@@ -1,7 +1,6 @@
 from memory import UnsafePointer
 
 from MojoSerial.MojoBridge.DTypes import SizeType
-from MojoSerial.bin.Debug import debug
 
 @fieldwise_init
 struct SiPixelDigisSoA(Copyable, Movable, Sized):
@@ -25,7 +24,7 @@ struct SiPixelDigisSoA(Copyable, Movable, Sized):
         rawIdArr: UnsafePointer[UInt32],
         adc: UnsafePointer[UInt16],
         clus: UnsafePointer[Int32],
-    ) raises:
+    ):
         self._pdigi = List[UInt32](capacity=nDigis)
         self._rawIdArr = List[UInt32](capacity=nDigis)
         self._adc = List[UInt16](capacity=nDigis)
@@ -35,11 +34,7 @@ struct SiPixelDigisSoA(Copyable, Movable, Sized):
             self._rawIdArr[i] = rawIdArr[i]
             self._adc[i] = adc[i]
             self._clus[i] = clus[i]
-
-        @parameter
-        if debug:
-            if self._pdigi.__len__() != nDigis:
-                raise Error("AssertionError")
+        debug_assert(self._pdigi.__len__() == nDigis)
 
     fn __len__(self) -> Int:
         return self._pdigi.__len__()

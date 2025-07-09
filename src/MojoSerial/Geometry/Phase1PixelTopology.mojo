@@ -1,4 +1,3 @@
-from MojoSerial.bin.Debug import debug
 from MojoSerial.MojoBridge.DTypes import Float
 
 struct Phase1PixelTopology:
@@ -19,19 +18,19 @@ struct Phase1PixelTopology:
 
     alias numberOfModules: UInt32 = 1856
     alias numberOfLayers: UInt32 = 10
-    alias layerStart =  InlineArray[UInt32, 10](0,
-                                                96,
-                                                320,
-                                                672,  # barrel
-                                                1184,
-                                                1296,
-                                                1408,  # positive endcap
-                                                1520,
-                                                1632,
-                                                1744,  # negative endcap
-                                                Self.numberOfModules)
+    alias layerStart =  List[UInt32](0,
+                                     96,
+                                     320,
+                                     672,  # barrel
+                                     1184,
+                                     1296,
+                                     1408,  # positive endcap
+                                     1520,
+                                     1632,
+                                     1744,  # negative endcap
+                                     Self.numberOfModules)
 
-    alias layerName = InlineArray[StaticString, 10](
+    alias layerName = List[StaticString](
         "BL1",
         "BL2",
         "BL3",
@@ -103,12 +102,7 @@ struct Phase1PixelTopology:
             res = res and i < Self.layerStart[Self.layer[j] + 1]
         return res
 
-    @staticmethod
-    fn validateLayerIndexAssert() raises:
-        @parameter
-        if debug:
-            if not Self.validateLayerIndex():
-                raise Error("layer from detIndex algo is buggy")
+    alias __d = debug_assert(Self.validateLayerIndex(), "layer from detIndex algo is buggy")
 
     @always_inline
     @staticmethod
@@ -195,4 +189,3 @@ struct AverageGeometry(Movable, Copyable):
         self.ladderMinZ = List[Float](capacity=Int(Self.numberOfLaddersInBarrel))
         self.ladderMaxZ = List[Float](capacity=Int(Self.numberOfLaddersInBarrel))
         self.endCapZ = List[Float](capacity=2)
-                
