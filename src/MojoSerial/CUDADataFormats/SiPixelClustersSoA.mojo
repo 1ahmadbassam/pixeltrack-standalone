@@ -3,7 +3,7 @@ from memory import UnsafePointer, OwnedPointer
 from MojoSerial.MojoBridge.DTypes import SizeType
 
 @fieldwise_init
-struct DeviceConstView(Movable):
+struct DeviceConstView(Movable, Defaultable):
     var _moduleStart: UnsafePointer[UInt32]
     var _clusInModule: UnsafePointer[UInt32]
     var _moduleId: UnsafePointer[UInt32]
@@ -32,7 +32,7 @@ struct DeviceConstView(Movable):
     fn clusModuleStart (self, i: Int) -> UInt32:
         return self._clusModuleStart[i]
 
-struct SiPixelClustersSoA(Movable):
+struct SiPixelClustersSoA(Movable, Defaultable):
     var view_d: DeviceConstView
     var moduleStart_d: List[UInt32]
     var clusInModule_d: List[UInt32]

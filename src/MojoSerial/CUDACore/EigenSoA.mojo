@@ -4,7 +4,7 @@ fn isPowerOf2(v: Int32) -> Bool:
     return v and not (v & (v - 1))
 
 # TODO: Figure out how to align this struct
-struct ScalarSoA[T: DType, S: Int](Movable, Copyable):
+struct ScalarSoA[T: DType, S: Int](Movable, Copyable, Defaultable):
     alias Scalar = Scalar[T]
     var _data: InlineArray[Self.Scalar, S]
 
@@ -36,14 +36,10 @@ struct ScalarSoA[T: DType, S: Int](Movable, Copyable):
         self._data = other._data
     
     @always_inline
-    fn data(self) -> UnsafePointer[Self.Scalar]:
-        return self._data.unsafe_ptr()
-    
-    @always_inline
-    fn data(mut self) -> UnsafePointer[Self.Scalar]:
+    fn data(ref self) -> UnsafePointer[Self.Scalar]:
         return self._data.unsafe_ptr()
 
-    fn __getitem__(self, i: Int) -> Self.Scalar:
+    fn __getitem__(ref self, i: Int) -> ref [self._data] Self.Scalar:
         return self._data[i]
 
     fn __setitem__(mut self, i: Int, v: Self.Scalar):

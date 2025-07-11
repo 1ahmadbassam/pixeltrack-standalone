@@ -2,7 +2,7 @@ from MojoSerial.DataFormats.SiPixelRawDataError import SiPixelRawDataError
 
 @fieldwise_init
 @register_passable("trivial")
-struct PixelErrorCompact(Movable, Copyable):
+struct PixelErrorCompact(Movable, Copyable, Defaultable):
     var raw_id: UInt32
     var word: UInt32
     var error_type: UInt8

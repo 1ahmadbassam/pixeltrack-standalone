@@ -1,4 +1,4 @@
-struct SiPixelRawDataError(Movable, Copyable, Comparable):
+struct SiPixelRawDataError(Movable, Copyable, Comparable, Defaultable):
     """
         Pixel error -- collection of errors and error information
         Class to contain and store all information about errors.

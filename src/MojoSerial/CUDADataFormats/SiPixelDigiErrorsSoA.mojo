@@ -4,7 +4,7 @@ from MojoSerial.CUDACore.SimpleVector import SimpleVector, make_SimpleVector
 from MojoSerial.DataFormats.PixelErrors import PixelErrorCompact, PixelFormatterErrors
 from MojoSerial.MojoBridge.DTypes import SizeType
 
-struct SiPixelDigiErrorsSoA(Movable):
+struct SiPixelDigiErrorsSoA(Movable, Defaultable):
     var data_d: List[PixelErrorCompact]
     var error_d: SimpleVector[PixelErrorCompact]
     var formatterErrors_h: PixelFormatterErrors

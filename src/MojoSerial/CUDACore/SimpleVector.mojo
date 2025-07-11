@@ -1,6 +1,6 @@
 from memory import UnsafePointer
 
-struct SimpleVector[T: Movable & Copyable](Movable, Copyable):
+struct SimpleVector[T: Movable & Copyable](Movable, Copyable, Defaultable):
     var m_size: Int
     var m_capacity: Int
     

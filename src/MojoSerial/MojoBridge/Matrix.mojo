@@ -1,6 +1,6 @@
 from MojoSerial.MojoBridge.Vector import Vector
 
-struct Matrix[T: DType, rows: Int, colns: Int]():
+struct Matrix[T: DType, rows: Int, colns: Int](Defaultable):
     alias _R = Vector[T, colns]
     alias _D = Scalar[T]
     alias _DC = InlineArray[Vector[T, colns], rows]

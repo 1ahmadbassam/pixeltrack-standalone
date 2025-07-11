@@ -16,7 +16,7 @@ struct Counters(Movable, Copyable):
 
 @fieldwise_init
 @register_passable("trivial")
-struct AtomicPairCounter(Movable, Copyable):
+struct AtomicPairCounter(Movable, Copyable, Defaultable):
     var counter: Counters
     alias CounterType = UInt64
     alias _Z = SIMD[DType.uint32, 2](0, 0)

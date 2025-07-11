@@ -5,7 +5,7 @@ from MojoSerial.MojoBridge.Matrix import Matrix
 from MojoSerial.CUDACore.EigenSoA import MatrixSoA
 
 @fieldwise_init
-struct TrajectoryStateSoA[S: Int32](Movable, Copyable):
+struct TrajectoryStateSoA[S: Int32](Movable, Copyable, Defaultable):
     alias Vector5f = Vector[DType.float32, 5]
     alias Vector15f = Vector[DType.float32, 15]
 

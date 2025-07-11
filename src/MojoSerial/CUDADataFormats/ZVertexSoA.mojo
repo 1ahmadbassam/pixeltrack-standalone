@@ -1,7 +1,7 @@
 from MojoSerial.MojoBridge.DTypes import Float
 
 @fieldwise_init
-struct ZVertexSoA(Movable, Copyable):
+struct ZVertexSoA(Movable, Copyable, Defaultable):
     alias MAXTRACKS: Int32 = 32 * 1024
     alias MAXVTX: Int32 = 1024
 
