@@ -1,8 +1,13 @@
 from collections import Set
+from MojoSerial.MojoBridge.Matrix import Matrix
+
 from compile.reflection import get_type_name
 
 alias StringStandardType = Copyable & Movable & Stringable
 alias StringStandardKeyType = StringStandardType & KeyElement
+
+fn pprint[T1: StringStandardType, T2: StringStandardType, //](t: Tuple[T1, T2]):
+    print('(' + t[0].__str__() + ', ' + t[1].__str__() + ')')
 
 fn pprint[T: StringStandardType](L: List[T]):
     print('[', end='')
@@ -41,6 +46,13 @@ fn pprint[T: StringStandardType](o: Optional[T]):
         print(o.value().__str__())
     else:
         print("None")
+
+fn pprint[T: DType](M: Matrix[T, _, _]):
+    for i in range(M.rows):
+        print('[', end='')
+        for j in range(M.colns):
+            print(M[i, j], end=' ')
+        print('\b]')
 
 @always_inline
 @parameter
