@@ -2,8 +2,10 @@ from memory import UnsafePointer, OwnedPointer
 
 from MojoSerial.MojoBridge.DTypes import SizeType
 
+alias nullptr = UnsafePointer[UInt32]()
+
 @fieldwise_init
-struct DeviceConstView(Movable, Copyable, EqualityComparable):
+struct DeviceConstView(Movable):
     var _moduleStart: UnsafePointer[UInt32]
     var _clusInModule: UnsafePointer[UInt32]
     var _moduleId: UnsafePointer[UInt32]
@@ -12,10 +14,10 @@ struct DeviceConstView(Movable, Copyable, EqualityComparable):
 
     @always_inline
     fn __init__(out self):
-        self._moduleStart = UnsafePointer[UInt32]()
-        self._clusInModule = UnsafePointer[UInt32]()
-        self._moduleId = UnsafePointer[UInt32]()
-        self._clusModuleStart = UnsafePointer[UInt32]()
+        self._moduleStart = nullptr
+        self._clusInModule = nullptr
+        self._moduleId = nullptr
+        self._clusModuleStart = nullptr
         self.__destruct = True
 
     fn __init__(out self, maxClusters: SizeType):
@@ -59,13 +61,6 @@ struct DeviceConstView(Movable, Copyable, EqualityComparable):
             self._moduleId.free()
             self._clusModuleStart.free()
 
-    fn __eq__(self, other: Self) -> Bool:
-        return self._moduleStart == other._moduleStart and self._clusInModule == other._clusInModule and self._moduleId == other._moduleId and self._clusModuleStart == other._clusModuleStart
-
-    @always_inline
-    fn __ne__(self, other: Self) -> Bool:
-        return not self.__eq__(other)
-
     @always_inline
     fn moduleStart (self, i: Int) -> UInt32:
         return self._moduleStart[i]
@@ -83,7 +78,7 @@ struct DeviceConstView(Movable, Copyable, EqualityComparable):
         return self._clusModuleStart[i]
 
 @fieldwise_init
-struct SiPixelClustersSoA(Movable, EqualityComparable):
+struct SiPixelClustersSoA(Movable):
     var view_d: OwnedPointer[DeviceConstView]
     var moduleStart_d: UnsafePointer[UInt32]
     var clusInModule_d: UnsafePointer[UInt32]
@@ -93,10 +88,10 @@ struct SiPixelClustersSoA(Movable, EqualityComparable):
 
     fn __init__(out self):
         self.view_d = OwnedPointer[](DeviceConstView())
-        self.moduleStart_d = UnsafePointer[UInt32]()
-        self.clusInModule_d = UnsafePointer[UInt32]()
-        self.moduleId_d = UnsafePointer[UInt32]()
-        self.clusModuleStart_d = UnsafePointer[UInt32]()
+        self.moduleStart_d = nullptr
+        self.clusInModule_d = nullptr
+        self.moduleId_d = nullptr
+        self.clusModuleStart_d = nullptr
         self.nClusters_h = 0
 
     fn __init__(out self, maxClusters: SizeType):
@@ -114,14 +109,34 @@ struct SiPixelClustersSoA(Movable, EqualityComparable):
         self.nClusters_h = 0
         self.view_d = OwnedPointer[](DeviceConstView(self.moduleStart_d, self.clusInModule_d, self.moduleId_d, self.clusModuleStart_d))
 
+    fn __del__(owned self):
+        if self.moduleStart_d != nullptr:
+            self.moduleStart_d.free()
+        if self.clusInModule_d != nullptr:
+            self.clusInModule_d.free()
+        if self.moduleId_d != nullptr:
+            self.moduleId_d.free()
+        if self.clusModuleStart_d != nullptr:
+            self.clusModuleStart_d.free()
+
     fn view (self) -> Pointer[mut=False, DeviceConstView, __origin_of(self.view_d)]:
         return Pointer[](to=self.view_d[])
 
-    fn __eq__(self, other: Self) -> Bool:
-        return self.view_d[] == other.view_d[] and self.moduleStart_d == other.moduleStart_d and self.clusInModule_d == other.clusInModule_d and self.moduleId_d == other.moduleId_d and self.clusModuleStart_d == other.clusModuleStart_d and self.nClusters_h == other.nClusters_h
+    fn nClusters(self) -> UInt32:
+        return self.nClusters_h
 
-    @always_inline
-    fn __ne__(self, other: Self) -> Bool:
-        return not self.__eq__(other)
+    fn setNClusters(mut self, nClusters: UInt32):
+        self.nClusters_h = nClusters
 
+    fn moduleStart(ref self) -> ref [self.moduleStart_d] UnsafePointer[UInt32]:
+        return self.moduleStart_d
+    
+    fn clusInModule(ref self) -> ref [self.clusInModule_d] UnsafePointer[UInt32]:
+        return self.clusInModule_d
 
+    fn moduleId(ref self) -> ref [self.moduleId_d] UnsafePointer[UInt32]:
+        return self.moduleId_d
+
+    fn clusModuleStart(ref self) -> ref [self.clusModuleStart_d] UnsafePointer[UInt32]:
+        return self.clusModuleStart_d
+    
