@@ -53,7 +53,6 @@ struct TrackSoAT[S: Int32](Movable, Defaultable):
     fn quality(ref self, i: Int) -> ref [self.m_quality._data] UInt8:
         return self.m_quality[i]
 
-
     @always_inline
     fn qualityData(ref self) -> UnsafePointer[Self.Quality]:
         return self.m_quality.data()

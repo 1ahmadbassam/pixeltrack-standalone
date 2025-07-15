@@ -64,7 +64,7 @@ struct SiPixelClustersSoA(Movable, Defaultable):
         self.clusModuleStart_d = other.clusModuleStart_d
         self.nClusters_h = other.nClusters_h
 
-    fn view (self) -> Pointer[mut=False, DeviceConstView, __origin_of(self.view_d)]:
+    fn view (self) -> Pointer[DeviceConstView, __origin_of(self.view_d)]:
         return Pointer[](to=self.view_d)
 
     @always_inline
@@ -76,19 +76,27 @@ struct SiPixelClustersSoA(Movable, Defaultable):
         self.nClusters_h = nClusters
 
     @always_inline
-    fn moduleStart(ref self) -> UnsafePointer[UInt32]:
+    fn moduleStart[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[UInt32]:
         return self.moduleStart_d.unsafe_ptr()
     
     @always_inline
-    fn clusInModule(ref self) -> UnsafePointer[UInt32]:
+    fn clusInModule[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[UInt32]:
         return self.clusInModule_d.unsafe_ptr()
 
     @always_inline
-    fn moduleId(ref self) -> UnsafePointer[UInt32]:
+    fn moduleId[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[UInt32]:
         return self.moduleId_d.unsafe_ptr()
 
     @always_inline
-    fn clusModuleStart(ref self) -> UnsafePointer[UInt32]:
+    fn clusModuleStart[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[UInt32]:
         return self.clusModuleStart_d.unsafe_ptr()
     
     @always_inline

@@ -84,7 +84,7 @@ struct SiPixelDigisSoA(Movable, Defaultable):
         self.nDigis_h = 0
 
     @always_inline
-    fn view (self) -> Pointer[mut=False, DeviceConstView, __origin_of(self.view_d)]:
+    fn view (self) -> Pointer[DeviceConstView, __origin_of(self.view_d)]:
         return Pointer[](to=self.view_d)
 
     @always_inline
@@ -101,31 +101,45 @@ struct SiPixelDigisSoA(Movable, Defaultable):
         return self.nDigis_h
 
     @always_inline
-    fn xx(ref self) -> UnsafePointer[UInt16]:
+    fn xx[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[UInt16]:
         return self.xx_d.unsafe_ptr()
 
     @always_inline
-    fn yy(ref self) -> UnsafePointer[UInt16]:
+    fn yy[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[UInt16]:
         return self.yy_d.unsafe_ptr()
 
     @always_inline
-    fn adc(ref self) -> UnsafePointer[UInt16]:
+    fn adc[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[UInt16]:
         return self.adc_d.unsafe_ptr()
 
     @always_inline
-    fn moduleInd(ref self) -> UnsafePointer[UInt16]:
+    fn moduleInd[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[UInt16]:
         return self.moduleInd_d.unsafe_ptr()
 
     @always_inline
-    fn clus(ref self) -> UnsafePointer[Int32]:
+    fn clus[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[Int32]:
         return self.clus_d.unsafe_ptr()
 
     @always_inline
-    fn pdigi(ref self) -> UnsafePointer[UInt32]:
+    fn pdigi[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[UInt32]:
         return self.pdigi_d.unsafe_ptr()
 
     @always_inline
-    fn rawIdArr(ref self) -> UnsafePointer[UInt32]:
+    fn rawIdArr[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[UInt32]:
         return self.rawIdArr_d.unsafe_ptr()
 
     @always_inline

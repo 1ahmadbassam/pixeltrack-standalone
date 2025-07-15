@@ -32,7 +32,9 @@ struct SiPixelDigiErrorsSoA(Movable, Defaultable):
     fn formatterErrors(self) -> PixelFormatterErrors:
         return self.formatterErrors_h
 
-    fn error(ref self) -> UnsafePointer[SimpleVector[PixelErrorCompact]]:
+    fn error[
+        is_mutable: Bool, //, origin: Origin[is_mutable]
+    ](ref [origin] self) -> UnsafePointer[SimpleVector[PixelErrorCompact]]:
         return UnsafePointer(to=self.error_d)
     
     fn c_error(self) -> UnsafePointer[SimpleVector[PixelErrorCompact]]:
