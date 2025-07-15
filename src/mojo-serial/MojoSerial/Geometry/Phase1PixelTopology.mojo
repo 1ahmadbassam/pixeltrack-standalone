@@ -171,7 +171,7 @@ struct Phase1PixelTopology:
         return py + shift
 
 @fieldwise_init
-struct AverageGeometry(Movable, Copyable, Defaultable):
+struct AverageGeometry(Movable, Defaultable):
     alias numberOfLaddersInBarrel = Phase1PixelTopology.numberOfLaddersInBarrel
     var ladderZ: List[Float]
     var ladderX: List[Float]
