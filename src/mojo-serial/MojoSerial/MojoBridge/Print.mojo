@@ -47,11 +47,19 @@ fn pprint[T: StringStandardType](o: Optional[T]):
     else:
         print("None")
 
-fn pprint[T: DType](M: Matrix[T, _, _]):
+fn wprint[T: DType, //](i: Scalar[T], *, width: Int = 0, end: StaticString = '\n'):
+    var _w = i.__str__().__len__()
+    var _c = width - _w
+    print(' ' * (_c if _c > 0 else 0) + i.__str__(), end=end)
+
+fn pprint[T: DType, //](M: Matrix[T, _, _]):
+    var width: Int = 0
+    for i in range(M.__len__()):
+        width = max(width, M[i].__str__().__len__())
     for i in range(M.rows):
         print('[', end='')
         for j in range(M.colns):
-            print(M[i, j], end=' ')
+            wprint(M[i, j], width=width, end=' ')
         print('\b]')
 
 @always_inline

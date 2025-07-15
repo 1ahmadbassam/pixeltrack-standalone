@@ -54,7 +54,7 @@ struct _VecIterator[
     W: DType,
     size: Int,
     vec_origin: Origin[vec_mutability],
-    forward: Bool = True,
+    forward: Bool = True
 ](Copyable, Iterator, Movable):
     alias vec_type = Vector[W, size]
     alias T = Scalar[W]
@@ -110,6 +110,7 @@ struct Vector[T: DType, size: Int](
     alias psize = _pow_2[size]()
     alias _D = Scalar[T]
     alias _DC = SIMD[T, Self.psize]
+    alias _Mask = Vector[DType.bool, size]
     var _data: Self._DC
 
     # SIMD specifics
@@ -121,7 +122,7 @@ struct Vector[T: DType, size: Int](
 
     @staticmethod
     fn get_type_name() -> String:
-        return "SIMD[" + repr(T) + ", " + repr(size) + "]"
+        return "Vector[" + repr(T) + ", " + repr(size) + "]"
 
     @staticmethod
     fn get_device_type_name() -> String:
@@ -132,8 +133,7 @@ struct Vector[T: DType, size: Int](
     alias MAX_FINITE = Self(_max_finite[T]())
     alias MIN_FINITE = Self(_min_finite[T]())
 
-    alias _Mask = Vector[DType.bool, size]
-    alias _default_alignment = alignof[Scalar[T]]() if is_gpu() else 1
+    alias _default_alignment = alignof[Self._D]() if is_gpu() else 1
 
     @doc_private
     @always_inline("nodebug")
@@ -152,7 +152,7 @@ struct Vector[T: DType, size: Int](
     @always_inline
     fn copy(self) -> Self:
         """Explicitly construct a copy of self."""
-        return Self(self)
+        return Self.__copyinit__(self)
 
     @implicit
     fn __init__[vsize: Int, //](out self, vec: Vector[T, vsize]):
@@ -178,15 +178,15 @@ struct Vector[T: DType, size: Int](
 
     @implicit
     fn __init__(out self, values: List[Self._D], /):
-        """Initialize a vector from a list of values (implicit)."""
+        """Initialize a vector from a list of values. Might cause data loss (implicit)."""
         self = Self()
-        for i in range(values.__len__()):
+        for i in range(min(size, values.__len__())):
             self._data[i] = values[i]
 
     @always_inline
     @implicit
-    fn __init__(out self, *values: Scalar[T], __list_literal__: () = ()):
-        """Constructs a SIMD vector via a variadic list of values in a literal format."""
+    fn __init__(out self, *values: Self._D, __list_literal__: () = ()):
+        """Constructs a vector via a variadic list of values in a literal format."""
         self = Self()
         for i in range(values.__len__()):
             self._data[i] = values[i]
@@ -225,12 +225,12 @@ struct Vector[T: DType, size: Int](
     @always_inline
     fn __init__[U: DType, //](out self, value: SIMD[U, size], /):
         """Initializes a vector with a SIMD vector of the same size and of a different data type."""
-        self._data = rebind[Self._DC](value)
+        self._data = rebind[Self._DC](value.cast[T]())
 
     @always_inline
     fn __init__[U: DType, //](out self, vec: Vector[U, size], /):
         """Initializes a vector with a vector of the same size and of a different data type."""
-        self._data = rebind[Self._DC](vec._data)
+        self._data = rebind[Self._DC](vec._data.cast[T]())
 
     fn __init__[src_size: Int, //, *, offset: Int](out self, vec: Vector[T, src_size]):
         """Initializes a vector as a slice of another vector with specified output size and offset."""
@@ -262,7 +262,7 @@ struct Vector[T: DType, size: Int](
         return _VecIterator[T, size, __origin_of(self)](0, Pointer(to=self))
 
     @always_inline
-    fn __contains__(self, value: Scalar[T]) -> Bool:
+    fn __contains__(self, value: Self._D) -> Bool:
         return self._data.__contains__(value)
 
     @always_inline
@@ -277,7 +277,16 @@ struct Vector[T: DType, size: Int](
 
     @always_inline
     fn __mul__(self, rhs: Self) -> Self:
+        constrained[T.is_numeric(), "DType must be numeric"]()
         return self._data * rhs._data
+    
+    @always_inline
+    fn __matmul__(self, rhs: Self) -> Self._D:
+        constrained[T.is_numeric(), "DType must be numeric"]()
+        var res: Self._D = 0
+        for i in range(size):
+            res += self._data[i] * rhs._data[i]
+        return res
 
     @always_inline
     fn __truediv__(self, rhs: Self) -> Self:
@@ -451,6 +460,14 @@ struct Vector[T: DType, size: Int](
         constrained[T.is_integral(), "DType must be an integral type"]()
         self = self >> rhs
 
+    @always_inline("nodebug")
+    fn __iinvert__(mut self):
+        constrained[
+            T.is_integral() or T is DType.bool,
+            "DType must be an integral or bool type",
+        ]()
+        self = ~self
+
     # Reversed operations
     
     @always_inline
@@ -467,6 +484,10 @@ struct Vector[T: DType, size: Int](
     fn __rmul__(self, value: Self) -> Self:
         constrained[T.is_numeric(), "DType must be numeric"]()
         return value * self
+
+    @always_inline
+    fn __rmatmul__(self, rhs: Self) -> Self._D:
+        return rhs @ self
 
     @always_inline
     fn __rfloordiv__(self, rhs: Self) -> Self:
