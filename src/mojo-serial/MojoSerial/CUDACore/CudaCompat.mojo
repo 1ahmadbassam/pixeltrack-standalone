@@ -5,7 +5,7 @@ from MojoSerial.MojoBridge.Stable import OpaquePointer, NonePointer
 alias CudaStreamType = OpaquePointer
 alias cudaStreamDefault: OpaquePointer = NonePointer
 
-struct CudaCompact:
+struct CudaCompat:
     @staticmethod
     fn atomicCAS[T1: Copyable & EqualityComparable, //](address: UnsafePointer[T1], compare: T1, val: T1) -> T1:
         var old: T1 = address[]
