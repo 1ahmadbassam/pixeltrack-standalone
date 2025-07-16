@@ -237,7 +237,7 @@ struct Vector[T: DType, size: Int](
         alias output_width = size
 
         self = Self()
-        var i: Int = 0
+        var i = 0
         @parameter
         for j in range(offset, offset + output_width):
             self._data[i] = vec._data[j]; i += 1
@@ -719,8 +719,8 @@ struct Vector[T: DType, size: Int](
 
     fn interleave[vsize: Int, //](self, other: Vector[T, vsize]) -> Vector[T, size + vsize]:
         var res = Vector[T, size + vsize]()
-        var u: Int = 0
-        var v: Int = 0
+        var u = 0
+        var v = 0
         @parameter
         for i in range(min(size, vsize) * 2):
             if i % 2 == 0:
@@ -768,7 +768,7 @@ struct Vector[T: DType, size: Int](
         @parameter
         if self.size == 1:
             return self._data[0]
-        var A: Self._D = self._data[0]
+        var A = self._data[0]
         @parameter
         for i in range(1, size):
             A = max(A, self._data[i])
@@ -778,7 +778,7 @@ struct Vector[T: DType, size: Int](
         @parameter
         if self.size == 1:
             return self._data[0]
-        var A: Self._D = self._data[0]
+        var A = self._data[0]
         @parameter
         for i in range(1, size):
             A = min(A, self._data[i])
@@ -788,7 +788,7 @@ struct Vector[T: DType, size: Int](
         @parameter
         if self.size == 1:
             return self._data[0]
-        var A: Self._D = self._data[0]
+        var A = self._data[0]
         @parameter
         for i in range(1, size):
             A = A + self._data[i]
@@ -798,7 +798,7 @@ struct Vector[T: DType, size: Int](
         @parameter
         if self.size == 1:
             return self._data[0]
-        var A: Self._D = self._data[0]
+        var A = self._data[0]
         @parameter
         for i in range(1, size):
             A = A * self._data[i]
@@ -808,7 +808,7 @@ struct Vector[T: DType, size: Int](
         @parameter
         if self.size == 1:
             return self._data[0]
-        var A: Self._D = self._data[0]
+        var A = self._data[0]
         @parameter
         for i in range(1, size):
             A = A & self._data[i]
@@ -818,7 +818,7 @@ struct Vector[T: DType, size: Int](
         @parameter
         if self.size == 1:
             return self._data[0]
-        var A: Self._D = self._data[0]
+        var A = self._data[0]
         @parameter
         for i in range(1, size):
             A = A | self._data[i]

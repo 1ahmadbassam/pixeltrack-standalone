@@ -20,7 +20,7 @@ fn pprint[T: StringStandardType](L: List[T]):
 fn pprint[T1: StringStandardKeyType, T2: StringStandardType](D: Dict[T1, T2]):
     print('{', end='')
     if (D.__len__() > 0):
-        var skip: Bool = True
+        var skip = True
         for ref entry in D.items():
             if not skip:
                 print(', ', end='')
@@ -32,7 +32,7 @@ fn pprint[T1: StringStandardKeyType, T2: StringStandardType](D: Dict[T1, T2]):
 fn pprint[T: StringStandardKeyType](S: Set[T]):
     print('{', end='')
     if (S.__len__() > 0):
-        var skip: Bool = True
+        var skip = True
         for ref item in S:
             if not skip:
                 print(', ', end='')

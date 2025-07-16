@@ -30,7 +30,7 @@ struct SimpleVector[T: Movable & Copyable](Movable, Copyable, Defaultable):
     # TODO: Replace this stub
 
 fn make_SimpleVector[T: Movable & Copyable](capacity: Int, data: UnsafePointer[T]) -> SimpleVector[T]:
-    var ret: SimpleVector[T] = SimpleVector[T]()
+    var ret = SimpleVector[T]()
     ret.construct(capacity, data)
     return ret
 
