@@ -4,6 +4,7 @@ from utils.numerics import max_or_inf as _max_or_inf
 from utils.numerics import min_finite as _min_finite
 from utils.numerics import min_or_neg_inf as _min_or_neg_inf
 
+from MojoSerial.MojoBridge.DTypes import Double
 from MojoSerial.MojoBridge.Vector import Vector
 from MojoSerial.MojoBridge.Stable import Iterator, OpaquePointer
 
@@ -153,23 +154,14 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     @always_inline
     @implicit
     fn __init__(out self, *values: Self._D, __list_literal__: () = ()):
-        """Constructs a matrix via a variadic list of values in a literal format."""
+        """Constructs a matrix via a variadic list of values in a literal format (implicit)."""
         self = Self()
         for i in range(values.__len__()):
             self[i] = values[i]
 
-    @always_inline
-    @implicit
-    fn __init__(out self, *values: VariadicList[Self._D], __list_literal__: () = ()):
-        """Constructs a matrix via a variadic list of variadic values in a literal format."""
-        self = Self()
-        for i in range(values.__len__()):
-            for j in range(values[0].__len__()):
-                self[i, j] = values[i][j]
-
     @implicit
     fn __init__(out self, mat: Self._L):
-        """Constructs a matrix via a matrix list representation."""
+        """Constructs a matrix via a matrix list representation (implicit)."""
         self = Self()
         if mat:
             for i in range(min(rows, mat.__len__())):
@@ -178,13 +170,18 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     @implicit
     fn __init__(out self, mat: Self._LS):
-        """Constructs a matrix via a matrix inline array representation."""
+        """Constructs a matrix via a matrix inline array representation (implicit)."""
         self = Self()
         @parameter
         for i in range(rows):
             @parameter
             for j in range(colns):
                 self[i, j] = mat[i][j]
+
+    @implicit
+    fn __init__(out self, owned data: Self._DC):
+        """Constructs a matrix via a matrix inline array internal data object (implicit)."""
+        self._data = data^
 
     fn __init__[vrows: Int, vcolns: Int, //](out self, mat: Matrix[T, vrows, vcolns]):
         """Initialize a matrix from an arbitrary matrix. Might cause data loss."""
@@ -200,7 +197,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         for i in range(rows * colns):
             self[i] = mat[i].cast[T]()
 
-    # Compatibility with V1 Matricies
+    # Compatibility with V1 Matrices
 
     fn __init__[vsize: Int, //](out self, vec: Vector[T, vsize]):
         """Initialize a matrix from an arbitrary vector (V1 format). Might cause data loss."""
@@ -253,7 +250,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     @always_inline
     fn __contains__(self, value: Self._D) -> Bool:
-        var res: Bool = False
+        var res = False
         @parameter
         for i in range(rows):
             res = res and self._data[i].__contains__(value)
@@ -290,7 +287,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     @no_inline
     fn __matmul__[trp: Int, //](self, rhs: Matrix[T, colns, trp]) -> Matrix[T, rows, trp]:
-        var res: Matrix[T, rows, trp] = Matrix[T, rows, trp]()
+        var res = Matrix[T, rows, trp]()
         @parameter
         for i in range(rows):
             @parameter
@@ -326,21 +323,24 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         return res
 
     @no_inline
-    fn __pow__[sq: Int, //](self: Matrix[T, sq, sq], exp: Int) -> Matrix[T, sq, sq]:
+    fn __pow__(self: Matrix[T, rows, colns], exp: Int) -> Matrix[T, rows, colns]:
+        constrained[rows == colns, "Can only calculate power of a square matrix"]()
+        alias sq = Matrix[T, rows, rows]
+        
         if exp < 0:
             return ~self ** -exp
         elif exp == 0:
-            return Matrix[T, sq, sq].identity()
+            return Matrix[T, rows, colns].identity()
         elif exp == 1:
             return self
-        var res: Matrix[T, sq, sq] = self
+        var res: Matrix[T, rows, colns] = self
         for _ in range(2, exp + 1):
-            res = self @ res
+            res = rebind[sq](self) @ res
         return res
 
     @always_inline
     fn __lt__(self, rhs: Self) -> Self._Mask:
-        var res: Self._Mask = Self._Mask()
+        var res = Self._Mask()
         @parameter
         for i in range(rows):
             res._data[i] = self._data[i] < rhs._data[i]
@@ -348,7 +348,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     @always_inline
     fn __le__(self, rhs: Self) -> Self._Mask:
-        var res: Self._Mask = Self._Mask()
+        var res = Self._Mask()
         @parameter
         for i in range(rows):
             res._data[i] = self._data[i] <= rhs._data[i]
@@ -356,7 +356,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     @always_inline
     fn __eq__(self, rhs: Self) -> Self._Mask:
-        var res: Self._Mask = Self._Mask()
+        var res = Self._Mask()
         @parameter
         for i in range(rows):
             res._data[i] = self._data[i] == rhs._data[i]
@@ -364,7 +364,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     @always_inline
     fn __ne__(self, rhs: Self) -> Self._Mask:
-        var res: Self._Mask = Self._Mask()
+        var res = Self._Mask()
         @parameter
         for i in range(rows):
             res._data[i] = self._data[i] != rhs._data[i]
@@ -372,7 +372,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     @always_inline
     fn __gt__(self, rhs: Self) -> Self._Mask:
-        var res: Self._Mask = Self._Mask()
+        var res = Self._Mask()
         @parameter
         for i in range(rows):
             res._data[i] = self._data[i] > rhs._data[i]
@@ -380,7 +380,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     @always_inline
     fn __ge__(self, rhs: Self) -> Self._Mask:
-        var res: Self._Mask = Self._Mask()
+        var res = Self._Mask()
         @parameter
         for i in range(rows):
             res._data[i] = self._data[i] >= rhs._data[i]
@@ -492,8 +492,9 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         self = self.__mod__(rhs)
 
     @always_inline("nodebug")
-    fn __ipow__[sq: Int, //](mut self: Matrix[T, sq, sq], rhs: Int):
+    fn __ipow__(mut self: Matrix[T, rows, colns], rhs: Int):
         constrained[T.is_numeric(), "DType must be numeric"]()
+        constrained[rows == colns, "Can only calculate power of a square matrix"]()
         self = self.__pow__(rhs)
 
     @always_inline("nodebug")
@@ -609,6 +610,47 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     # Methods
 
+    @always_inline("nodebug")
+    fn _refine[
+        T: DType = Self.T, rows: Int = Self.rows, colns: Int = Self.colns
+    ](self) -> Matrix[T, rows, colns]:
+        return rebind[Matrix[T, rows, colns]](self)
+
+    @always_inline
+    fn cast[target: DType](self) -> Matrix[target, rows, colns]:
+        @parameter
+        if T is target:
+            return self._refine[target]()
+        @parameter
+        if T in (DType.float8_e4m3fn, DType.float8_e5m2):
+            constrained[
+                    target
+                    in (
+                        DType.bfloat16,
+                        DType.float16,
+                        DType.float32,
+                        DType.float64,
+                    ),
+                    (
+                        String(
+                            (
+                                "Only FP8->F64, FP8->F32, FP8->F16, and FP8->BF16"
+                                " castings are implemented. "
+                            ),
+                            T,
+                            "->",
+                            target,
+                        )
+                    ),
+                ]()
+        
+        # low level manip for efficiency
+        var res = InlineArray[Vector[target, colns], rows](uninitialized=True)
+        @parameter
+        for i in range(rows):
+            res[i] = self._data[i].cast[target]()
+        return res
+
     fn row_iterator(ref self) -> _MatIterator[T, rows, colns, __origin_of(self)]:
         return _MatIterator[T, rows, colns, __origin_of(self)](0, Pointer(to=self))
 
@@ -621,7 +663,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     
     @no_inline
     fn coln(self, j: Int) -> Vector[T, rows]:
-        var res: Vector[T, rows] = Vector[T, rows]()
+        var res = Vector[T, rows]()
         @parameter
         for i in range(rows):
             res[i] = self[i, j]
@@ -650,7 +692,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     @no_inline
     fn identity() -> Self:
         constrained[rows == colns, "Identity can only be a square matrix"]()
-        var res: Self = Self()
+        var res = Self()
         for i in range(rows):
             res[i, i] = 1
         return res
@@ -658,5 +700,43 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     @always_inline
     fn inverse(self) -> Self:
         return ~self
+
+    @no_inline
+    fn det[W: DType, *, protect: Bool = False](self: Matrix[T, rows, colns]) -> Scalar[W]:
+        constrained[rows == colns, "Can only calculate determinant for a square matrix"]()
+        alias n = rows
+
+        var mat = self.cast[DType.float64]()
+        var det: Double = 1.0
+        @parameter
+        for i in range(n):
+            var pivot = i
+            @parameter
+            for j in range(i + 1, n):
+                if abs(mat[j, i]) > abs(mat[pivot, i]):
+                    pivot = j
+            if pivot != i:
+                mat._data[i], mat._data[pivot] = mat._data[pivot], mat._data[i]
+                det *= -1
+            if (mat[i, i] == 0):
+                return 0
+            det *= mat[i, i]
+            @parameter
+            for j in range(i + 1, n):
+                var factor: Double = mat[j, i] / mat[i, i]
+                @parameter
+                for k in range(i + 1, n):
+                    mat[j, k] -= factor * mat[i, k]
+        @parameter
+        if protect:
+            @parameter
+            if W in (DType.uint8, DType.uint16, DType.uint32, DType.uint64, DType.uint128, DType.uint256):
+                if det < 0:
+                    return 0    # truncated for logic protection
+        return det.cast[W]()
+
+    @always_inline
+    fn det[*, protect: Bool = False](self: Matrix[T, rows, colns], ) -> Self._D:
+        return self.det[T, protect=protect]()
     
     # TODO: Finish this class
