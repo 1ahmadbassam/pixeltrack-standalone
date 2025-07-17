@@ -1,4 +1,5 @@
 from sys import alignof, is_gpu
+from bit import pop_count
 from utils.numerics import max_finite as _max_finite
 from utils.numerics import max_or_inf as _max_or_inf
 from utils.numerics import min_finite as _min_finite
@@ -76,6 +77,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     alias _R = Vector[T, colns]
     alias _D = Scalar[T]
     alias _DC = InlineArray[Vector[T, colns], rows]
+    alias _DB = InlineArray[Vector[DType.bool, colns], rows]
     alias _Mask = Matrix[DType.bool, rows, colns]
     var _data: Self._DC
 
@@ -115,6 +117,11 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         self._data = Self._DC(Self._R())
     
     @always_inline
+    fn __init__(out self, *, uninitialized: Bool):
+        """Default unsafe constructor."""
+        self._data = Self._DC(uninitialized=uninitialized)
+
+    @always_inline
     fn copy(self) -> Self:
         """Explicitly construct a copy of self."""
         return Self.__copyinit__(self)
@@ -127,7 +134,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     @always_inline
     fn __init__[U: DType, //](out self, *, owned coln: Vector[U, colns]):
         """Initialize a matrix from a Vector coln object of the same row-size, splattered across all columns."""
-        self = Self()
+        self._data = Self._DC(uninitialized=True)
         @parameter
         for i in range(rows):
             @parameter
@@ -163,23 +170,22 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     @implicit
     fn __init__(out self, *values: Self._D, __list_literal__: () = ()):
         """Constructs a matrix via a variadic list of values in a literal format (implicit)."""
-        self = Self()
+        self._data = Self._DC(uninitialized=True)
         for i in range(values.__len__()):
             self[i] = values[i]
 
     @implicit
     fn __init__(out self, mat: Self._L):
         """Constructs a matrix via a matrix list representation (implicit)."""
-        self = Self()
-        if mat:
-            for i in range(min(rows, mat.__len__())):
-                for j in range(min(colns, mat[0].__len__())):
-                    self[i, j] = mat[i][j]
+        self._data = Self._DC(uninitialized=True)
+        for i in range(min(rows, mat.__len__())):
+            for j in range(min(colns, mat[0].__len__())):
+                self[i, j] = mat[i][j]
 
     @implicit
     fn __init__(out self, mat: Self._LS):
         """Constructs a matrix via a matrix inline array representation (implicit)."""
-        self = Self()
+        self._data = Self._DC(uninitialized=True)
         @parameter
         for i in range(rows):
             @parameter
@@ -193,22 +199,35 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     fn __init__[vrows: Int, vcolns: Int, //](out self, mat: Matrix[T, vrows, vcolns]):
         """Initialize a matrix from an arbitrary matrix. Might cause data loss."""
-        self = Self()
+        self._data = Self._DC(uninitialized=True)
         @parameter
         for i in range(min(rows * colns, vrows * vcolns)):
             self[i] = mat[i]
 
     fn __init__[U: DType, //](out self, mat: Matrix[U, rows, colns]):
         """Initialize a matrix from a matrix of the same size of a different data type."""
-        self = Self()
+        self._data = Self._DC(uninitialized=True)
         @parameter
         for i in range(rows * colns):
             self[i] = mat[i].cast[T]()
+
+    fn __init__[*, row_offset: Int, coln_offset: Int](out self, mat: Matrix[T, *_]):
+        """Initializes a matrix as a slice of another matrix with specified output size and offset."""
+        self._data = Self._DC(uninitialized=True)
+        var u = 0
+        @parameter
+        for i in range(row_offset, rows + row_offset):
+            var v = 0
+            @parameter
+            for j in range(coln_offset, colns + coln_offset):
+                self[u, v] = mat[i, j]; v += 1
+            u += 1
+
     # Compatibility with V1 Matrices
 
     fn __init__[vsize: Int, //](out self, vec: Vector[T, vsize]):
         """Initialize a matrix from an arbitrary vector (V1 format). Might cause data loss."""
-        self = Self()
+        self._data = Self._DC(uninitialized=True)
         @parameter
         for i in range(min(rows * colns, vsize)):
             self[i] = vec[i]
@@ -216,7 +235,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     @implicit
     fn __init__(out self, values: List[Self._D], /):
         """Initialize a matrix from a list of values. Might cause data loss."""
-        self = Self()
+        self._data = Self._DC(uninitialized=True)
         for i in range(min(self.__len__(), values.__len__())):
             self[i] = values[i]
 
@@ -724,6 +743,10 @@ struct Matrix[T: DType, rows: Int, colns: Int](
             res._data[i] = self._data[i].__round__(ndigits)
         return res
 
+    @always_inline
+    fn __ceildiv__(self, denominator: Self) -> Self:
+        return self.__truediv__(denominator).__round__()
+
     fn __hash__(self) -> UInt:
         var res: UInt = 37
         @parameter
@@ -779,6 +802,14 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         for i in range(rows):
             res[i] = self._data[i].cast[target]()
         return res
+
+    @always_inline
+    fn is_power_of_two(self) -> Self._Mask:
+        constrained[T.is_integral(), "DType must be integral"]()
+        if T.is_unsigned():
+            return self.pop_count() == 1
+        else:
+            return (self > 0) & (self & (self - 1) == 0)
 
     @no_inline
     fn write_to[W: Writer](self, mut writer: W):
@@ -896,5 +927,195 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     @always_inline
     fn det[*, protect: Bool = False](self: Matrix[T, rows, colns], ) -> Self._D:
         return self.det[T, protect=protect]()
+
+    @always_inline
+    fn clamp(self, lower_bound: Self, upper_bound: Self) -> Self:
+        var res = self
+        @parameter
+        for i in range(rows):
+            res._data[i] = res._data[i].clamp(lower_bound._data[i], upper_bound._data[i])
+        return res
     
-    # TODO: Finish this class
+    @always_inline
+    fn fma(self, multiplier: Self, accumulator: Self) -> Self:
+        constrained[T.is_numeric(), "DType must be numeric"]()
+        var res = self
+        for i in range(rows):
+            res._data[i] = res._data[i].fma(multiplier._data[i], accumulator._data[i])
+        return res
+
+    fn slice[
+        output_rows: Int, output_colns: Int, /, *, 
+        row_offset: Int = 0, coln_offset: Int = 0
+    ](self) -> Matrix[T, output_rows, output_colns]:
+        constrained[
+            0 <= row_offset < output_rows + row_offset <= rows,
+            "Output rows must be a positive integer less than rows",
+        ]()
+        constrained[
+            0 <= coln_offset < output_colns + coln_offset <= rows,
+            "Output colns must be a positive integer less than colns",
+        ]()
+
+        @parameter
+        if output_rows == 1 and output_colns == 1:
+            return self[row_offset, coln_offset]
+
+        return Matrix[T, output_rows, output_colns].__init__[row_offset=row_offset, coln_offset=coln_offset](self)
+
+    fn insert[*, row_offset: Int = 0, coln_offset: Int = 0](self, mat: Matrix[T, *_]) -> Self:
+        alias input_rows = mat.rows
+        alias input_colns = mat.colns
+        constrained[
+            0 <= row_offset < input_rows + row_offset <= rows,
+            "Insertion position must not exceed the rows of the matrix",
+        ]()
+        constrained[
+            0 <= coln_offset < input_colns + coln_offset <= rows,
+            "Insertion position must not exceed the colns of the matrix",
+        ]()
+        @parameter
+        if rows == 1 and colns == 1:
+            constrained[
+                input_rows == 1 and input_colns == 1,
+                "The input width must be 1 if the size of the matrix is 1"
+            ]()
+            return mat[0]
+
+        var res = self
+        @parameter
+        for i in range(row_offset, rows):
+            res._data[i] = res._data[i].insert[offset=coln_offset](mat._data[i])
+        return res
+
+    fn iinsert[*, row_offset: Int = 0, coln_offset: Int = 0](mut self, mat: Matrix[T, *_]):
+        alias input_rows = mat.rows
+        alias input_colns = mat.colns
+        constrained[
+            0 <= row_offset < input_rows + row_offset <= rows,
+            "Insertion position must not exceed the rows of the matrix",
+        ]()
+        constrained[
+            0 <= coln_offset < input_colns + coln_offset <= rows,
+            "Insertion position must not exceed the colns of the matrix",
+        ]()
+        @parameter
+        if rows == 1 and colns == 1:
+            constrained[
+                input_rows == 1 and input_colns == 1,
+                "The input width must be 1 if the size of the matrix is 1"
+            ]()
+            self[0] = mat[0]
+    
+        @parameter
+        for i in range(row_offset, rows):
+            self._data[i] = self._data[i].insert[offset=coln_offset](mat._data[i])
+
+    fn row_stack[mcolns: Int, //](self, other: Matrix[T, rows, mcolns]) -> Matrix[T, rows, colns + mcolns]:
+        var res = Matrix[T, rows, colns + mcolns](uninitialized=True)
+        @parameter
+        for i in range(rows):
+            res._data[i] = self._data[i].join(other._data[i])
+        return res
+    
+    fn coln_stack[mrows: Int, //](self, other: Matrix[T, mrows, colns]) -> Matrix[T, rows + mrows, colns]:
+        var res = Matrix[T, rows + mrows, colns](uninitialized=True)
+        @parameter
+        for i in range(rows):
+            res._data[i] = self._data[i]
+        @parameter
+        for i in range(mrows):
+            res._data[rows + i] = other._data[i]
+        return res
+
+    fn split[factor: Int = 2](self) -> InlineArray[Matrix[T, rows // factor, colns // factor], factor * factor]:
+        constrained[rows == colns and rows % factor == 0, "Can only do integral splits on square matrices"]()
+        var res = InlineArray[Matrix[T, rows // factor, colns // factor], factor * factor](uninitialized=True)
+        var i = 0
+        @parameter
+        for row_offset in range(0, rows, rows // factor):
+            @parameter
+            for coln_offset in range(0, colns, colns // factor):
+                res[i] = self.slice[rows // factor, colns // factor, row_offset=row_offset, coln_offset=coln_offset](); i += 1
+        return res
+
+    # Reductions
+
+    fn reduce_max(self) -> Self._D:
+        @parameter
+        if rows == 1 and colns == 1:
+            return self[0]
+        var A = self._data[0].reduce_max()
+        @parameter
+        for i in range(rows):
+            A = max(A, self._data[i].reduce_max())
+        return A
+
+    fn reduce_min(self) -> Self._D:
+        @parameter
+        if rows == 1 and colns == 1:
+            return self[0]
+        var A = self._data[0].reduce_min()
+        @parameter
+        for i in range(rows):
+            A = min(A, self._data[i].reduce_min())
+        return A
+
+    fn reduce_add(self) -> Self._D:
+        @parameter
+        if rows == 1 and colns == 1:
+            return self[0]
+        var A = self._data[0].reduce_add()
+        @parameter
+        for i in range(rows):
+            A = A + self._data[i].reduce_add()
+        return A
+
+    fn reduce_mul(self) -> Self._D:
+        @parameter
+        if rows == 1 and colns == 1:
+            return self[0]
+        var A = self._data[0].reduce_mul()
+        @parameter
+        for i in range(rows):
+            A = A * self._data[i].reduce_mul()
+        return A
+
+    fn reduce_and(self) -> Self._D:
+        @parameter
+        if rows == 1 and colns == 1:
+            return self[0]
+        var A = self._data[0].reduce_and()
+        @parameter
+        for i in range(rows):
+            A = A & self._data[i].reduce_and()
+        return A
+
+    fn reduce_or(self) -> Self._D:
+        @parameter
+        if rows == 1 and colns == 1:
+            return self[0]
+        var A = self._data[0].reduce_or()
+        @parameter
+        for i in range(rows):
+            A = A | self._data[i].reduce_or()
+        return A
+
+    fn reduce_bit_count(self) -> Int:
+        constrained[
+            T.is_integral() or T is DType.bool,
+            "Expected either integral or bool type",
+        ]()
+
+        @parameter
+        if T is DType.bool:
+            return Int(self.cast[DType.uint8]().reduce_add())
+        else:
+            return Int(self.pop_count().reduce_add())
+
+    fn pop_count(self) -> Self:
+        var res = Self._DC(uninitialized=True)
+        @parameter
+        for i in range(rows):
+            res[i] = Vector[T, colns](pop_count(self._data[i]._data))
+        return Self(res)
