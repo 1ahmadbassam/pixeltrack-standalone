@@ -232,7 +232,7 @@ struct Vector[T: DType, size: Int](
         """Initializes a vector with a vector of the same size and of a different data type."""
         self._data = rebind[Self._DC](vec._data.cast[T]())
 
-    fn __init__[src_size: Int, //, *, offset: Int](out self, vec: Vector[T, src_size]):
+    fn __init__[*, offset: Int](out self, vec: Vector[T, _]):
         """Initializes a vector as a slice of another vector with specified output size and offset."""
         alias output_width = size
 
@@ -762,6 +762,16 @@ struct Vector[T: DType, size: Int](
             res[1][i] = self[2 * i + 1]
         return res[0], res[1]
 
+    fn reversed(self) -> Self:
+        var res = self
+        @parameter
+        for i in range(size // 2):
+            res[i], res[size - 1 - i] = res[size - 1 - i], res[i]
+        return res
+
+    fn pop_count(self) -> Self:
+        return pop_count(self._data)
+
     # Reductions
 
     fn reduce_max(self) -> Self._D:
@@ -835,10 +845,3 @@ struct Vector[T: DType, size: Int](
             return Int(self.cast[DType.uint8]().reduce_add())
         else:
             return Int(Vector[T, size](pop_count(self._data)).reduce_add())
-
-    fn reversed(self) -> Self:
-        var res = self
-        @parameter
-        for i in range(size // 2):
-            res[i], res[size - 1 - i] = res[size - 1 - i], res[i]
-        return res
