@@ -638,12 +638,12 @@ struct Vector[T: DType, size: Int](
         return self._data.cast[target]()
 
     @always_inline
-    fn is_power_of_two(self) -> Vector[DType.bool, size]:
+    fn is_power_of_two(self) -> Self._Mask:
         constrained[T.is_integral(), "DType must be integral"]()
 
         @parameter
         if T.is_unsigned():
-            return Vector[DType.bool, size](pop_count(self._data)) == 1
+            return Self._Mask(pop_count(self._data) == 1)
         else:
             return (self > 0) & (self & (self - 1) == 0)
 
@@ -762,8 +762,8 @@ struct Vector[T: DType, size: Int](
             res[1][i] = self[2 * i + 1]
         return res[0], res[1]
 
-
     # Reductions
+
     fn reduce_max(self) -> Self._D:
         @parameter
         if self.size == 1:
