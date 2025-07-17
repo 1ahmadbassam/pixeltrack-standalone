@@ -3,6 +3,8 @@ from utils.numerics import max_finite as _max_finite
 from utils.numerics import max_or_inf as _max_or_inf
 from utils.numerics import min_finite as _min_finite
 from utils.numerics import min_or_neg_inf as _min_or_neg_inf
+from hashlib._hasher import _HashableWithHasher, _Hasher
+from builtin.simd import _hash_simd
 
 from MojoSerial.MojoBridge.DTypes import Double
 from MojoSerial.MojoBridge.Vector import Vector
@@ -57,11 +59,17 @@ struct _MatIterator[
 # Handling rows in a SIMD structure does give rows immense advantage over columns, it also simplfies implementation... but we are still using InlineArray for memory
 # TODO: Is implementing a matrix as an inline array of vectors faster or slower than a direct memory implementation using an unsafe pointer?
 struct Matrix[T: DType, rows: Int, colns: Int](
-    Defaultable,
-    Movable,
+    Absable,
     Copyable,
+    Defaultable,
     ExplicitlyCopyable,
-    Sized
+    Hashable,
+    Movable,
+    Representable,
+    Roundable,
+    Sized,
+    Stringable,
+    Writable
 ):
     alias _L = List[List[Scalar[T]]]
     alias _LS = InlineArray[InlineArray[Scalar[T], colns], rows]
@@ -196,7 +204,6 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         @parameter
         for i in range(rows * colns):
             self[i] = mat[i].cast[T]()
-
     # Compatibility with V1 Matrices
 
     fn __init__[vsize: Int, //](out self, vec: Vector[T, vsize]):
@@ -455,9 +462,56 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         return res
 
     @no_inline
+    fn __invert__[W: DType, *, protect: Bool = False](self: Matrix[T, rows, colns]) -> Matrix[W, rows, colns]:
+        constrained[rows == colns, "Can only find inverse of a square matrix"]()
+        debug_assert(abs(self.det[DType.float64]()) > 1e-9, "Matrix is not invertible")
+        # if this assert fails, we'll return a weird value
+        alias n = rows
+        
+        var mat = self.cast[DType.float64]()
+        var idn = Matrix[DType.float64, rows, colns].identity()
+
+        @parameter
+        for i in range(n):
+            var pivot = i
+            @parameter
+            for j in range(i, n):
+                if abs(mat[j, i]) > abs(mat[pivot, i]):
+                    pivot = j
+
+            mat._data[i], mat._data[pivot] = mat._data[pivot], mat._data[i]
+            idn._data[i], idn._data[pivot] = idn._data[pivot], idn._data[i]
+
+            if (abs(mat[i, i]) < 1e-9):
+                return idn.cast[W]()
+
+            var div = mat[i, i]
+            @parameter
+            for j in range(n):
+                mat[i, j] /= div
+                idn[i, j] /= div
+
+            @parameter
+            for j in range(n):
+                if i != j:
+                    var mult = mat[j, i]
+                    @parameter
+                    for k in range(n): 
+                        mat[j, k] -= mult * mat[i, k]
+                        idn[j, k] -= mult * idn[i, k]
+        @parameter
+        if protect:
+            @parameter
+            if W in (DType.uint8, DType.uint16, DType.uint32, DType.uint64, DType.uint128, DType.uint256):
+                @parameter
+                for i in range(n * n):
+                    if idn[i] < 1e-9:
+                        idn[i] = 0
+        return idn.cast[W]()
+
+    @always_inline
     fn __invert__(self) -> Self:
-        # TODO: Implement Inverse
-        return self
+        return self.__invert__[T]()
 
     # In place operations
 
@@ -607,6 +661,81 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     # Trait conformance
     
+    @always_inline
+    fn __str__(self) -> String:
+        return String.write(self)
+
+    @no_inline
+    fn __repr__(self) -> String:
+        var output = String()
+        output.write("Matrix[" + T.__repr__() + ", ", rows, ", ", colns, "](")
+        for i in range(self.__len__()):
+            output.write(self[i])
+            if i < self.__len__() - 1:
+                output.write(', ')
+        output.write(')')
+        return output^
+
+    @always_inline
+    fn __floor__(self) -> Self:
+        var res = Self()
+        @parameter
+        for i in range(rows):
+            res._data[i] = self._data[i].__floor__()
+        return res
+
+    @always_inline
+    fn __ceil__(self) -> Self:
+        var res = Self()
+        @parameter
+        for i in range(rows):
+            res._data[i] = self._data[i].__ceil__()
+        return res
+
+    @always_inline
+    fn __trunc__(self) -> Self:
+        var res = Self()
+        @parameter
+        for i in range(rows):
+            res._data[i] = self._data[i].__trunc__()
+        return res
+
+    @always_inline
+    fn __abs__(self) -> Self:
+        var res = Self()
+        @parameter
+        for i in range(rows):
+            res._data[i] = self._data[i].__abs__()
+        return res
+    
+    @always_inline
+    fn __round__(self) -> Self:
+        var res = Self()
+        @parameter
+        for i in range(rows):
+            res._data[i] = self._data[i].__round__()
+        return res
+
+    @always_inline
+    fn __round__(self, ndigits: Int) -> Self:
+        var res = Self()
+        @parameter
+        for i in range(rows):
+            res._data[i] = self._data[i].__round__(ndigits)
+        return res
+
+    fn __hash__(self) -> UInt:
+        var res: UInt = 37
+        @parameter
+        for i in range(rows):
+            res += self._data[i].__hash__()
+        return res
+
+    fn __hash__[H: _Hasher](self, mut hasher: H):
+        @parameter
+        for i in range(rows):
+            self._data[i].__hash__[H](hasher)
+        hasher._update_with_simd(Scalar[DType.uint64](37))
 
     # Methods
 
@@ -650,6 +779,29 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         for i in range(rows):
             res[i] = self._data[i].cast[target]()
         return res
+
+    @no_inline
+    fn write_to[W: Writer](self, mut writer: W):
+        writer.write('[')
+
+        var width = 0
+        @parameter
+        for i in range(rows * colns):
+            width = max(width, self[i].__str__().__len__())
+        
+        @parameter
+        for i in range(rows):
+            if i != 0:
+                writer.write(' ')
+            writer.write('[')
+            @parameter
+            for j in range(colns):
+                var _c = width - self[i, j].__str__().__len__()
+                writer.write(' ' * (_c if _c > 0 else 0) + self[i, j].__str__() + (' ' if j < colns - 1 else ''))
+            writer.write(']')
+            if i < rows - 1:
+                writer.write('\n')
+        writer.write(']')
 
     fn row_iterator(ref self) -> _MatIterator[T, rows, colns, __origin_of(self)]:
         return _MatIterator[T, rows, colns, __origin_of(self)](0, Pointer(to=self))
@@ -698,7 +850,13 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         return res
 
     @always_inline
+    fn inverse[W: DType, *, protect: Bool = False](self: Matrix[T, rows, colns]) -> Matrix[W, rows, colns]:
+        constrained[rows == colns, "Can only find inverse of a square matrix"]()
+        return self.__invert__[W, protect=protect]()
+
+    @always_inline
     fn inverse(self) -> Self:
+        constrained[rows == colns, "Can only find inverse of a square matrix"]()
         return ~self
 
     @no_inline
@@ -731,8 +889,8 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         if protect:
             @parameter
             if W in (DType.uint8, DType.uint16, DType.uint32, DType.uint64, DType.uint128, DType.uint256):
-                if det < 0:
-                    return 0    # truncated for logic protection
+                if det < 1e-9:
+                    det = 0
         return det.cast[W]()
 
     @always_inline
