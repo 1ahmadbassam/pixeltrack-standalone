@@ -6,6 +6,7 @@ from MojoSerial.CUDADataFormats.TrajectoryStateSoA import TrajectoryStateSoA
 from MojoSerial.MojoBridge.Matrix import Vector, Matrix
 from MojoSerial.MojoBridge.DTypes import Float
 
+
 struct TrackQuality:
     alias bad: UInt8 = 0
     alias dup: UInt8 = 1
@@ -14,14 +15,17 @@ struct TrackQuality:
     alias tight: UInt8 = 4
     alias highPurity: UInt8 = 5
 
+
 @fieldwise_init
-struct TrackSoAT[S: Int32](Movable, Defaultable):
+struct TrackSoAT[S: Int32](Defaultable, Movable):
     alias Quality = UInt8
     alias HIndexType = DType.uint16
-    alias HitContainer = OneToManyAssoc[S.cast[DType.uint32](), 5 * S.cast[DType.uint32](), Self.HIndexType]
+    alias HitContainer = OneToManyAssoc[
+        S.cast[DType.uint32](), 5 * S.cast[DType.uint32](), Self.HIndexType
+    ]
 
     var m_quality: ScalarSoA[DType.uint8, Int(S)]
-    var hitIndicies: Self.HitContainer
+    var hitIndices: Self.HitContainer
     var detIndices: Self.HitContainer
     var m_nTracks: UInt32
 
@@ -34,7 +38,7 @@ struct TrackSoAT[S: Int32](Movable, Defaultable):
     @always_inline
     fn __init__(out self):
         self.m_quality = ScalarSoA[DType.uint8, Int(S)]()
-        self.hitIndicies = Self.HitContainer()
+        self.hitIndices = Self.HitContainer()
         self.detIndices = Self.HitContainer()
         self.m_nTracks = 0
 
@@ -63,8 +67,8 @@ struct TrackSoAT[S: Int32](Movable, Defaultable):
 
     @always_inline
     fn charge(self, i: Int32) -> Float:
-        return Float(1.) if self.stateAtBS.state[i][2] >= 0 else Float(-1.)
-    
+        return Float(1.0) if self.stateAtBS.state[i][2] >= 0 else Float(-1.0)
+
     @always_inline
     fn phi(self, i: Int32) -> Float:
         return self.stateAtBS.state[i][0]

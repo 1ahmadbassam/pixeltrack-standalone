@@ -4,19 +4,30 @@ from memory import UnsafePointer
 from MojoSerial.CondFormats.PixelCPEforGPU import ParamsOnGPU
 from MojoSerial.CUDACore.CudaCompat import CudaStreamType, cudaStreamDefault
 from MojoSerial.CUDADataFormats.HeterogeneousSoA import Traits, CPUTraits
-from MojoSerial.CUDADataFormats.TrackingRecHit2DSOAView import Hist, TrackingRecHit2DSOAView
-from MojoSerial.Geometry.Phase1PixelTopology import Phase1PixelTopology, AverageGeometry
+from MojoSerial.CUDADataFormats.TrackingRecHit2DSOAView import (
+    Hist,
+    TrackingRecHit2DSOAView,
+)
+from MojoSerial.Geometry.Phase1PixelTopology import (
+    Phase1PixelTopology,
+    AverageGeometry,
+)
 from MojoSerial.MojoBridge.DTypes import Float
 
 # even though Traits are deprecated, the syntax is compatible for compatibility purposes
 
-struct TrackingRecHit2DHeterogeneous[T: Movable & Copyable, //, Tr: Traits = CPUTraits[T]](Movable, Defaultable):
+
+struct TrackingRecHit2DHeterogeneous[
+    T: Movable & Copyable, //, Tr: Traits = CPUTraits[T]
+](Defaultable, Movable):
     alias UniquePointer = Tr.UniquePointer
 
     alias n16: UInt32 = 4
     alias n32: UInt32 = 9
 
-    alias __d = debug_assert(sizeof[UInt32]() == sizeof[Float]()) # idk why this exists
+    alias __d = debug_assert(
+        sizeof[UInt32]() == sizeof[Float]()
+    )  # idk why this exists
 
     var m_store16: List[UInt16]
     var m_store32: List[Float]
@@ -48,7 +59,13 @@ struct TrackingRecHit2DHeterogeneous[T: Movable & Copyable, //, Tr: Traits = CPU
         self.m_hitsLayerStart = UnsafePointer[UInt32]()
         self.m_iphi = UnsafePointer[Int16]()
 
-    fn __init__(out self, nHits: UInt32, cpeParams: ParamsOnGPU, hitsModuleStart: UnsafePointer[UInt32], stream: CudaStreamType = cudaStreamDefault):
+    fn __init__(
+        out self,
+        nHits: UInt32,
+        cpeParams: ParamsOnGPU,
+        hitsModuleStart: UnsafePointer[UInt32],
+        stream: CudaStreamType = cudaStreamDefault,
+    ):
         self.m_store16 = []
         self.m_store32 = []
         self.m_HistStore = Hist()
@@ -63,22 +80,24 @@ struct TrackingRecHit2DHeterogeneous[T: Movable & Copyable, //, Tr: Traits = CPU
         self.m_iphi = UnsafePointer[Int16]()
 
         @parameter
-        fn get16 (i: Int) -> UnsafePointer[UInt16]:
-            return (self.m_store16.unsafe_ptr() + i * nHits)
+        fn get16(i: Int) -> UnsafePointer[UInt16]:
+            return self.m_store16.unsafe_ptr() + i * nHits
 
         @parameter
-        fn get32 (i: Int) -> UnsafePointer[Float]:
-            return (self.m_store32.unsafe_ptr() + i * nHits)
+        fn get32(i: Int) -> UnsafePointer[Float]:
+            return self.m_store32.unsafe_ptr() + i * nHits
 
         self.m_hitsLayerStart = get32(Int(Self.n32)).bitcast[UInt32]()
         self.m_iphi = get16(0).bitcast[Int16]()
 
-        # if empy do not bother
+        # if empty do not bother
         if nHits == 0:
             return
-        
+
         self.m_view.m_nHits = UnsafePointer(to=self.m_nHits)
-        self.m_view.m_averageGeometry = UnsafePointer(to=self.m_AverageGeometryStore)
+        self.m_view.m_averageGeometry = UnsafePointer(
+            to=self.m_AverageGeometryStore
+        )
         self.m_view.m_cpeParams = cpeParams
         self.m_view.m_hitsModuleStart = self.m_hitsModuleStart
 
@@ -103,23 +122,25 @@ struct TrackingRecHit2DHeterogeneous[T: Movable & Copyable, //, Tr: Traits = CPU
 
     @always_inline
     fn __moveinit__(out self, owned other: Self):
-        self.m_store16 = other.m_store16^ 
-        self.m_store32 = other.m_store32^ 
-        self.m_HistStore = other.m_HistStore^ 
-        self.m_AverageGeometryStore = other.m_AverageGeometryStore^ 
-        self.m_view = other.m_view^ 
+        self.m_store16 = other.m_store16^
+        self.m_store32 = other.m_store32^
+        self.m_HistStore = other.m_HistStore^
+        self.m_AverageGeometryStore = other.m_AverageGeometryStore^
+        self.m_view = other.m_view^
 
-        self.m_nHits = other.m_nHits 
-        self.m_hitsModuleStart = other.m_hitsModuleStart 
-        self.m_hist = other.m_hist 
+        self.m_nHits = other.m_nHits
+        self.m_hitsModuleStart = other.m_hitsModuleStart
+        self.m_hist = other.m_hist
 
         self.m_hitsLayerStart = other.m_hitsLayerStart
-        self.m_iphi = other.m_iphi 
+        self.m_iphi = other.m_iphi
 
     @always_inline
     fn view[
         is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin] self) -> Pointer[TrackingRecHit2DSOAView, __origin_of(self.m_view)]:
+    ](ref [origin]self) -> Pointer[
+        TrackingRecHit2DSOAView, __origin_of(self.m_view)
+    ]:
         return Pointer[](to=self.m_view)
 
     @always_inline

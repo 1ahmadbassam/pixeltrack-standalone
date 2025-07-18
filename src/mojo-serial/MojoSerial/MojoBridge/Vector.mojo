@@ -10,32 +10,41 @@ from builtin.simd import _hash_simd
 
 from MojoSerial.MojoBridge.Stable import Iterator, OpaquePointer
 
+
 @always_inline
 fn _pow_2[T: DType, //, n: Scalar[T]]() -> Scalar[T]:
     alias num_bits = T.bitwidth()
     var result = n - 1
+
     @parameter
     if num_bits > 1:
         result |= result >> 1
+
     @parameter
     if num_bits > 2:
         result |= result >> 2
+
     @parameter
     if num_bits > 4:
         result |= result >> 4
+
     @parameter
     if num_bits > 8:
         result |= result >> 8
+
     @parameter
     if num_bits > 16:
         result |= result >> 16
+
     @parameter
     if num_bits > 32:
         result |= result >> 32
+
     @parameter
     if num_bits > 64:
         result |= result >> 64
     return result + 1
+
 
 @always_inline
 fn _pow_2[n: Int]() -> Int:
@@ -48,13 +57,14 @@ fn _pow_2[n: Int]() -> Int:
     result |= result >> 32
     return result + 1
 
+
 @fieldwise_init
 struct _VecIterator[
     vec_mutability: Bool, //,
     W: DType,
     size: Int,
     vec_origin: Origin[vec_mutability],
-    forward: Bool = True
+    forward: Bool = True,
 ](Copyable, Iterator, Movable):
     alias vec_type = Vector[W, size]
     alias T = Scalar[W]
@@ -91,6 +101,7 @@ struct _VecIterator[
         else:
             return self.index
 
+
 @fieldwise_init
 @register_passable("trivial")
 struct Vector[T: DType, size: Int](
@@ -105,8 +116,8 @@ struct Vector[T: DType, size: Int](
     Roundable,
     Sized,
     Stringable,
-    Writable
-): 
+    Writable,
+):
     alias psize = _pow_2[size]()
     alias _D = Scalar[T]
     alias _DC = SIMD[T, Self.psize]
@@ -156,16 +167,20 @@ struct Vector[T: DType, size: Int](
 
     @implicit
     fn __init__[vsize: Int, //](out self, vec: Vector[T, vsize]):
-        """Initialize a vector from an arbitrary vector. Might cause data loss (implicit)."""
+        """Initialize a vector from an arbitrary vector. Might cause data loss (implicit).
+        """
         self = Self()
+
         @parameter
         for i in range(min(size, vsize)):
             self._data[i] = vec[i]
 
     @implicit
     fn __init__[vsize: Int, //](out self, vec: SIMD[T, vsize]):
-        """Initialize a vector from an arbitrary SIMD vector. Might cause data loss (implicit)."""
+        """Initialize a vector from an arbitrary SIMD vector. Might cause data loss (implicit).
+        """
         self = Self()
+
         @parameter
         for i in range(min(size, vsize)):
             self._data[i] = vec[i]
@@ -173,12 +188,14 @@ struct Vector[T: DType, size: Int](
     @always_inline
     @implicit
     fn __init__(out self, owned vec: SIMD[T, size], /):
-        """Initialize a vector from a SIMD object of the same size (implicit)."""
+        """Initialize a vector from a SIMD object of the same size (implicit).
+        """
         self._data = rebind[Self._DC](vec)
 
     @implicit
     fn __init__(out self, values: List[Self._D], /):
-        """Initialize a vector from a list of values. Might cause data loss (implicit)."""
+        """Initialize a vector from a list of values. Might cause data loss (implicit).
+        """
         self = Self()
         for i in range(min(size, values.__len__())):
             self._data[i] = values[i]
@@ -186,11 +203,12 @@ struct Vector[T: DType, size: Int](
     @always_inline
     @implicit
     fn __init__(out self, *values: Self._D, __list_literal__: () = ()):
-        """Constructs a vector via a variadic list of values in a literal format."""
+        """Constructs a vector via a variadic list of values in a literal format.
+        """
         self = Self()
         for i in range(values.__len__()):
             self._data[i] = values[i]
-    
+
     fn __init__(out self, *values: Self._D):
         """Initialize a vector from a variadic list of values."""
         self = Self()
@@ -199,48 +217,54 @@ struct Vector[T: DType, size: Int](
 
     @always_inline
     fn __init__[U: DType, //](out self, val: Scalar[U], /):
-        """Initializes a vector with a scalar. 
+        """Initializes a vector with a scalar.
         The scalar is splatted across all the elements of the vector."""
         self._data = Self._DC(val)
 
     @always_inline
     fn __init__(out self, val: Int, /):
-        """Initializes a vector with a signed integer. 
+        """Initializes a vector with a signed integer.
         The signed integer is splatted across all the elements of the vector."""
         self._data = Self._DC(val)
 
     @always_inline
     fn __init__(out self, val: UInt, /):
-        """Initializes a vector with an unsigned integer. 
-        The unsigned integer is splatted across all the elements of the vector."""
+        """Initializes a vector with an unsigned integer.
+        The unsigned integer is splatted across all the elements of the vector.
+        """
         self._data = Self._DC(val)
 
     @always_inline
     @implicit
     fn __init__(out self, val: IntLiteral, /):
-        """Initializes a vector with an integer literal (implicit). 
+        """Initializes a vector with an integer literal (implicit).
         The signed integer is splatted across all the elements of the vector."""
         self._data = Self._DC(val)
 
     @always_inline
     fn __init__[U: DType, //](out self, value: SIMD[U, size], /):
-        """Initializes a vector with a SIMD vector of the same size and of a different data type."""
+        """Initializes a vector with a SIMD vector of the same size and of a different data type.
+        """
         self._data = rebind[Self._DC](value.cast[T]())
 
     @always_inline
     fn __init__[U: DType, //](out self, vec: Vector[U, size], /):
-        """Initializes a vector with a vector of the same size and of a different data type."""
+        """Initializes a vector with a vector of the same size and of a different data type.
+        """
         self._data = rebind[Self._DC](vec._data.cast[T]())
 
     fn __init__[*, offset: Int](out self, vec: Vector[T, _]):
-        """Initializes a vector as a slice of another vector with specified output size and offset."""
+        """Initializes a vector as a slice of another vector with specified output size and offset.
+        """
         alias output_width = size
 
         self = Self()
         var i = 0
+
         @parameter
         for j in range(offset, offset + output_width):
-            self._data[i] = vec._data[j]; i += 1
+            self._data[i] = vec._data[j]
+            i += 1
 
     @staticmethod
     fn from_bits[U: DType, //](value: SIMD[U, size]) -> Vector[U, size]:
@@ -249,7 +273,7 @@ struct Vector[T: DType, size: Int](
         return Vector[U, size](SIMD[U, size].from_bits(value))
 
     # Operators
-    
+
     @always_inline
     fn __getitem__(self, idx: Int) -> Self._D:
         return self._data[idx]
@@ -267,7 +291,7 @@ struct Vector[T: DType, size: Int](
 
     @always_inline
     fn __add__(self, rhs: Self) -> Self:
-        constrained[T.is_numeric(), "DType must be numeric"]()        
+        constrained[T.is_numeric(), "DType must be numeric"]()
         return self._data + rhs._data
 
     @always_inline
@@ -279,7 +303,7 @@ struct Vector[T: DType, size: Int](
     fn __mul__(self, rhs: Self) -> Self:
         constrained[T.is_numeric(), "DType must be numeric"]()
         return self._data * rhs._data
-    
+
     @always_inline
     fn __matmul__(self, rhs: Self) -> Self._D:
         constrained[T.is_numeric(), "DType must be numeric"]()
@@ -306,12 +330,12 @@ struct Vector[T: DType, size: Int](
     @always_inline
     fn __pow__(self, exp: Int) -> Self:
         constrained[T.is_numeric(), "DType must be numeric"]()
-        return self._data ** exp
+        return self._data**exp
 
     @always_inline
     fn __pow__(self, exp: Self) -> Self:
         constrained[T.is_numeric(), "DType must be numeric"]()
-        return self._data ** exp._data
+        return self._data**exp._data
 
     @always_inline
     fn __lt__(self, rhs: Self) -> Self._Mask:
@@ -328,7 +352,7 @@ struct Vector[T: DType, size: Int](
     @always_inline
     fn __ne__(self, rhs: Self) -> Self._Mask:
         return self._data != rhs._data
-    
+
     @always_inline
     fn __gt__(self, rhs: Self) -> Self._Mask:
         return self._data > rhs._data
@@ -469,7 +493,7 @@ struct Vector[T: DType, size: Int](
         self = ~self
 
     # Reversed operations
-    
+
     @always_inline
     fn __radd__(self, value: Self) -> Self:
         constrained[T.is_numeric(), "DType must be numeric"]()
@@ -560,8 +584,8 @@ struct Vector[T: DType, size: Int](
         for i in range(self.__len__()):
             output.write(self[i])
             if i < self.__len__() - 1:
-                output.write(', ')
-        output.write(')')
+                output.write(", ")
+        output.write(")")
         return output^
 
     @always_inline
@@ -579,7 +603,7 @@ struct Vector[T: DType, size: Int](
     @always_inline
     fn __abs__(self) -> Self:
         return self._data.__abs__()
-    
+
     @always_inline
     fn __round__(self) -> Self:
         return self._data.__round__()
@@ -612,29 +636,30 @@ struct Vector[T: DType, size: Int](
         @parameter
         if T is target:
             return self._refine[target]()
+
         @parameter
         if T in (DType.float8_e4m3fn, DType.float8_e5m2):
             constrained[
-                    target
-                    in (
-                        DType.bfloat16,
-                        DType.float16,
-                        DType.float32,
-                        DType.float64,
-                    ),
-                    (
-                        String(
-                            (
-                                "Only FP8->F64, FP8->F32, FP8->F16, and FP8->BF16"
-                                " castings are implemented. "
-                            ),
-                            T,
-                            "->",
-                            target,
-                        )
-                    ),
-                ]()
-        
+                target
+                in (
+                    DType.bfloat16,
+                    DType.float16,
+                    DType.float32,
+                    DType.float64,
+                ),
+                (
+                    String(
+                        (
+                            "Only FP8->F64, FP8->F32, FP8->F16, and FP8->BF16"
+                            " castings are implemented. "
+                        ),
+                        T,
+                        "->",
+                        target,
+                    )
+                ),
+            ]()
+
         return self._data.cast[target]()
 
     @always_inline
@@ -649,12 +674,12 @@ struct Vector[T: DType, size: Int](
 
     @no_inline
     fn write_to[W: Writer](self, mut writer: W):
-        writer.write('[')
+        writer.write("[")
         for i in range(self.__len__()):
             writer.write(self[i])
             if i < self.__len__() - 1:
-                writer.write(', ')
-        writer.write(']')
+                writer.write(", ")
+        writer.write("]")
 
     @always_inline
     fn clamp(self, lower_bound: Self, upper_bound: Self) -> Self:
@@ -711,37 +736,53 @@ struct Vector[T: DType, size: Int](
 
         self._data = self._data.insert[offset=offset](value._data)
 
-    fn join[vsize: Int, //](self, other: Vector[T, vsize]) -> Vector[T, size + vsize]:
+    fn join[
+        vsize: Int, //
+    ](self, other: Vector[T, vsize]) -> Vector[T, size + vsize]:
         var res = Vector[T, size + vsize]()
         res.iinsert(self)
         res.iinsert[offset=size](other)
         return res
 
-    fn interleave[vsize: Int, //](self, other: Vector[T, vsize]) -> Vector[T, size + vsize]:
+    fn interleave[
+        vsize: Int, //
+    ](self, other: Vector[T, vsize]) -> Vector[T, size + vsize]:
         var res = Vector[T, size + vsize]()
         var u = 0
         var v = 0
+
         @parameter
         for i in range(min(size, vsize) * 2):
             if i % 2 == 0:
-                res[i] = self[u]; u += 1
+                res[i] = self[u]
+                u += 1
             else:
-                res[i] = other[v]; v += 1
+                res[i] = other[v]
+                v += 1
+
         @parameter
         if size > vsize:
+
             @parameter
             for i in range(vsize * 2, vsize + size):
-                res[i] = self[u]; u += 1
+                res[i] = self[u]
+                u += 1
+
         @parameter
         if vsize > size:
+
             @parameter
             for i in range(size * 2, vsize + size):
-                res[i] = other[v]; v += 1
+                res[i] = other[v]
+                v += 1
         return res
 
     @always_inline
     fn split(self) -> Tuple[Vector[T, size // 2], Vector[T, size // 2]]:
-        constrained[size % 2 == 0 and size > 1, "Vector size must be divisible by 2 for splitting"]()
+        constrained[
+            size % 2 == 0 and size > 1,
+            "Vector size must be divisible by 2 for splitting",
+        ]()
         alias half_size = size // 2
         var se = self.slice[half_size]()
         var lf = self.slice[half_size, offset=half_size]()
@@ -749,13 +790,17 @@ struct Vector[T: DType, size: Int](
 
     @always_inline
     fn deinterleave(self) -> Tuple[Vector[T, size // 2], Vector[T, size // 2]]:
-        constrained[size % 2 == 0 and size > 1, "Vector size must be divisible by 2 for deinterleaving"]()
+        constrained[
+            size % 2 == 0 and size > 1,
+            "Vector size must be divisible by 2 for deinterleaving",
+        ]()
 
         @parameter
         if size == 2:
             return self[0], self[1]
 
         var res = Vector[T, size // 2](), Vector[T, size // 2]()
+
         @parameter
         for i in range(size // 2):
             res[0][i] = self[2 * i]
@@ -764,6 +809,7 @@ struct Vector[T: DType, size: Int](
 
     fn reversed(self) -> Self:
         var res = self
+
         @parameter
         for i in range(size // 2):
             res[i], res[size - 1 - i] = res[size - 1 - i], res[i]
@@ -779,6 +825,7 @@ struct Vector[T: DType, size: Int](
         if self.size == 1:
             return self._data[0]
         var A = self._data[0]
+
         @parameter
         for i in range(1, size):
             A = max(A, self._data[i])
@@ -789,6 +836,7 @@ struct Vector[T: DType, size: Int](
         if self.size == 1:
             return self._data[0]
         var A = self._data[0]
+
         @parameter
         for i in range(1, size):
             A = min(A, self._data[i])
@@ -799,6 +847,7 @@ struct Vector[T: DType, size: Int](
         if self.size == 1:
             return self._data[0]
         var A = self._data[0]
+
         @parameter
         for i in range(1, size):
             A = A + self._data[i]
@@ -809,6 +858,7 @@ struct Vector[T: DType, size: Int](
         if self.size == 1:
             return self._data[0]
         var A = self._data[0]
+
         @parameter
         for i in range(1, size):
             A = A * self._data[i]
@@ -819,6 +869,7 @@ struct Vector[T: DType, size: Int](
         if self.size == 1:
             return self._data[0]
         var A = self._data[0]
+
         @parameter
         for i in range(1, size):
             A = A & self._data[i]
@@ -829,6 +880,7 @@ struct Vector[T: DType, size: Int](
         if self.size == 1:
             return self._data[0]
         var A = self._data[0]
+
         @parameter
         for i in range(1, size):
             A = A | self._data[i]

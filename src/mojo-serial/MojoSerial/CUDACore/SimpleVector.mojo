@@ -1,9 +1,10 @@
 from memory import UnsafePointer
 
-struct SimpleVector[T: Movable & Copyable](Movable, Copyable, Defaultable):
+
+struct SimpleVector[T: Movable & Copyable](Copyable, Defaultable, Movable):
     var m_size: Int
     var m_capacity: Int
-    
+
     var m_data: UnsafePointer[T]
     alias nullptr = UnsafePointer[T]()
 
@@ -29,12 +30,22 @@ struct SimpleVector[T: Movable & Copyable](Movable, Copyable, Defaultable):
 
     # TODO: Replace this stub
 
-fn make_SimpleVector[T: Movable & Copyable](capacity: Int, data: UnsafePointer[T]) -> SimpleVector[T]:
+
+fn make_SimpleVector[
+    T: Movable & Copyable
+](capacity: Int, data: UnsafePointer[T]) -> SimpleVector[T]:
     var ret = SimpleVector[T]()
     ret.construct(capacity, data)
     return ret
 
-fn make_SimpleVector[T: Movable & Copyable](mut mem: UnsafePointer[SimpleVector[T]], capacity: Int, data: UnsafePointer[T]) -> ref [mem[]]SimpleVector[T]:
+
+fn make_SimpleVector[
+    T: Movable & Copyable
+](
+    mut mem: UnsafePointer[SimpleVector[T]],
+    capacity: Int,
+    data: UnsafePointer[T],
+) -> ref [mem[]] SimpleVector[T]:
     # construct a new object where mem points, assuming it is initialized
     mem.init_pointee_move(SimpleVector[T]())
     mem[].construct(capacity, data)

@@ -8,11 +8,16 @@ alias HeterogeneousSoA = OwnedPointer
 alias HeterogeneousSoAImpl = OwnedPointer
 alias HeterogeneousSoACPU = HeterogeneousSoAImpl
 
+
 trait Traits:
     # unable to constraint pointers to pointer trait as it currently does not exist
     alias UniquePointer: AnyType
 
-@deprecated("Heterogenous unique pointers should explicitly rely on Mojo standard pointers")
+
+@deprecated(
+    "Heterogenous unique pointers should explicitly rely on Mojo standard"
+    " pointers"
+)
 struct CPUTraits[T: AnyType](Traits):
     alias UniquePointer = UnsafePointer[T]
 
@@ -33,5 +38,7 @@ struct CPUTraits[T: AnyType](Traits):
         return Self.UniquePointer.alloc(1)
 
     @staticmethod
-    fn make_device_unique(size: SizeType, x: CudaStreamType) -> Self.UniquePointer:
+    fn make_device_unique(
+        size: SizeType, x: CudaStreamType
+    ) -> Self.UniquePointer:
         return Self.UniquePointer.alloc(size)

@@ -2,8 +2,9 @@ from memory import UnsafePointer
 
 from MojoSerial.MojoBridge.DTypes import SizeType
 
+
 @fieldwise_init
-struct SiPixelDigisSoA(Copyable, Movable, Sized, Defaultable):
+struct SiPixelDigisSoA(Copyable, Defaultable, Movable, Sized):
     var _pdigi: List[UInt32]
     var _rawIdArr: List[UInt32]
     var _adc: List[UInt16]

@@ -4,18 +4,30 @@ from memory import UnsafePointer
 from MojoSerial.CondFormats.PixelCPEforGPU import ParamsOnGPU
 from MojoSerial.CUDACore.HistoContainer import HistoContainer
 from MojoSerial.CUDADataFormats.GPUClusteringConstants import PixelGPUConstants
-from MojoSerial.Geometry.Phase1PixelTopology import Phase1PixelTopology, AverageGeometry
+from MojoSerial.Geometry.Phase1PixelTopology import (
+    Phase1PixelTopology,
+    AverageGeometry,
+)
 from MojoSerial.MojoBridge.DTypes import Float
 
-alias Hist = HistoContainer[DType.int16, 128, PixelGPUConstants.MaxNumClusters, 8 * sizeof[UInt16](), DType.int16, 10]
+alias Hist = HistoContainer[
+    DType.int16,
+    128,
+    PixelGPUConstants.MaxNumClusters,
+    8 * sizeof[UInt16](),
+    DType.int16,
+    10,
+]
+
 
 @fieldwise_init
-struct TrackingRecHit2DSOAView(Movable, Defaultable):
+struct TrackingRecHit2DSOAView(Defaultable, Movable):
     @staticmethod
     @always_inline
     fn maxHits() -> UInt32:
         return PixelGPUConstants.MaxNumClusters
-    alias HIndexType = UInt16 # if above is <=2^16
+
+    alias HIndexType = UInt16  # if above is <=2^16
 
     # local coord
     var m_xl: UnsafePointer[Float]
@@ -38,8 +50,8 @@ struct TrackingRecHit2DSOAView(Movable, Defaultable):
 
     # supporting objects
     var m_averageGeometry: UnsafePointer[AverageGeometry]  # owned
-    var m_cpeParams: ParamsOnGPU                           # forwarded from setup
-    var m_hitsModuleStart: UnsafePointer[UInt32]           # forwarded from clusters
+    var m_cpeParams: ParamsOnGPU  # forwarded from setup
+    var m_hitsModuleStart: UnsafePointer[UInt32]  # forwarded from clusters
 
     var m_hitsLayerStart: UnsafePointer[UInt32]
     var m_hist: UnsafePointer[Hist]
@@ -73,7 +85,7 @@ struct TrackingRecHit2DSOAView(Movable, Defaultable):
     @always_inline
     fn nHits(self) -> UInt32:
         return self.m_nHits[]
-    
+
     @always_inline
     fn xLocal(ref self, i: Int) -> ref [self.m_xl] Float:
         return self.m_xl[i]
@@ -81,7 +93,7 @@ struct TrackingRecHit2DSOAView(Movable, Defaultable):
     @always_inline
     fn yLocal(ref self, i: Int) -> ref [self.m_yl] Float:
         return self.m_yl[i]
-    
+
     @always_inline
     fn xerrLocal(ref self, i: Int) -> ref [self.m_xerr] Float:
         return self.m_xerr[i]
@@ -137,7 +149,7 @@ struct TrackingRecHit2DSOAView(Movable, Defaultable):
     @always_inline
     fn hitsLayerStart[
         is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin] self) -> UnsafePointer[UInt32]:
+    ](ref [origin]self) -> UnsafePointer[UInt32]:
         return self.m_hitsLayerStart
 
     @always_inline
@@ -145,5 +157,7 @@ struct TrackingRecHit2DSOAView(Movable, Defaultable):
         return self.m_hist[]
 
     @always_inline
-    fn averageGeometry(ref self) -> ref [self.m_averageGeometry] AverageGeometry:
+    fn averageGeometry(
+        ref self,
+    ) -> ref [self.m_averageGeometry] AverageGeometry:
         return self.m_averageGeometry[]

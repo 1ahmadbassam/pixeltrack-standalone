@@ -2,8 +2,9 @@ from memory import UnsafePointer, OwnedPointer
 
 from MojoSerial.MojoBridge.DTypes import SizeType
 
+
 @fieldwise_init
-struct DeviceConstView(Movable, Defaultable):
+struct DeviceConstView(Defaultable, Movable):
     var _moduleStart: UnsafePointer[UInt32]
     var _clusInModule: UnsafePointer[UInt32]
     var _moduleId: UnsafePointer[UInt32]
@@ -17,22 +18,23 @@ struct DeviceConstView(Movable, Defaultable):
         self._clusModuleStart = UnsafePointer[UInt32]()
 
     @always_inline
-    fn moduleStart (self, i: Int) -> UInt32:
+    fn moduleStart(self, i: Int) -> UInt32:
         return self._moduleStart[i]
 
     @always_inline
-    fn clusInModule (self, i: Int) -> UInt32:
+    fn clusInModule(self, i: Int) -> UInt32:
         return self._clusInModule[i]
 
     @always_inline
-    fn moduleId (self, i: Int) -> UInt32:
+    fn moduleId(self, i: Int) -> UInt32:
         return self._moduleId[i]
 
     @always_inline
-    fn clusModuleStart (self, i: Int) -> UInt32:
+    fn clusModuleStart(self, i: Int) -> UInt32:
         return self._clusModuleStart[i]
 
-struct SiPixelClustersSoA(Movable, Defaultable):
+
+struct SiPixelClustersSoA(Defaultable, Movable):
     var view_d: DeviceConstView
     var moduleStart_d: List[UInt32]
     var clusInModule_d: List[UInt32]
@@ -49,11 +51,16 @@ struct SiPixelClustersSoA(Movable, Defaultable):
         self.nClusters_h = 0
 
     fn __init__(out self, maxClusters: SizeType):
-        self.moduleStart_d = List[UInt32](capacity=maxClusters+1)
+        self.moduleStart_d = List[UInt32](capacity=maxClusters + 1)
         self.clusInModule_d = List[UInt32](capacity=maxClusters)
         self.moduleId_d = List[UInt32](capacity=maxClusters)
-        self.clusModuleStart_d = List[UInt32](capacity=maxClusters+1)
-        self.view_d = DeviceConstView(self.moduleStart_d.unsafe_ptr(), self.clusInModule_d.unsafe_ptr(), self.moduleId_d.unsafe_ptr(), self.clusModuleStart_d.unsafe_ptr())
+        self.clusModuleStart_d = List[UInt32](capacity=maxClusters + 1)
+        self.view_d = DeviceConstView(
+            self.moduleStart_d.unsafe_ptr(),
+            self.clusInModule_d.unsafe_ptr(),
+            self.moduleId_d.unsafe_ptr(),
+            self.clusModuleStart_d.unsafe_ptr(),
+        )
         self.nClusters_h = 0
 
     fn __moveinit__(out self, owned other: Self):
@@ -64,7 +71,7 @@ struct SiPixelClustersSoA(Movable, Defaultable):
         self.clusModuleStart_d = other.clusModuleStart_d
         self.nClusters_h = other.nClusters_h
 
-    fn view (self) -> Pointer[DeviceConstView, __origin_of(self.view_d)]:
+    fn view(self) -> Pointer[DeviceConstView, __origin_of(self.view_d)]:
         return Pointer[](to=self.view_d)
 
     @always_inline
@@ -78,31 +85,31 @@ struct SiPixelClustersSoA(Movable, Defaultable):
     @always_inline
     fn moduleStart[
         is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin] self) -> UnsafePointer[UInt32]:
+    ](ref [origin]self) -> UnsafePointer[UInt32]:
         return self.moduleStart_d.unsafe_ptr()
-    
+
     @always_inline
     fn clusInModule[
         is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin] self) -> UnsafePointer[UInt32]:
+    ](ref [origin]self) -> UnsafePointer[UInt32]:
         return self.clusInModule_d.unsafe_ptr()
 
     @always_inline
     fn moduleId[
         is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin] self) -> UnsafePointer[UInt32]:
+    ](ref [origin]self) -> UnsafePointer[UInt32]:
         return self.moduleId_d.unsafe_ptr()
 
     @always_inline
     fn clusModuleStart[
         is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin] self) -> UnsafePointer[UInt32]:
+    ](ref [origin]self) -> UnsafePointer[UInt32]:
         return self.clusModuleStart_d.unsafe_ptr()
-    
+
     @always_inline
     fn c_moduleStart(self) -> UnsafePointer[UInt32]:
         return self.moduleStart_d.unsafe_ptr()
-    
+
     @always_inline
     fn c_clusInModule(self) -> UnsafePointer[UInt32]:
         return self.clusInModule_d.unsafe_ptr()

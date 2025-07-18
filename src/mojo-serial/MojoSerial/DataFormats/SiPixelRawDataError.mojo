@@ -1,7 +1,7 @@
-struct SiPixelRawDataError(Movable, Copyable, Comparable, Defaultable):
+struct SiPixelRawDataError(Comparable, Copyable, Defaultable, Movable):
     """
-        Pixel error -- collection of errors and error information
-        Class to contain and store all information about errors.
+    Pixel error -- collection of errors and error information
+    Class to contain and store all information about errors.
     """
 
     # the 32-bit word that contains the error information
@@ -10,7 +10,7 @@ struct SiPixelRawDataError(Movable, Copyable, Comparable, Defaultable):
     var _errorWord64: UInt64
     # the number associated with the error type (26-31 for ROC number errors, 32-33 for calibration errors)
     var _errorType: Int
-    # the fedId where the error occured
+    # the fedId where the error occurred
     var _fedId: Int
     # the error message to be displayed with the error
     var _errorMessage: String
@@ -22,9 +22,14 @@ struct SiPixelRawDataError(Movable, Copyable, Comparable, Defaultable):
         self._errorType = 0
         self._fedId = 0
         self._errorMessage = ""
-    
+
     # constructor for 32-bit error word
-    fn __init__(out self, owned errorWord32: UInt32, owned errorType: Int, owned fedId: Int):
+    fn __init__(
+        out self,
+        owned errorWord32: UInt32,
+        owned errorType: Int,
+        owned fedId: Int,
+    ):
         self._errorWord64 = 0
         # Mojo currently does not infer setting constructor fields outside of the constructor
         self._errorMessage = ""
@@ -36,7 +41,12 @@ struct SiPixelRawDataError(Movable, Copyable, Comparable, Defaultable):
         self.setMessage()
 
     # constructor for 32-bit error word
-    fn __init__(out self, owned errorWord64: UInt64, owned errorType: Int, owned fedId: Int):
+    fn __init__(
+        out self,
+        owned errorWord64: UInt64,
+        owned errorType: Int,
+        owned fedId: Int,
+    ):
         self._errorWord32 = 0
         # Mojo currently does not infer setting constructor fields outside of the constructor
         self._errorMessage = ""
@@ -77,7 +87,7 @@ struct SiPixelRawDataError(Movable, Copyable, Comparable, Defaultable):
     @always_inline
     fn getWord32(self) -> UInt32:
         return self._errorWord32
-    
+
     @always_inline
     fn getWord64(self) -> UInt64:
         return self._errorWord64
@@ -89,7 +99,7 @@ struct SiPixelRawDataError(Movable, Copyable, Comparable, Defaultable):
     @always_inline
     fn getFedId(self) -> Int:
         return self._fedId
-    
+
     fn setMessage(mut self):
         if self._errorType == 25:
             self._errorMessage = "Error: Disabled FED channel (ROC=25)"

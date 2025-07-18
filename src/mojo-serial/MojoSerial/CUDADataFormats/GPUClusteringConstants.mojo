@@ -12,7 +12,9 @@ struct PixelGPUConstants:
         return 1024
 
     alias MaxNumModules: UInt32 = 2000
-    alias MaxNumClustersPerModules: Int32 = Self.maxHitsInModule().cast[DType.int32]()
+    alias MaxNumClustersPerModules: Int32 = Self.maxHitsInModule().cast[
+        DType.int32
+    ]()
     alias MaxHitsInModule: UInt32 = Self.maxHitsInModule()
     alias MaxNumClusters: UInt32 = Self.maxNumberOfHits
     alias InvId: UInt16 = 9999
