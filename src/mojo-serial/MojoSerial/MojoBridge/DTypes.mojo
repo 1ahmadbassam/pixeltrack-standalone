@@ -9,6 +9,7 @@ alias Double = Float64  # double
 # this trait is essential for supporting the framework
 # currently, the framework uses some clever rebind trickery to bypass statically typed objects and store arbitrary objects within a container, but to have the same type flexibility, we must also be able to identify objects by type
 trait Typeable:
+    @always_inline
     @staticmethod
     fn dtype() -> String:
         ...

@@ -72,6 +72,8 @@ struct EventSetup(Defaultable, Movable, Typeable):
         )
 
     fn get[T: Typeable & Movable](self) raises -> ref [self._typeToProduct] T:
+        if T.dtype() not in self._typeToProduct:
+            raise "RuntimeError: Product of type " + T.dtype() + " is not produced."
         return rebind[ESWrapper[T]](self._typeToProduct[T.dtype()]).product()[]
 
     @staticmethod
