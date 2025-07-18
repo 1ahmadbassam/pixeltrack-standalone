@@ -1,5 +1,7 @@
 from memory import bitcast
 
+from MojoSerial.MojoBridge.DTypes import Typeable
+
 
 @fieldwise_init
 @register_passable("trivial")
@@ -15,10 +17,15 @@ struct Counters(Copyable, Movable):
     fn set_ac(mut self, owned ac: UInt64):
         self.c = bitcast[DType.uint32, 2](ac)
 
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "Counters"
+
 
 @fieldwise_init
 @register_passable("trivial")
-struct AtomicPairCounter(Copyable, Defaultable, Movable):
+struct AtomicPairCounter(Copyable, Defaultable, Movable, Typeable):
     var counter: Counters
     alias CounterType = UInt64
     alias _Z = SIMD[DType.uint32, 2](0, 0)
@@ -38,3 +45,8 @@ struct AtomicPairCounter(Copyable, Defaultable, Movable):
     fn add(mut self, i: UInt32) -> Counters:
         self.counter.set_ac(Self._incr + i.cast[DType.uint64]())
         return self.counter
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "AtomicPairCounter"

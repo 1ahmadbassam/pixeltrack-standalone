@@ -1,4 +1,9 @@
-struct SiPixelRawDataError(Comparable, Copyable, Defaultable, Movable):
+from MojoSerial.MojoBridge.DTypes import Typeable
+
+
+struct SiPixelRawDataError(
+    Comparable, Copyable, Defaultable, Movable, Typeable
+):
     """
     Pixel error -- collection of errors and error information
     Class to contain and store all information about errors.
@@ -153,3 +158,8 @@ struct SiPixelRawDataError(Comparable, Copyable, Defaultable, Movable):
     @always_inline
     fn __ge__(self, rhs: Self) -> Bool:
         return self._fedId >= rhs._fedId
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "SiPixelRawDataError"

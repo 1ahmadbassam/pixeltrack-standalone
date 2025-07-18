@@ -8,6 +8,7 @@ from utils.numerics import min_or_neg_inf as _min_or_neg_inf
 from hashlib._hasher import _HashableWithHasher, _Hasher
 from builtin.simd import _hash_simd
 
+from MojoSerial.MojoBridge.DTypes import Typeable
 from MojoSerial.MojoBridge.Stable import Iterator, OpaquePointer
 
 
@@ -65,7 +66,7 @@ struct _VecIterator[
     size: Int,
     vec_origin: Origin[vec_mutability],
     forward: Bool = True,
-](Copyable, Iterator, Movable):
+](Copyable, Iterator, Movable, Typeable):
     alias vec_type = Vector[W, size]
     alias T = Scalar[W]
     alias Element = Self.T
@@ -100,6 +101,11 @@ struct _VecIterator[
             return len(self.src[]) - self.index
         else:
             return self.index
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "_VecIterator[" + String(vec_mutability) + ", " + W.__repr__() + ", " + String(size) + ", Origin["+ String(vec_mutability) + "], " + String(forward) + "]"
 
 
 @fieldwise_init
@@ -568,6 +574,11 @@ struct Vector[T: DType, size: Int](
         return value >> self
 
     # Trait conformance
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "Vector[" + T.__repr__() + ", " + String(size) + "]"
 
     @always_inline
     fn __len__(self) -> Int:

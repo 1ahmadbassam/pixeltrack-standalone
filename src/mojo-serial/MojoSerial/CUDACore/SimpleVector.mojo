@@ -1,7 +1,8 @@
 from memory import UnsafePointer
 
+from MojoSerial.MojoBridge.DTypes import Typeable
 
-struct SimpleVector[T: Movable & Copyable](Copyable, Defaultable, Movable):
+struct SimpleVector[T: Movable & Copyable](Copyable, Defaultable, Movable, Typeable):
     var m_size: Int
     var m_capacity: Int
 
@@ -28,8 +29,13 @@ struct SimpleVector[T: Movable & Copyable](Copyable, Defaultable, Movable):
     fn capacity(self) -> Int:
         return self.m_capacity
 
-    # TODO: Replace this stub
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        #TODO: Annotate properly with type
+        return "SimpleVector"
 
+    # TODO: Replace this stub
 
 fn make_SimpleVector[
     T: Movable & Copyable

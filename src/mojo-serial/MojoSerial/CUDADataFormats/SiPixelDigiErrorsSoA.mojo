@@ -5,10 +5,10 @@ from MojoSerial.DataFormats.PixelErrors import (
     PixelErrorCompact,
     PixelFormatterErrors,
 )
-from MojoSerial.MojoBridge.DTypes import SizeType
+from MojoSerial.MojoBridge.DTypes import SizeType, Typeable
 
 
-struct SiPixelDigiErrorsSoA(Defaultable, Movable):
+struct SiPixelDigiErrorsSoA(Defaultable, Movable, Typeable):
     var data_d: List[PixelErrorCompact]
     var error_d: SimpleVector[PixelErrorCompact]
     var formatterErrors_h: PixelFormatterErrors
@@ -45,3 +45,8 @@ struct SiPixelDigiErrorsSoA(Defaultable, Movable):
 
     fn c_error(self) -> UnsafePointer[SimpleVector[PixelErrorCompact]]:
         return UnsafePointer(to=self.error_d)
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "SiPixelDigiErrorsSoA"

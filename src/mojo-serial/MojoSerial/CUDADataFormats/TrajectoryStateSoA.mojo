@@ -1,4 +1,4 @@
-from MojoSerial.MojoBridge.DTypes import Float, Double
+from MojoSerial.MojoBridge.DTypes import Float, Double, Typeable
 from MojoSerial.MojoBridge.Vector import Vector
 from MojoSerial.MojoBridge.Matrix import Matrix
 
@@ -6,7 +6,7 @@ from MojoSerial.CUDACore.EigenSoA import MatrixSoA
 
 
 @fieldwise_init
-struct TrajectoryStateSoA[S: Int32](Copyable, Defaultable, Movable):
+struct TrajectoryStateSoA[S: Int32](Copyable, Defaultable, Movable, Typeable):
     alias Vector5f = Vector[DType.float32, 5]
     alias Vector15f = Vector[DType.float32, 15]
 
@@ -84,3 +84,8 @@ struct TrajectoryStateSoA[S: Int32](Copyable, Defaultable, Movable):
                 cov[j, k] = self.covariance[i][ind].cast[T2]()
                 cov[k, j] = cov[j, k]
                 ind += 1
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "TrajectoryStateSoA[" + String(S) + "]"

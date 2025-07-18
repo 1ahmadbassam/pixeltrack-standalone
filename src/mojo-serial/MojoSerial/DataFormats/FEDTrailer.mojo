@@ -1,8 +1,16 @@
+from MojoSerial.MojoBridge.DTypes import Typeable
+
+
 @fieldwise_init
 @register_passable("trivial")
-struct FedtStruct(Copyable, Movable):
+struct FedtStruct(Copyable, Movable, Typeable):
     var conscheck: UInt32
     var eventsize: UInt32
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "FedtStruct"
 
 
 alias FedtType = FedtStruct

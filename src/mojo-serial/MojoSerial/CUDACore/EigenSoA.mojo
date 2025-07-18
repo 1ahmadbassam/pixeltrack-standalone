@@ -1,12 +1,14 @@
 from memory import UnsafePointer
 
+from MojoSerial.MojoBridge.DTypes import Typeable
+
 
 fn isPowerOf2(v: Int32) -> Bool:
     return v and not (v & (v - 1))
 
 
 # TODO: Figure out how to align this struct
-struct ScalarSoA[T: DType, S: Int](Copyable, Defaultable, Movable):
+struct ScalarSoA[T: DType, S: Int](Copyable, Defaultable, Movable, Typeable):
     alias Scalar = Scalar[T]
     var _data: InlineArray[Self.Scalar, S]
 
@@ -53,11 +55,16 @@ struct ScalarSoA[T: DType, S: Int](Copyable, Defaultable, Movable):
     fn __setitem__(mut self, i: Int, v: Self.Scalar):
         self._data[i] = v
 
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "ScalarSoA[" + T.__repr__() + ", " + String(S) + "]"
+
 
 # TODO: Find out how to align this struct
-# TODO: Implement SoA on a list of matricies or vectors
+# TODO: Implement SoA on a list of matrices or vectors
 #       Since we control these types, it should not be impossible
 #       The current implementation does not expose elements of a vector or a matrix appropriately for an SoA representation
-# struct MatrixSoA:
+# struct MatrixSoA(Typeable):
 #     pass
 alias MatrixSoA = InlineArray

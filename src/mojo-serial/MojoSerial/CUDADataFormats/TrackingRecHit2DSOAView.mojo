@@ -8,7 +8,7 @@ from MojoSerial.Geometry.Phase1PixelTopology import (
     Phase1PixelTopology,
     AverageGeometry,
 )
-from MojoSerial.MojoBridge.DTypes import Float
+from MojoSerial.MojoBridge.DTypes import Float, Typeable
 
 alias Hist = HistoContainer[
     DType.int16,
@@ -21,7 +21,7 @@ alias Hist = HistoContainer[
 
 
 @fieldwise_init
-struct TrackingRecHit2DSOAView(Defaultable, Movable):
+struct TrackingRecHit2DSOAView(Defaultable, Movable, Typeable):
     @staticmethod
     @always_inline
     fn maxHits() -> UInt32:
@@ -161,3 +161,8 @@ struct TrackingRecHit2DSOAView(Defaultable, Movable):
         ref self,
     ) -> ref [self.m_averageGeometry] AverageGeometry:
         return self.m_averageGeometry[]
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "TrackingRecHit2DSOAView"

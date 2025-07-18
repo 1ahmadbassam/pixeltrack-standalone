@@ -1,8 +1,8 @@
-from MojoSerial.MojoBridge.DTypes import Float
+from MojoSerial.MojoBridge.DTypes import Float, Typeable
 
 
 @fieldwise_init
-struct ZVertexSoA(Copyable, Defaultable, Movable):
+struct ZVertexSoA(Copyable, Defaultable, Movable, Typeable):
     alias MAXTRACKS: Int32 = 32 * 1024
     alias MAXVTX: Int32 = 1024
 
@@ -29,3 +29,8 @@ struct ZVertexSoA(Copyable, Defaultable, Movable):
     @always_inline
     fn init(mut self):
         self.nvFinal = 0
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "ZVertexSoA"

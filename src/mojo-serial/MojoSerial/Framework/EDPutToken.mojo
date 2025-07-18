@@ -2,7 +2,7 @@ from MojoSerial.MojoBridge.DTypes import Typeable
 
 
 @register_passable("trivial")
-struct EDPutTokenT[T: AnyType](Copyable, Defaultable, Movable, Typeable):
+struct EDPutTokenT[T: Typeable](Copyable, Defaultable, Movable, Typeable):
     alias s_uninitializedValue = 0xFFFFFFFF
     var m_value: UInt
 
@@ -32,7 +32,7 @@ struct EDPutTokenT[T: AnyType](Copyable, Defaultable, Movable, Typeable):
     @staticmethod
     @always_inline
     fn dtype() -> String:
-        return "EDPutTokenT"
+        return "EDPutTokenT[" + T.dtype() + "]"
 
 
 @register_passable("trivial")
@@ -45,7 +45,7 @@ struct EDPutToken(Copyable, Defaultable, Movable, Typeable):
         self.m_value = Self.s_uninitializedValue
 
     @always_inline
-    fn __init__[T: AnyType, //](out self, owned iOther: EDPutTokenT[T]):
+    fn __init__[T: Typeable, //](out self, owned iOther: EDPutTokenT[T]):
         self.m_value = iOther.m_value
 
     @always_inline

@@ -1,4 +1,4 @@
-from MojoSerial.MojoBridge.DTypes import Float
+from MojoSerial.MojoBridge.DTypes import Float, Typeable
 
 struct Phase1PixelTopology:
     alias numRowsInRoc: UInt16 = 80
@@ -171,7 +171,7 @@ struct Phase1PixelTopology:
         return py + shift
 
 @fieldwise_init
-struct AverageGeometry(Movable, Defaultable):
+struct AverageGeometry(Movable, Defaultable, Typeable):
     alias numberOfLaddersInBarrel = Phase1PixelTopology.numberOfLaddersInBarrel
     var ladderZ: List[Float]
     var ladderX: List[Float]
@@ -189,3 +189,8 @@ struct AverageGeometry(Movable, Defaultable):
         self.ladderMinZ = List[Float](capacity=Int(Self.numberOfLaddersInBarrel))
         self.ladderMaxZ = List[Float](capacity=Int(Self.numberOfLaddersInBarrel))
         self.endCapZ = List[Float](capacity=2)
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "AverageGeometry"

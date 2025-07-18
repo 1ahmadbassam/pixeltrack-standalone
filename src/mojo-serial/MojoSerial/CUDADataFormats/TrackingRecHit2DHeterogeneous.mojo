@@ -12,14 +12,14 @@ from MojoSerial.Geometry.Phase1PixelTopology import (
     Phase1PixelTopology,
     AverageGeometry,
 )
-from MojoSerial.MojoBridge.DTypes import Float
+from MojoSerial.MojoBridge.DTypes import Float, Typeable
 
 # even though Traits are deprecated, the syntax is compatible for compatibility purposes
 
 
 struct TrackingRecHit2DHeterogeneous[
     T: Movable & Copyable, //, Tr: Traits = CPUTraits[T]
-](Defaultable, Movable):
+](Defaultable, Movable, Typeable):
     alias UniquePointer = Tr.UniquePointer
 
     alias n16: UInt32 = 4
@@ -162,6 +162,12 @@ struct TrackingRecHit2DHeterogeneous[
     @always_inline
     fn iphi(self) -> UnsafePointer[Int16]:
         return self.m_iphi
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        #TODO: Annotate properly with type
+        return "TrackingRecHit2DHeterogeneous"
 
 
 alias TrackingRecHit2DCPU = TrackingRecHit2DHeterogeneous

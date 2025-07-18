@@ -4,7 +4,7 @@ from MojoSerial.CUDACore.HistoContainer import OneToManyAssoc
 from MojoSerial.CUDACore.EigenSoA import ScalarSoA
 from MojoSerial.CUDADataFormats.TrajectoryStateSoA import TrajectoryStateSoA
 from MojoSerial.MojoBridge.Matrix import Vector, Matrix
-from MojoSerial.MojoBridge.DTypes import Float
+from MojoSerial.MojoBridge.DTypes import Float, Typeable
 
 
 struct TrackQuality:
@@ -17,7 +17,7 @@ struct TrackQuality:
 
 
 @fieldwise_init
-struct TrackSoAT[S: Int32](Defaultable, Movable):
+struct TrackSoAT[S: Int32](Defaultable, Movable, Typeable):
     alias Quality = UInt8
     alias HIndexType = DType.uint16
     alias HitContainer = OneToManyAssoc[
@@ -80,3 +80,8 @@ struct TrackSoAT[S: Int32](Defaultable, Movable):
     @always_inline
     fn zip(self, i: Int32) -> Float:
         return self.stateAtBS.state[i][4]
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "TrackSoAT[" + String(S) + "]"

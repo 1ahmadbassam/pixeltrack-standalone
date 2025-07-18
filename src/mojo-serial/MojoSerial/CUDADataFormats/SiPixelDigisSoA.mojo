@@ -1,10 +1,10 @@
 from memory import UnsafePointer
 
-from MojoSerial.MojoBridge.DTypes import SizeType
+from MojoSerial.MojoBridge.DTypes import SizeType, Typeable
 
 
 @fieldwise_init
-struct DeviceConstView(Defaultable, Movable):
+struct DeviceConstView(Defaultable, Movable, Typeable):
     var _xx: UnsafePointer[UInt16]
     var _yy: UnsafePointer[UInt16]
     var _adc: UnsafePointer[UInt16]
@@ -39,8 +39,13 @@ struct DeviceConstView(Defaultable, Movable):
     fn clus(self, i: Int) -> Int32:
         return self._clus[i]
 
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "DeviceConstView"
 
-struct SiPixelDigisSoA(Defaultable, Movable):
+
+struct SiPixelDigisSoA(Defaultable, Movable, Typeable):
     var xx_d: List[UInt16]
     var yy_d: List[UInt16]
     var adc_d: List[UInt16]
@@ -176,3 +181,8 @@ struct SiPixelDigisSoA(Defaultable, Movable):
     @always_inline
     fn c_rawIdArr(self) -> UnsafePointer[UInt32]:
         return self.rawIdArr_d.unsafe_ptr()
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "SiPixelDigisSoA"

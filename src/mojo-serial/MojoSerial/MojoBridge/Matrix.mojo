@@ -7,7 +7,7 @@ from utils.numerics import min_or_neg_inf as _min_or_neg_inf
 from hashlib._hasher import _HashableWithHasher, _Hasher
 from builtin.simd import _hash_simd
 
-from MojoSerial.MojoBridge.DTypes import Double
+from MojoSerial.MojoBridge.DTypes import Double, Typeable
 from MojoSerial.MojoBridge.Vector import Vector
 from MojoSerial.MojoBridge.Stable import Iterator, OpaquePointer
 
@@ -21,7 +21,7 @@ struct _MatIterator[
     mat_origin: Origin[mat_mutability],
     forward: Bool = True,
     row_wise: Bool = True,
-](Copyable, Iterator, Movable):
+](Copyable, Iterator, Movable, Typeable):
     alias mat_type = Matrix[W, rows, colns]
     alias T = Scalar[W]
     alias Element = Self.T
@@ -57,6 +57,10 @@ struct _MatIterator[
         else:
             return self.index
 
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "_MatIterator[" + String(mat_mutability) + ", " + W.__repr__() + ", " + String(rows) + ", " + String(colns) + ", Origin[" + String(mat_mutability) + "], " + String(row_wise) + "]"
 
 # A comment about this implementation: it is probably the speediest, but arguably not of the best memory efficiency (?)
 # Handling rows in a SIMD structure does give rows immense advantage over columns, it also simplfies implementation... but we are still using InlineArray for memory
@@ -72,6 +76,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     Roundable,
     Sized,
     Stringable,
+    Typeable,
     Writable,
 ):
     alias _L = List[List[Scalar[T]]]
@@ -758,6 +763,11 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     # Trait conformance
 
     @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "Matrix[" + T.__repr__() + ", " + String(rows) + ", " + String(colns) + "]"
+
+    @always_inline
     fn __str__(self) -> String:
         return String.write(self)
 
@@ -1297,3 +1307,4 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         for i in range(rows):
             res[i] = Vector[T, colns](pop_count(self._data[i]._data))
         return Self(res)
+
