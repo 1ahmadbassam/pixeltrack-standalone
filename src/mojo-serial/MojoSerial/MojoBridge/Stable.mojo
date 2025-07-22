@@ -1,11 +1,11 @@
 from memory import UnsafePointer
+from sys.ffi import OpaquePointer
 
 # This file and its usages are to be reviewed on every update
 # to the Mojo language. Our goal is to target the latest stable
 # version while introducing (much needed) improvements from nightly
 # versions.
 
-alias OpaquePointer = UnsafePointer[NoneType]
 alias NonePointer = OpaquePointer()
 
 

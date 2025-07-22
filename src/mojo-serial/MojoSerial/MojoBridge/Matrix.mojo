@@ -1,4 +1,5 @@
 from sys import alignof, is_gpu
+from sys.ffi import OpaquePointer
 from bit import pop_count
 from utils.numerics import max_finite as _max_finite
 from utils.numerics import max_or_inf as _max_or_inf
@@ -9,7 +10,7 @@ from builtin.simd import _hash_simd
 
 from MojoSerial.MojoBridge.DTypes import Double, Typeable
 from MojoSerial.MojoBridge.Vector import Vector
-from MojoSerial.MojoBridge.Stable import Iterator, OpaquePointer
+from MojoSerial.MojoBridge.Stable import Iterator
 
 
 @fieldwise_init
