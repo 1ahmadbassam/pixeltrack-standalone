@@ -2,7 +2,7 @@ from memory import UnsafePointer
 
 from MojoSerial.MojoBridge.DTypes import Typeable
 
-struct SimpleVector[T: Movable & Copyable](Copyable, Defaultable, Movable, Typeable):
+struct SimpleVector[T: Movable & Copyable, DT: StaticString](Copyable, Defaultable, Movable, Typeable):
     var m_size: Int
     var m_capacity: Int
 
@@ -32,27 +32,29 @@ struct SimpleVector[T: Movable & Copyable](Copyable, Defaultable, Movable, Typea
     @always_inline
     @staticmethod
     fn dtype() -> String:
-        #TODO: Annotate properly with type
-        return "SimpleVector"
+        return "SimpleVector[" + DT + "]"
 
     # TODO: Replace this stub
 
 fn make_SimpleVector[
-    T: Movable & Copyable
-](capacity: Int, data: UnsafePointer[T]) -> SimpleVector[T]:
-    var ret = SimpleVector[T]()
+    T: Movable & Copyable,
+    DT: StaticString
+](capacity: Int, data: UnsafePointer[T]) -> SimpleVector[T, DT]:
+    var ret = SimpleVector[T, DT]()
     ret.construct(capacity, data)
     return ret
 
 
 fn make_SimpleVector[
-    T: Movable & Copyable
+    T: Movable & Copyable,
+    DT: StaticString,
+    //
 ](
-    mut mem: UnsafePointer[SimpleVector[T]],
+    mut mem: UnsafePointer[SimpleVector[T, DT]],
     capacity: Int,
     data: UnsafePointer[T],
-) -> ref [mem[]] SimpleVector[T]:
+) -> ref [mem[]] SimpleVector[T, DT]:
     # construct a new object where mem points, assuming it is initialized
-    mem.init_pointee_move(SimpleVector[T]())
+    mem.init_pointee_move(SimpleVector[T, DT]())
     mem[].construct(capacity, data)
     return mem[]

@@ -31,7 +31,7 @@ struct WrapperBase(Copyable, Defaultable, Movable, Typeable):
         return "WrapperBase"
 
 
-struct Wrapper[T: Movable](Movable, Typeable):
+struct Wrapper[T: Typeable & Movable](Movable, Typeable):
     var _ptr: UnsafePointer[T]
 
     @always_inline
@@ -55,8 +55,7 @@ struct Wrapper[T: Movable](Movable, Typeable):
     @staticmethod
     @always_inline
     fn dtype() -> String:
-        #TODO: Annotate properly with type
-        return "Wrapper"
+        return "Wrapper[" + T.dtype() + ']'
 
 
 struct Event:

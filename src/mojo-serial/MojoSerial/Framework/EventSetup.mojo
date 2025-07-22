@@ -26,7 +26,7 @@ struct ESWrapperBase(Copyable, Defaultable, Movable, Typeable):
         return "ESWrapperBase"
 
 
-struct ESWrapper[T: Movable](Movable, Typeable):
+struct ESWrapper[T: Typeable & Movable](Movable, Typeable):
     var _ptr: UnsafePointer[T]
 
     @always_inline
@@ -50,8 +50,7 @@ struct ESWrapper[T: Movable](Movable, Typeable):
     @staticmethod
     @always_inline
     fn dtype() -> String:
-        #TODO: Annotate properly with type
-        return "ESWrapper"
+        return "ESWrapper[" + T.dtype() + ']'
 
 
 struct EventSetup(Defaultable, Movable, Typeable):
