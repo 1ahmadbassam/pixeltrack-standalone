@@ -1,6 +1,7 @@
 from memory import UnsafePointer
+from sys.ffi import OpaquePointer
 
-from MojoSerial.MojoBridge.Stable import OpaquePointer, NonePointer
+from MojoSerial.MojoBridge.Stable import NonePointer
 
 alias CudaStreamType = OpaquePointer
 alias cudaStreamDefault: OpaquePointer = NonePointer
@@ -11,7 +12,7 @@ struct CudaCompat:
     fn atomicCAS[
         T1: Copyable & EqualityComparable, //
     ](address: UnsafePointer[T1], compare: T1, val: T1) -> T1:
-        var old = address[]
+        var old: T1 = address[]
         address[] = val if old == compare else old
         return old
 
@@ -19,7 +20,7 @@ struct CudaCompat:
     fn atomicInc[
         T1: DType, //
     ](a: UnsafePointer[Scalar[T1]], b: Scalar[T1]) -> Scalar[T1]:
-        var ret = a[]
+        var ret: Scalar[T1] = a[]
         if ret < b:
             a[] += 1
         return ret
@@ -28,7 +29,7 @@ struct CudaCompat:
     fn atomicAdd[
         T1: DType, //
     ](a: UnsafePointer[Scalar[T1]], b: Scalar[T1]) -> Scalar[T1]:
-        var ret = a[]
+        var ret: Scalar[T1] = a[]
         a[] += b
         return ret
 
@@ -36,7 +37,7 @@ struct CudaCompat:
     fn atomicSub[
         T1: DType, //
     ](a: UnsafePointer[Scalar[T1]], b: Scalar[T1]) -> Scalar[T1]:
-        var ret = a[]
+        var ret: Scalar[T1] = a[]
         a[] -= b
         return ret
 
@@ -44,7 +45,7 @@ struct CudaCompat:
     fn atomicMin[
         T1: Copyable & Comparable, //
     ](a: UnsafePointer[T1], b: T1) -> T1:
-        var ret = a[]
+        var ret: T1 = a[]
         a[] = min(a[], b)
         return ret
 
@@ -52,6 +53,6 @@ struct CudaCompat:
     fn atomicMax[
         T1: Copyable & Comparable, //
     ](a: UnsafePointer[T1], b: T1) -> T1:
-        var ret = a[]
+        var ret: T1 = a[]
         a[] = max(a[], b)
         return ret

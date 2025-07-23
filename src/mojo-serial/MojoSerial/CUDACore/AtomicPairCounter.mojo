@@ -5,7 +5,7 @@ from MojoSerial.MojoBridge.DTypes import Typeable
 
 @fieldwise_init
 @register_passable("trivial")
-struct Counters(Copyable, Movable):
+struct Counters(Copyable, Movable, Typeable):
     var c: SIMD[DType.uint32, 2]
     # alias n: UInt32 = c[0] # in a "One to Many" association is the number of "One"
     # alias m: UInt32 = c[1] # in a "One to Many" association is the total number of associations
