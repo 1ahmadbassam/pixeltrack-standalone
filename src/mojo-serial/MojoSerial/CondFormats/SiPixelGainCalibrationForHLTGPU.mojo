@@ -1,18 +1,36 @@
-from  memory import UnsafePointer
-from CondFormats.SiPixelGainForHLTonGPU import SiPixelGainForHLTonGPU, SiPixelGainForHLTonGPU_DecodingStructure
+from memory import UnsafePointer
 
-struct SiPixelGainCalibrationForHLTGPU(Movable & Copyable):
-    var gainForHLTonHost_: UnsafePointer[SiPixelGainForHLTonGPU]
-    var gainData_: List[UInt8]
+from MojoSerial.CondFormats.SiPixelGainForHLTonGPU import SiPixelGainForHLTonGPU
+from MojoSerial.MojoBridge.DTypes import Char, Typeable
 
+
+struct SiPixelGainCalibrationForHLTGPU(
+    Copyable, Defaultable, Movable, Typeable
+):
+    var _gainForHLTonHost: SiPixelGainForHLTonGPU
+    var _gainData: List[Char]
+
+    @always_inline
     fn __init__(out self):
-        self.gainForHLTonHost_ = UnsafePointer[SiPixelGainForHLTonGPU]()
-        self.gainData_ = List[UInt8](capacity = 0)
-    '''
-    fn __init__(out self, gain: SiPixelGainForHLTonGPU, gainData: List[UInt8]):
-        self.gainForHLTonHost_ = SiPixelGainForHLTonGPU(gain)
-        self.gainData_ = gainData'''
+        self._gainForHLTonHost = SiPixelGainForHLTonGPU()
+        self._gainData = []
 
-    fn __init__(out self, gain: SiPixelGainForHLTonGPU, gainData: List[UInt8]):
-        self.gainData_ = gainData
-        self.gainForHLTonHost_ = SiPixelGainForHLTonGPU(gain)
+    @always_inline
+    fn __init__(
+        out self, gain: SiPixelGainForHLTonGPU, owned gainData: List[Char]
+    ):
+        self._gainData = gainData^
+        self._gainForHLTonHost = gain
+        # TODO: check if this works
+        self._gainForHLTonHost.v_pedestals = rebind[
+            UnsafePointer[SiPixelGainForHLTonGPU.DecodingStructure]
+        ](self._gainData.unsafe_ptr())
+
+    @always_inline
+    fn getCPUProduct(self) -> UnsafePointer[SiPixelGainForHLTonGPU]:
+        return UnsafePointer(to=self._gainForHLTonHost)
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "SiPixelGainCalibrationForHLTGPU"

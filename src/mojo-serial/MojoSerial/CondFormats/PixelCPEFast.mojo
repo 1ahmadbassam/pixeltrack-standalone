@@ -1,139 +1,93 @@
-#from MojoSerial.Geometry import phase1PixelTopology
-from CondFormats.pixelCPEforGPU import CommonParams, DetParams, ParamsOnGPU, LayerGeometry, AverageGeometry
-from sys.info import sizeof
-import os
-struct PixelCPEFast:
+from memory import UnsafePointer
+from sys import sizeof
+from os import PathLike
+
+from MojoSerial.CondFormats.PixelCPEforGPU import (
+    CommonParams,
+    DetParams,
+    ParamsOnGPU,
+    LayerGeometry,
+    AverageGeometry,
+)
+from MojoSerial.MojoBridge.DTypes import Float, Typeable
+
+alias micronsToCm: Float = 1.0e-4
+
+
+struct PixelCPEFast(Defaultable, Movable, Typeable):
     var m_commonParamsGPU: CommonParams
     var m_detParamsGPU: List[DetParams]
     var m_layerGeometry: LayerGeometry
     var m_averageGeometry: AverageGeometry
-    var cpuData_: ParamsOnGPU
 
-    fn __init__(out self, path: StringSlice) raises:
+    var _cpuData: ParamsOnGPU
+
+    @always_inline
+    fn __init__(out self):
+        self.m_commonParamsGPU = CommonParams()
+        self.m_detParamsGPU = []
+        self.m_layerGeometry = LayerGeometry()
+        self.m_averageGeometry = AverageGeometry()
+
+        self._cpuData = ParamsOnGPU(
+            UnsafePointer(to=self.m_commonParamsGPU),
+            self.m_detParamsGPU.unsafe_ptr(),
+            UnsafePointer(to=self.m_layerGeometry),
+            UnsafePointer(to=self.m_averageGeometry),
+        )
+
+    fn __init__[T: PathLike, //](out self, path: T) raises:
+        self.m_commonParamsGPU = CommonParams()
+        self.m_layerGeometry = LayerGeometry()
+        self.m_averageGeometry = AverageGeometry()
+
+        # TODO: Check if this works
         with open(path, "r") as file:
-            var common_params_bytes = file.read_bytes(sizeof[CommonParams]())
-            for i in range(0, 16, 4):
-                var byte_array = InlineArray[SIMD[DType.uint8, 1], DType.float32.sizeof()](common_params_bytes[i],
-                    common_params_bytes[i+1],
-                    common_params_bytes[i+2],
-                    common_params_bytes[i+3]
-                )
-                var value = SIMD[DType.float32, 1].from_bytes(byte_array)
-                if i == 0:
-                    self.m_commonParamsGPU.theThicknessB = value
-                elif i == 4:
-                    self.m_commonParamsGPU.theThicknessE = value
-                elif i == 8:
-                    self.m_commonParamsGPU.thePitchX = value
-                elif i == 12:
-                    self.m_commonParamsGPU.thePitchY = value
+            rebind[UnsafePointer[CommonParams]](
+                file.read_bytes(sizeof[CommonParams]()).unsafe_ptr()
+            ).move_pointee_into(UnsafePointer(to=self.m_commonParamsGPU))
 
-            
-            var ndet_params_bytes = file.read_bytes(sizeof[UInt32]())
-            var byte_array_ndet = InlineArray[SIMD[DType.uint8, 1], DType.uint32.sizeof()](ndet_params_bytes[0],
-                ndet_params_bytes[1],
-                ndet_params_bytes[2],
-                ndet_params_bytes[3]
+            # Mojo UInt is 64-bit, so we have to explicitly
+            # state 32-bit for compatibility with the read file
+            var ndetbyteArray = InlineArray[UInt8, DType.uint32.sizeof()](0)
+            var ndetbyteList = file.read_bytes(DType.uint32.sizeof())
+
+            @parameter
+            for i in range(DType.uint32.sizeof()):
+                ndetbyteArray[i] = ndetbyteList[i]
+
+            var ndetParams: UInt32 = Scalar[DType.uint32].from_bytes(
+                ndetbyteArray
             )
-            var ndetParams = SIMD[DType.uint32, 1].from_bytes(byte_array_ndet)
-            self.m_detParamsGPU = List[DetParams]()
-            total_bytes = ndetParams * sizeof[DetParams]()
-            var det_params_bytes = file.read_bytes(Int(total_bytes))
+            self.m_detParamsGPU = List[DetParams](capacity=Int(ndetParams))
             
-            for i in range()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            # Read m_detParamsGPU
-            # TODO: Use ndetParams value
-            var det_params_bytes = file.read_bytes(ndetParams * sizeof[pixelCPEforGPU::DetParams]())
-            # TODO: Deserialize to List[pixelCPEforGPU::DetParams]
-            # e.g., m_detParamsGPU = deserialize_DetParams(det_params_bytes, ndetParams)
-
-            # Read m_averageGeometry
-            var avg_geom_bytes = file.read_bytes(sizeof[pixelCPEforGPU::AverageGeometry]())
-            # TODO: Convert to pixelCPEforGPU::AverageGeometry
-
-            # Read m_layerGeometry
-            var layer_geom_bytes = file.read_bytes(sizeof[pixelCPEforGPU::LayerGeometry]())
-            # TODO: Convert to pixelCPEforGPU::LayerGeometry
-
-        # Assign to cpuData_
-        cpuData_ = {
-            &m_commonParamsGPU,
-            m_detParamsGPU.data(),
-            &m_layerGeometry,
-            &m_averageGeometry
-        }
+            var _rawDataDet = file.read_bytes(
+                Int(ndetParams) * sizeof[DetParams]()
+            )
+            for i in range(Int(ndetParams)):
+                rebind[UnsafePointer[DetParams]](
+                    _rawDataDet.unsafe_ptr() + i
+                ).move_pointee_into(self.m_detParamsGPU.unsafe_ptr() + i)
+
+            rebind[UnsafePointer[AverageGeometry]](
+                file.read_bytes(sizeof[AverageGeometry]()).unsafe_ptr()
+            ).move_pointee_into(UnsafePointer(to=self.m_averageGeometry))
+            rebind[UnsafePointer[LayerGeometry]](
+                file.read_bytes(sizeof[LayerGeometry]()).unsafe_ptr()
+            ).move_pointee_into(UnsafePointer(to=self.m_layerGeometry))
+
+        self._cpuData = ParamsOnGPU(
+            UnsafePointer(to=self.m_commonParamsGPU),
+            self.m_detParamsGPU.unsafe_ptr(),
+            UnsafePointer(to=self.m_layerGeometry),
+            UnsafePointer(to=self.m_averageGeometry),
+        )
+
+    @always_inline
+    fn getCPUProduct(self) -> ParamsOnGPU:
+        return self._cpuData
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "PixelCPEFast"
