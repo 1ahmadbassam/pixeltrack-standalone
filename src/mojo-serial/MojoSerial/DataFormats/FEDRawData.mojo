@@ -7,7 +7,7 @@ struct FEDRawData(Copyable, Movable):
     fn __init__(out self):
         self._data = []
 
-    fn __init__(out self, newsize: Int) raises:
+    fn __init__(out self, newsize: Int):
         debug_assert(newsize % 8 == 0, "Size" + String(newsize) + "is not a multiple of 8")
 
         self._data : List[UInt8] = List[UInt8](length = newsize, fill = 0)
@@ -24,7 +24,7 @@ struct FEDRawData(Copyable, Movable):
     fn size(self) -> SizeType:
         return len(self._data)
 
-    fn resize(mut self, newsize: SizeType) raises:
+    fn resize(mut self, newsize: SizeType):
         debug_assert(newsize % 8 == 0, "Size" + String(newsize) + "is not a multiple of 8")
 
         current_size = len(self._data)
