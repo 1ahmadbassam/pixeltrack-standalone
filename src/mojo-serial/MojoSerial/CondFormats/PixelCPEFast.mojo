@@ -15,8 +15,8 @@ alias micronsToCm: Float = 1.0e-4
 
 
 struct PixelCPEFast(Defaultable, Movable, Typeable):
-    var m_commonParamsGPU: CommonParams
     var m_detParamsGPU: List[DetParams]
+    var m_commonParamsGPU: CommonParams
     var m_layerGeometry: LayerGeometry
     var m_averageGeometry: AverageGeometry
 
