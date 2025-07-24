@@ -18,6 +18,14 @@ struct Counters(Copyable, Movable, Typeable):
         self.c = bitcast[DType.uint32, 2](ac)
 
     @always_inline
+    fn __getitem__(self, i: Int) -> UInt32:
+        return self.c[i]
+
+    @always_inline
+    fn __setitem__(mut self, i: Int, val: UInt32):
+        self.c[i] = val
+
+    @always_inline
     @staticmethod
     fn dtype() -> String:
         return "Counters"
