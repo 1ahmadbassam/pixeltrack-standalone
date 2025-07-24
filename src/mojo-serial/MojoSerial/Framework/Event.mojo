@@ -22,7 +22,7 @@ struct WrapperBase(Copyable, Defaultable, Movable, Typeable):
             self._ptr.free()
 
     @always_inline
-    fn product(self) -> UnsafePointer[NoneType]:
+    fn product(self) -> UnsafePointer[NoneType, mut=False]:
         return self._ptr
 
     @staticmethod
@@ -49,7 +49,7 @@ struct Wrapper[T: Typeable & Movable](Movable, Typeable):
         self._ptr = other._ptr
 
     @always_inline
-    fn product(self) -> UnsafePointer[T]:
+    fn product(self) -> UnsafePointer[T, mut=False]:
         return self._ptr
 
     @staticmethod

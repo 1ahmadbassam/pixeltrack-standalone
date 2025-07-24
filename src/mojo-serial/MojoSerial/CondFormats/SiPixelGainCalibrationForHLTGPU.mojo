@@ -26,7 +26,7 @@ struct SiPixelGainCalibrationForHLTGPU(
         ](self._gainData.unsafe_ptr())
 
     @always_inline
-    fn getCPUProduct(self) -> UnsafePointer[SiPixelGainForHLTonGPU]:
+    fn getCPUProduct(self) -> UnsafePointer[SiPixelGainForHLTonGPU, mut=False]:
         return UnsafePointer(to=self._gainForHLTonHost)
 
     @always_inline

@@ -114,72 +114,86 @@ struct SiPixelDigisSoA(Defaultable, Movable, Typeable):
 
     @always_inline
     fn xx[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[UInt16]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        UInt16, mut = origin.mut, origin=origin
+    ]:
         return self.xx_d.unsafe_ptr()
 
     @always_inline
     fn yy[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[UInt16]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        UInt16, mut = origin.mut, origin=origin
+    ]:
         return self.yy_d.unsafe_ptr()
 
     @always_inline
     fn adc[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[UInt16]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        UInt16, mut = origin.mut, origin=origin
+    ]:
         return self.adc_d.unsafe_ptr()
 
     @always_inline
     fn moduleInd[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[UInt16]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        UInt16, mut = origin.mut, origin=origin
+    ]:
         return self.moduleInd_d.unsafe_ptr()
 
     @always_inline
     fn clus[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[Int32]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        Int32, mut = origin.mut, origin=origin
+    ]:
         return self.clus_d.unsafe_ptr()
 
     @always_inline
     fn pdigi[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[UInt32]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        UInt32, mut = origin.mut, origin=origin
+    ]:
         return self.pdigi_d.unsafe_ptr()
 
     @always_inline
     fn rawIdArr[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[UInt32]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        UInt32, mut = origin.mut, origin=origin
+    ]:
         return self.rawIdArr_d.unsafe_ptr()
 
     @always_inline
-    fn c_xx(self) -> UnsafePointer[UInt16]:
+    fn c_xx(self) -> UnsafePointer[UInt16, mut=False]:
         return self.xx_d.unsafe_ptr()
 
     @always_inline
-    fn c_yy(self) -> UnsafePointer[UInt16]:
+    fn c_yy(self) -> UnsafePointer[UInt16, mut=False]:
         return self.yy_d.unsafe_ptr()
 
     @always_inline
-    fn c_adc(self) -> UnsafePointer[UInt16]:
+    fn c_adc(self) -> UnsafePointer[UInt16, mut=False]:
         return self.adc_d.unsafe_ptr()
 
     @always_inline
-    fn c_moduleInd(self) -> UnsafePointer[UInt16]:
+    fn c_moduleInd(self) -> UnsafePointer[UInt16, mut=False]:
         return self.moduleInd_d.unsafe_ptr()
 
     @always_inline
-    fn c_clus(self) -> UnsafePointer[Int32]:
+    fn c_clus(self) -> UnsafePointer[Int32, mut=False]:
         return self.clus_d.unsafe_ptr()
 
     @always_inline
-    fn c_pdigi(self) -> UnsafePointer[UInt32]:
+    fn c_pdigi(self) -> UnsafePointer[UInt32, mut=False]:
         return self.pdigi_d.unsafe_ptr()
 
     @always_inline
-    fn c_rawIdArr(self) -> UnsafePointer[UInt32]:
+    fn c_rawIdArr(self) -> UnsafePointer[UInt32, mut=False]:
         return self.rawIdArr_d.unsafe_ptr()
 
     @always_inline

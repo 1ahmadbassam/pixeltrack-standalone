@@ -89,42 +89,50 @@ struct SiPixelClustersSoA(Defaultable, Movable, Typeable):
 
     @always_inline
     fn moduleStart[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[UInt32]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        UInt32, mut = origin.mut, origin=origin
+    ]:
         return self.moduleStart_d.unsafe_ptr()
 
     @always_inline
     fn clusInModule[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[UInt32]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        UInt32, mut = origin.mut, origin=origin
+    ]:
         return self.clusInModule_d.unsafe_ptr()
 
     @always_inline
     fn moduleId[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[UInt32]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        UInt32, mut = origin.mut, origin=origin
+    ]:
         return self.moduleId_d.unsafe_ptr()
 
     @always_inline
     fn clusModuleStart[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[UInt32]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        UInt32, mut = origin.mut, origin=origin
+    ]:
         return self.clusModuleStart_d.unsafe_ptr()
 
     @always_inline
-    fn c_moduleStart(self) -> UnsafePointer[UInt32]:
+    fn c_moduleStart(self) -> UnsafePointer[UInt32, mut=False]:
         return self.moduleStart_d.unsafe_ptr()
 
     @always_inline
-    fn c_clusInModule(self) -> UnsafePointer[UInt32]:
+    fn c_clusInModule(self) -> UnsafePointer[UInt32, mut=False]:
         return self.clusInModule_d.unsafe_ptr()
 
     @always_inline
-    fn c_moduleId(self) -> UnsafePointer[UInt32]:
+    fn c_moduleId(self) -> UnsafePointer[UInt32, mut=False]:
         return self.moduleId_d.unsafe_ptr()
 
     @always_inline
-    fn c_clusModuleStart(self) -> UnsafePointer[UInt32]:
+    fn c_clusModuleStart(self) -> UnsafePointer[UInt32, mut=False]:
         return self.clusModuleStart_d.unsafe_ptr()
 
     @always_inline

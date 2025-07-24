@@ -142,19 +142,19 @@ struct TrackingRecHit2DHeterogeneous(Defaultable, Movable, Typeable):
         return self.m_nHits
 
     @always_inline
-    fn hitsModuleStart(self) -> UnsafePointer[UInt32]:
+    fn hitsModuleStart(self) -> UnsafePointer[UInt32, mut=False]:
         return self.m_hitsModuleStart
 
     @always_inline
-    fn hitsLayerStart(self) -> UnsafePointer[UInt32]:
+    fn hitsLayerStart(self) -> UnsafePointer[UInt32, mut=False]:
         return self.m_hitsLayerStart
 
     @always_inline
-    fn phiBinner(self) -> UnsafePointer[Hist]:
+    fn phiBinner(self) -> UnsafePointer[Hist, mut=False]:
         return self.m_hist
 
     @always_inline
-    fn iphi(self) -> UnsafePointer[Int16]:
+    fn iphi(self) -> UnsafePointer[Int16, mut=False]:
         return self.m_iphi
 
     @always_inline

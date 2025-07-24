@@ -30,7 +30,7 @@ struct SiPixelFedCablingMapGPUWrapper(Copyable, Defaultable, Movable, Typeable):
     fn hasQuality(self) -> Bool:
         return self._hasQuality
 
-    fn getCPUProduct(self) -> UnsafePointer[SiPixelFedCablingMapGPU]:
+    fn getCPUProduct(self) -> UnsafePointer[SiPixelFedCablingMapGPU, mut=False]:
         return UnsafePointer(to=self.cablingMapHost)
 
     @always_inline

@@ -148,8 +148,10 @@ struct TrackingRecHit2DSOAView(Defaultable, Movable, Typeable):
 
     @always_inline
     fn hitsLayerStart[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[UInt32]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        UInt32, mut = origin.mut, origin=origin
+    ]:
         return self.m_hitsLayerStart
 
     @always_inline

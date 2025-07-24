@@ -9,7 +9,9 @@ from MojoSerial.MojoBridge.DTypes import SizeType, Typeable
 
 
 struct SiPixelDigiErrorsSoA(Defaultable, Movable, Typeable):
-    alias _error_dtype = SimpleVector[PixelErrorCompact, PixelErrorCompact.dtype()]
+    alias _error_dtype = SimpleVector[
+        PixelErrorCompact, PixelErrorCompact.dtype()
+    ]
     var data_d: List[PixelErrorCompact]
     var error_d: Self._error_dtype
     var formatterErrors_h: PixelFormatterErrors
@@ -26,7 +28,9 @@ struct SiPixelDigiErrorsSoA(Defaultable, Movable, Typeable):
     ):
         self.formatterErrors_h = errors^
         self.data_d = List[PixelErrorCompact](capacity=maxFedWords)
-        self.error_d = make_SimpleVector[PixelErrorCompact, PixelErrorCompact.dtype()](maxFedWords, self.data_d.unsafe_ptr())
+        self.error_d = make_SimpleVector[
+            PixelErrorCompact, PixelErrorCompact.dtype()
+        ](maxFedWords, self.data_d.unsafe_ptr())
         debug_assert(self.error_d.empty())
         debug_assert(self.error_d.capacity() == maxFedWords)
 
@@ -40,11 +44,13 @@ struct SiPixelDigiErrorsSoA(Defaultable, Movable, Typeable):
         return self.formatterErrors_h
 
     fn error[
-        is_mutable: Bool, //, origin: Origin[is_mutable]
-    ](ref [origin]self) -> UnsafePointer[Self._error_dtype]:
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[
+        Self._error_dtype, mut = origin.mut, origin=origin
+    ]:
         return UnsafePointer(to=self.error_d)
 
-    fn c_error(self) -> UnsafePointer[Self._error_dtype]:
+    fn c_error(self) -> UnsafePointer[Self._error_dtype, mut=False]:
         return UnsafePointer(to=self.error_d)
 
     @always_inline
