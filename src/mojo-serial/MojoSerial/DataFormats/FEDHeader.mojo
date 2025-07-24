@@ -142,7 +142,7 @@ struct FEDHeader(Copyable, Defaultable, Movable, Typeable):
 
     @staticmethod
     fn set(
-        mut header: UnsafePointer[UChar],
+        header: UnsafePointer[UChar, mut=True],
         triggerType: UInt8,
         lvl1ID: UInt32,
         bxID: UInt16,

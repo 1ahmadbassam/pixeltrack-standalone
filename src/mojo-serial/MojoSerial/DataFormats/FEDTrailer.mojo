@@ -174,7 +174,7 @@ struct FEDTrailer(Copyable, Defaultable, Movable, Typeable):
         return self.theTrailer[].conscheck
 
     @staticmethod
-    fn set(mut trailer: UnsafePointer[UInt8], length: UInt32, crc: UInt16, evtStatus: UInt8, ttsBits: UInt8, moreTrailers: Bool = False):
+    fn set(trailer: UnsafePointer[UInt8, mut=True], length: UInt32, crc: UInt16, evtStatus: UInt8, ttsBits: UInt8, moreTrailers: Bool = False):
         var t = rebind[UnsafePointer[FedtType]](trailer)
 
         t[].eventsize = (FED_SLINK_END_MARKER << FED_TCTRLID_SHIFT) | ((length << FED_EVSZ_SHIFT) & FED_EVSZ_MASK)
