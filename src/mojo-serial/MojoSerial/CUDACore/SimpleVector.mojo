@@ -1,15 +1,15 @@
 from memory import UnsafePointer
 
-from MojoSerial.CUDACore.CudaCompat import CudaCompat
+from MojoSerial.CUDACore.CUDACompat import CUDACompat
 from MojoSerial.MojoBridge.DTypes import Typeable
 
 
 @fieldwise_init
 struct SimpleVector[T: Movable & Copyable, DT: StaticString](
-    Copyable, Defaultable, Movable, Typeable
+    Copyable, Defaultable, Movable, Sized, Typeable
 ):
-    var m_size: Int64
-    var m_capacity: Int64
+    var m_size: Int
+    var m_capacity: Int
     var m_data: UnsafePointer[T]
 
     @always_inline
@@ -19,13 +19,13 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
         self.m_data = UnsafePointer[T]()
 
     @always_inline
-    fn construct(mut self, capacity: Int64, data: UnsafePointer[T]):
+    fn construct(mut self, capacity: Int, data: UnsafePointer[T]):
         self.m_size = 0
         self.m_capacity = capacity
         self.m_data = data
 
     @always_inline
-    fn push_back_unsafe(mut self, element: T) -> Int64:
+    fn push_back_unsafe(mut self, element: T) -> Int:
         var previousSize = self.m_size
         self.m_size += 1
 
@@ -37,41 +37,40 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
             return -1
 
     @always_inline
-    fn back(self) -> ref [self.m_data] T:
+    fn back(ref self) -> ref [self.m_data] T:
         if self.m_size > 0:
             return self.m_data[self.m_size - 1]
-        return self.m_data[]
+        return self.m_data[]  # undefined behavior
 
-    fn push_back(self, element: T) -> Int64:
-        var previousSize = CudaCompat.atomicAdd(
-            UnsafePointer(to=self.m_size), 1
-        )
+    fn push_back(mut self, element: T) -> Int:
+        var previousSize = self.m_size
+        self.m_size += 1
 
         if previousSize < self.m_capacity:
             self.m_data[previousSize] = element
             return previousSize
         else:
-            _ = CudaCompat.atomicSub(UnsafePointer(to=self.m_size), 1)
+            self.m_size -= 1
             return -1
 
-    fn extend(self, size: Int64 = 1) -> Int64:
-        var previousSize = CudaCompat.atomicAdd(
-            UnsafePointer(to=self.m_size), size
-        )
+    fn extend(mut self, size: Int = 1) -> Int:
+        var previousSize = self.m_size
+        self.m_size += size
+
         if previousSize < self.m_capacity:
             return previousSize
         else:
-            _ = CudaCompat.atomicSub(UnsafePointer(to=self.m_size), size)
+            self.m_size -= 1
             return -1
 
-    fn shrink(self, size: Int64 = 1) -> Int64:
-        var previousSize = CudaCompat.atomicSub(
-            UnsafePointer(to=self.m_size), size
-        )
+    fn shrink(mut self, size: Int = 1) -> Int:
+        var previousSize = self.m_size
+        self.m_size -= size
+
         if previousSize >= size:
             return previousSize - size
         else:
-            _ = CudaCompat.atomicAdd(UnsafePointer(to=self.m_size), size)
+            self.m_size += size
             return -1
 
     @always_inline
@@ -87,28 +86,32 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
         return self.m_data[i]
 
     @always_inline
+    fn __setitem__(mut self, i: Int, val: T):
+        self.m_data[i] = val
+
+    @always_inline
     fn reset(mut self):
         self.m_size = 0
 
     @always_inline
-    fn size(self) -> Int64:
-        return self.m_size
-
-    @always_inline
-    fn capacity(self) -> Int64:
+    fn capacity(self) -> Int:
         return self.m_capacity
 
     @always_inline
-    fn data(self) -> UnsafePointer[T]:
+    fn data(self) -> UnsafePointer[T, mut=False]:
         return self.m_data
 
     @always_inline
-    fn resize(mut self, size: Int64):
+    fn resize(mut self, size: Int):
         self.m_size = size
 
     @always_inline
     fn set_data(mut self, data: UnsafePointer[T]):
         self.m_data = data
+
+    @always_inline
+    fn __len__(self) -> Int:
+        return self.m_size
 
     @always_inline
     @staticmethod

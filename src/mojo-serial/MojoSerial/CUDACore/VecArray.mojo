@@ -2,9 +2,10 @@ from memory import UnsafePointer
 
 from MojoSerial.MojoBridge.DTypes import Typeable
 
+
 @fieldwise_init
 struct VecArray[T: Movable & Copyable, DT: StaticString, maxSize: Int](
-    Copyable, Defaultable, Movable, Typeable
+    Copyable, Defaultable, Movable, Sized, Typeable
 ):
     var m_data: InlineArray[T, maxSize]
     var m_size: Int
@@ -16,7 +17,7 @@ struct VecArray[T: Movable & Copyable, DT: StaticString, maxSize: Int](
         self.m_size = 0
 
     @always_inline
-    fn push_back_unsafe(mut self, owned element: T) -> Int64:
+    fn push_back_unsafe(mut self, owned element: T) -> Int:
         var previousSize = self.m_size
         self.m_size += 1
 
@@ -34,7 +35,7 @@ struct VecArray[T: Movable & Copyable, DT: StaticString, maxSize: Int](
         else:
             return self.m_data[0]  # undefined behavior
 
-    fn push_back(mut self, owned element: T) -> Int64:
+    fn push_back(mut self, owned element: T) -> Int:
         var previousSize = self.m_size
         self.m_size += 1
 
@@ -55,16 +56,16 @@ struct VecArray[T: Movable & Copyable, DT: StaticString, maxSize: Int](
             return self.m_data[0]  # undefined behavior
 
     @always_inline
-    fn begin(ref self) -> UnsafePointer[T]:
-        return UnsafePointer(to=self.m_data[0])
+    fn begin[
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[T, mut = origin.mut, origin=origin]:
+        return self.m_data.unsafe_ptr()
 
     @always_inline
-    fn end(ref self) -> UnsafePointer[T]:
-        return UnsafePointer(to=self.m_data[self.m_size - 1])
-
-    @always_inline
-    fn size(self) -> Int:
-        return self.m_size
+    fn end[
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[T, mut = origin.mut, origin=origin]:
+        return self.m_data.unsafe_ptr() + self.m_size - 1
 
     @always_inline
     fn __getitem__(ref self, i: Int) -> ref [self.m_data] T:
@@ -80,7 +81,9 @@ struct VecArray[T: Movable & Copyable, DT: StaticString, maxSize: Int](
         return maxSize
 
     @always_inline
-    fn data(self) -> UnsafePointer[T]:
+    fn data[
+        origin: Origin, //
+    ](ref [origin]self) -> UnsafePointer[T, mut = origin.mut, origin=origin]:
         return self.m_data.unsafe_ptr()
 
     @always_inline
@@ -94,6 +97,10 @@ struct VecArray[T: Movable & Copyable, DT: StaticString, maxSize: Int](
     @always_inline
     fn full(self) -> Bool:
         return self.m_size == maxSize
+
+    @always_inline
+    fn __len__(self) -> Int:
+        return self.m_size
 
     @always_inline
     @staticmethod
