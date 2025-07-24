@@ -49,9 +49,11 @@ struct ScalarSoA[T: DType, S: Int](Copyable, Defaultable, Movable, Typeable):
     fn data(ref self) -> UnsafePointer[Self.Scalar, mut=False]:
         return self._data.unsafe_ptr()
 
+    @always_inline
     fn __getitem__(ref self, i: Int) -> ref [self._data] Self.Scalar:
         return self._data[i]
 
+    @always_inline
     fn __setitem__(mut self, i: Int, v: Self.Scalar):
         self._data[i] = v
 

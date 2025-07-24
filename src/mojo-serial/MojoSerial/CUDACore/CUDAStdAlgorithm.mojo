@@ -1,5 +1,5 @@
 from memory import UnsafePointer
-from sys.info import sizeof
+from sys import sizeof
 
 
 fn lower_bound[
