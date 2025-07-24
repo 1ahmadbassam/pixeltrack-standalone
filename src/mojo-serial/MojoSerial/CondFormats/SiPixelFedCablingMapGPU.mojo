@@ -11,6 +11,7 @@ from MojoSerial.CondFormats.PixelCPEforGPU import (
 from MojoSerial.MojoBridge.DTypes import UChar, Typeable
 
 
+@nonmaterializable(NoneType)
 struct PixelGPUDetails:
     # Maximum fed for phase1 is 150 but not all of them are filled
     # Update the number FED based on maximum fed found in the cabling map
@@ -22,7 +23,7 @@ struct PixelGPUDetails:
 
 
 @fieldwise_init
-struct SiPixelFedCablingMapGPU(Defaultable, Copyable, Movable, Typeable):
+struct SiPixelFedCablingMapGPU(Copyable, Defaultable, Movable, Typeable):
     alias _U = InlineArray[UInt, PixelGPUDetails.MAX_SIZE]
     alias _C = InlineArray[UChar, PixelGPUDetails.MAX_SIZE]
     var fed: Self._U
@@ -46,24 +47,33 @@ struct SiPixelFedCablingMapGPU(Defaultable, Copyable, Movable, Typeable):
         self.size = 0
 
     @always_inline
-    fn __init__(out self, owned fed: Self._U, owned link: Self._U, owned roc: Self._U, owned RawId: Self._U, owned rocInDet: Self._U, owned moduleId: Self._U, owned badRocs: Self._C):
-        self.fed = fed^ 
-        self.link = link^ 
-        self.roc = roc^ 
-        self.RawId = RawId^ 
-        self.rocInDet = rocInDet^ 
-        self.moduleId = moduleId^ 
+    fn __init__(
+        out self,
+        owned fed: Self._U,
+        owned link: Self._U,
+        owned roc: Self._U,
+        owned RawId: Self._U,
+        owned rocInDet: Self._U,
+        owned moduleId: Self._U,
+        owned badRocs: Self._C,
+    ):
+        self.fed = fed^
+        self.link = link^
+        self.roc = roc^
+        self.RawId = RawId^
+        self.rocInDet = rocInDet^
+        self.moduleId = moduleId^
         self.badRocs = badRocs^
         self.size = 0
-    
+
     @always_inline
     fn __moveinit__(out self, owned other: Self):
-        self.fed = other.fed^ 
-        self.link = other.link^ 
-        self.roc = other.roc^ 
-        self.RawId = other.RawId^ 
-        self.rocInDet = other.rocInDet^ 
-        self.moduleId = other.moduleId^ 
+        self.fed = other.fed^
+        self.link = other.link^
+        self.roc = other.roc^
+        self.RawId = other.RawId^
+        self.rocInDet = other.rocInDet^
+        self.moduleId = other.moduleId^
         self.badRocs = other.badRocs^
         self.size = other.size
 

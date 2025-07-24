@@ -1,3 +1,4 @@
+@nonmaterializable(NoneType)
 struct PixelGPUConstants:
     alias maxNumberOfHits: UInt32 = 48 * 1024
 

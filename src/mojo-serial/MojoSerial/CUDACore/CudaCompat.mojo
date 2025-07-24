@@ -7,6 +7,7 @@ alias CudaStreamType = OpaquePointer
 alias cudaStreamDefault: OpaquePointer = NonePointer
 
 
+@nonmaterializable(NoneType)
 struct CudaCompat:
     @staticmethod
     fn atomicCAS[

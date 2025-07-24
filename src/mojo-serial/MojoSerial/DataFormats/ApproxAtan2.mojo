@@ -3,6 +3,7 @@ from math import pi
 
 from MojoSerial.MojoBridge.DTypes import Short, Float, Double, hex_to_float
 
+@nonmaterializable(NoneType)
 struct ApproxAtan2:
     """
         Approximate atan2 evaluations. Polynomials were obtained using Sollya scripts.

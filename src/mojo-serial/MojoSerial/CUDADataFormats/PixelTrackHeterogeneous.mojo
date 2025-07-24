@@ -7,6 +7,7 @@ from MojoSerial.MojoBridge.Matrix import Vector, Matrix
 from MojoSerial.MojoBridge.DTypes import Float, Typeable
 
 
+@nonmaterializable(NoneType)
 struct TrackQuality:
     alias bad: UInt8 = 0
     alias dup: UInt8 = 1
