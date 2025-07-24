@@ -1,7 +1,7 @@
 from memory import bitcast
 from math import pi
 
-from MojoSerial.MojoBridge.DTypes import Short, Float, Double, HexToFloat
+from MojoSerial.MojoBridge.DTypes import Short, Float, Double, hex_to_float
 
 struct ApproxAtan2:
     """
@@ -23,39 +23,39 @@ struct ApproxAtan2:
         @parameter
         if DEGREE == 3:
             # degree =  3   => absolute accuracy is  7 bits
-            return x * (HexToFloat[0xbf78eed2]() + z * HexToFloat[0x3e448e00]())
+            return x * (hex_to_float[0xbf78eed2]() + z * hex_to_float[0x3e448e00]())
         elif DEGREE == 5:
             # degree =  5   => absolute accuracy is  10 bits
-            return x * (HexToFloat[0xbf7ecfc8]() + z * (HexToFloat[0x3e93cf3a]() + z * HexToFloat[0xbda27c92]()))
+            return x * (hex_to_float[0xbf7ecfc8]() + z * (hex_to_float[0x3e93cf3a]() + z * hex_to_float[0xbda27c92]()))
         elif DEGREE == 7:
             # degree =  7   => absolute accuracy is  13 bits
-            return x * (HexToFloat[0xbf7fcc7a]() + z * (HexToFloat[0x3ea4710c]() + z * (HexToFloat[0xbe15c65a]() + z * HexToFloat[0x3d1fb050]())))
+            return x * (hex_to_float[0xbf7fcc7a]() + z * (hex_to_float[0x3ea4710c]() + z * (hex_to_float[0xbe15c65a]() + z * hex_to_float[0x3d1fb050]())))
         elif DEGREE == 9:
             # degree =  9   => absolute accuracy is  16 bits
-            return x * (HexToFloat[0xbf7ff73e]() +
-                        z * (HexToFloat[0x3ea91dc2]() +
-                            z * (HexToFloat[0xbe387bfa]() + z * (HexToFloat[0x3dae672a]() + z * HexToFloat[0xbcaac48a]()))))
+            return x * (hex_to_float[0xbf7ff73e]() +
+                        z * (hex_to_float[0x3ea91dc2]() +
+                            z * (hex_to_float[0xbe387bfa]() + z * (hex_to_float[0x3dae672a]() + z * hex_to_float[0xbcaac48a]()))))
         elif DEGREE == 11:
             # degree =  11   => absolute accuracy is  19 bits
-            return x * (HexToFloat[0xbf7ffe82]() +
-                        z * (HexToFloat[0x3eaa4d90]() +
-                            z * (HexToFloat[0xbe462faa]() +
-                                    z * (HexToFloat[0x3dee71de]() + z * (HexToFloat[0xbd57a64a]() + z * HexToFloat[0x3c4003a8]())))))
+            return x * (hex_to_float[0xbf7ffe82]() +
+                        z * (hex_to_float[0x3eaa4d90]() +
+                            z * (hex_to_float[0xbe462faa]() +
+                                    z * (hex_to_float[0x3dee71de]() + z * (hex_to_float[0xbd57a64a]() + z * hex_to_float[0x3c4003a8]())))))
         elif DEGREE == 13:
             # degree =  13   => absolute accuracy is  21 bits
-            return x * (HexToFloat[0xbf7fffbe]() +
-                        z * (HexToFloat[0x3eaa95a0]() +
-                            z * (HexToFloat[0xbe4ad37e]() +
-                                    z * (HexToFloat[0x3e077de4]() +
-                                        z * (HexToFloat[0xbda30408]() + z * (HexToFloat[0x3d099028]() + z * HexToFloat[0xbbdf05e2]()))))))
+            return x * (hex_to_float[0xbf7fffbe]() +
+                        z * (hex_to_float[0x3eaa95a0]() +
+                            z * (hex_to_float[0xbe4ad37e]() +
+                                    z * (hex_to_float[0x3e077de4]() +
+                                        z * (hex_to_float[0xbda30408]() + z * (hex_to_float[0x3d099028]() + z * hex_to_float[0xbbdf05e2]()))))))
         elif DEGREE == 15:
             # degree =  15   => absolute accuracy is  24 bits
-            return x * (HexToFloat[0xbf7ffff4]() +
-                        z * (HexToFloat[0x3eaaa5f2]() + 
-                            z * (HexToFloat[0xbe4c3dca]() +
-                                    z * (HexToFloat[0x3e0e6098]() +
-                                        z * (HexToFloat[0xbdc54406]() +
-                                            z * (HexToFloat[0x3d6484d6]() + z * (HexToFloat[0xbcb27aa0]() + z * HexToFloat[0x3b843aee]())))))))
+            return x * (hex_to_float[0xbf7ffff4]() +
+                        z * (hex_to_float[0x3eaaa5f2]() + 
+                            z * (hex_to_float[0xbe4c3dca]() +
+                                    z * (hex_to_float[0x3e0e6098]() +
+                                        z * (hex_to_float[0xbdc54406]() +
+                                            z * (hex_to_float[0x3d6484d6]() + z * (hex_to_float[0xbcb27aa0]() + z * hex_to_float[0x3b843aee]())))))))
         else:
             # will never happen
             return 0
