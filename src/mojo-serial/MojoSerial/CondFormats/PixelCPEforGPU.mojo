@@ -35,7 +35,6 @@ struct CommonParams(Copyable, Defaultable, Movable, Typeable):
 
 
 @fieldwise_init
-@register_passable("trivial")
 struct DetParams(Copyable, Defaultable, Movable, Typeable):
     var isBarrel: Bool
     var isPosZ: Bool
@@ -52,8 +51,8 @@ struct DetParams(Copyable, Defaultable, Movable, Typeable):
     var y0: Float
     var z0: Float
 
-    var sx: Vector[DType.float32, 3]  # errors
-    var sy: Vector[DType.float32, 3]  # errors
+    var sx: InlineArray[Float, 3]  # errors
+    var sy: InlineArray[Float, 3]  # errors
 
     var frame: Frame
 
@@ -74,8 +73,8 @@ struct DetParams(Copyable, Defaultable, Movable, Typeable):
         self.y0 = 0.0
         self.z0 = 0.0
 
-        self.sx = Vector[DType.float32, 3]()
-        self.sy = Vector[DType.float32, 3]()
+        self.sx = InlineArray[Float, 3](0)
+        self.sy = InlineArray[Float, 3](0)
 
         self.frame = Frame()
 
