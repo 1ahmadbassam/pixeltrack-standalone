@@ -55,13 +55,19 @@ struct Wrapper[T: Typeable & Movable](Movable, Typeable):
     @staticmethod
     @always_inline
     fn dtype() -> String:
-        return "Wrapper[" + T.dtype() + ']'
+        return "Wrapper[" + T.dtype() + "]"
 
 
-struct Event:
+struct Event(Defaultable, Movable, Typeable):
     var _streamId: StreamID
     var _eventId: Int
     var _products: List[WrapperBase]
+
+    @always_inline
+    fn __init__(out self):
+        self._streamId = 0
+        self._eventId = 0
+        self._products = []
 
     @always_inline
     fn __init__(
@@ -93,3 +99,8 @@ struct Event:
         T: Typeable & Movable
     ](mut self, ref token: EDPutTokenT[T], owned prod: T):
         self._products[token.index()] = rebind[WrapperBase](Wrapper[T](prod^))
+
+    @staticmethod
+    @always_inline
+    fn dtype() -> String:
+        return "Event"
