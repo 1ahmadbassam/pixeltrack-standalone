@@ -8,8 +8,10 @@ alias cudaStreamDefault: OpaquePointer = NonePointer
 
 
 @nonmaterializable(NoneType)
-struct CudaCompat:
+@deprecated("Any methods using CUDACompat should be redirected to perform the regular operations since we are not in a CUDA environment.")
+struct CUDACompat:
     @staticmethod
+    @deprecated("Any methods using CUDACompat should be redirected to perform the regular operations since we are not in a CUDA environment.")
     fn atomicCAS[
         T1: Copyable & EqualityComparable, //
     ](address: UnsafePointer[T1], compare: T1, val: T1) -> T1:
@@ -18,6 +20,7 @@ struct CudaCompat:
         return old
 
     @staticmethod
+    @deprecated("Any methods using CUDACompat should be redirected to perform the regular operations since we are not in a CUDA environment.")
     fn atomicInc[
         T1: DType, //
     ](a: UnsafePointer[Scalar[T1]], b: Scalar[T1]) -> Scalar[T1]:
@@ -27,6 +30,7 @@ struct CudaCompat:
         return ret
 
     @staticmethod
+    @deprecated("Any methods using CUDACompat should be redirected to perform the regular operations since we are not in a CUDA environment.")
     fn atomicAdd[
         T1: DType, //
     ](a: UnsafePointer[Scalar[T1]], b: Scalar[T1]) -> Scalar[T1]:
@@ -35,6 +39,7 @@ struct CudaCompat:
         return ret
 
     @staticmethod
+    @deprecated("Any methods using CUDACompat should be redirected to perform the regular operations since we are not in a CUDA environment.")
     fn atomicSub[
         T1: DType, //
     ](a: UnsafePointer[Scalar[T1]], b: Scalar[T1]) -> Scalar[T1]:
@@ -43,6 +48,7 @@ struct CudaCompat:
         return ret
 
     @staticmethod
+    @deprecated("Any methods using CUDACompat should be redirected to perform the regular operations since we are not in a CUDA environment.")
     fn atomicMin[
         T1: Copyable & Comparable, //
     ](a: UnsafePointer[T1], b: T1) -> T1:
@@ -51,6 +57,7 @@ struct CudaCompat:
         return ret
 
     @staticmethod
+    @deprecated("Any methods using CUDACompat should be redirected to perform the regular operations since we are not in a CUDA environment.")
     fn atomicMax[
         T1: Copyable & Comparable, //
     ](a: UnsafePointer[T1], b: T1) -> T1:
