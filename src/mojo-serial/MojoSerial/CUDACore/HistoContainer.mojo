@@ -1,5 +1,5 @@
 from sys import sizeof
-from memory import UnsafePointer
+from memory import UnsafePointer, memset
 
 from MojoSerial.CUDACore.AtomicPairCounter import AtomicPairCounter
 import MojoSerial.CUDACore.CUDAStdAlgorithm as CUDAStdAlgorithm
@@ -47,11 +47,9 @@ fn fillFromVector[
 
 @always_inline
 fn launchZero(mut h: HistoContainer):
-    var poff = UnsafePointer[mut=True](to=h.off)
-
-    for i in range(len(h.off)):
-        poff[][i] = 0
-    h.psws = 0
+    var poff = h.off.unsafe_ptr()
+    var size = Int(h.totbins())
+    memset(poff, 0, size)  # memset sets by bytes in C++, but by elements here
 
 
 @always_inline
@@ -89,12 +87,13 @@ fn forEachInBins[
     n: Int,
     func: fn (Scalar[hist.IndexType]),
 ):
-    var bs: Int = Int(hist.bin(value))
-    var be: Int = min(Int(hist.nbins()) - 1, bs + n)
+    """Iterate over N bins left and right of the one containing "v"."""
+    var bs = Int(hist.bin(value))
+    var be = min(Int(hist.nbins()) - 1, bs + n)
     bs = max(0, bs - n)
     debug_assert(be >= bs)
 
-    pj = hist.begin(bs)
+    var pj = hist.begin(bs)
     while pj < hist.end(be):
         func(pj[])
         pj += 1
@@ -108,11 +107,12 @@ fn forEachInWindow[
     wmax: Scalar[V],
     func: fn (Scalar[hist.IndexType]),
 ):
-    bs: Int = Int(hist.bin(wmin))
-    be: Int = Int(hist.bin(wmax))
+    """Iterate over bins containing all values in window wmin, wmax."""
+    var bs = Int(hist.bin(wmin))
+    var be = Int(hist.bin(wmax))
     debug_assert(be >= bs)
 
-    pj = hist.begin(bs)
+    var pj = hist.begin(bs)
     while pj < hist.end(be):
         func(pj[])
         pj += 1
