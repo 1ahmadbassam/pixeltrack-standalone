@@ -9,23 +9,13 @@ from MojoSerial.CondFormats.PixelCPEforGPU import (
     ParamsOnGPU,
 )
 from MojoSerial.MojoBridge.DTypes import UChar, Typeable
-
-
-@nonmaterializable(NoneType)
-struct PixelGPUDetails:
-    # Maximum fed for phase1 is 150 but not all of them are filled
-    # Update the number FED based on maximum fed found in the cabling map
-    alias MAX_FED: UInt = 150
-    alias MAX_LINK: UInt = 48  # maximum links/channels for Phase 1
-    alias MAX_ROC: UInt = 8
-    alias MAX_SIZE = Self.MAX_FED * Self.MAX_LINK * Self.MAX_ROC
-    alias MAX_SIZE_BYTE_BOOL = Self.MAX_SIZE * sizeof[UChar]()
+from MojoSerial.PluginSiPixelClusterizer.PixelGPUDetails import PixelGPUDetails
 
 
 @fieldwise_init
 struct SiPixelFedCablingMapGPU(Copyable, Defaultable, Movable, Typeable):
-    alias _U = InlineArray[UInt32, PixelGPUDetails.MAX_SIZE]
-    alias _C = InlineArray[UChar, PixelGPUDetails.MAX_SIZE]
+    alias _U = InlineArray[UInt32, Int(PixelGPUDetails.MAX_SIZE)]
+    alias _C = InlineArray[UChar, Int(PixelGPUDetails.MAX_SIZE)]
     var fed: Self._U
     var link: Self._U
     var roc: Self._U
