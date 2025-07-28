@@ -14,9 +14,9 @@ struct SiPixelRawDataError(
     # the 64-bit word that contains the error information
     var _errorWord64: UInt64
     # the number associated with the error type (26-31 for ROC number errors, 32-33 for calibration errors)
-    var _errorType: Int
+    var _errorType: Int32
     # the fedId where the error occurred
-    var _fedId: Int
+    var _fedId: Int32
     # the error message to be displayed with the error
     var _errorMessage: String
 
@@ -32,8 +32,8 @@ struct SiPixelRawDataError(
     fn __init__(
         out self,
         owned errorWord32: UInt32,
-        owned errorType: Int,
-        owned fedId: Int,
+        owned errorType: Int32,
+        owned fedId: Int32,
     ):
         self._errorWord64 = 0
         # Mojo currently does not infer setting constructor fields outside of the constructor
@@ -49,8 +49,8 @@ struct SiPixelRawDataError(
     fn __init__(
         out self,
         owned errorWord64: UInt64,
-        owned errorType: Int,
-        owned fedId: Int,
+        owned errorType: Int32,
+        owned fedId: Int32,
     ):
         self._errorWord32 = 0
         # Mojo currently does not infer setting constructor fields outside of the constructor
@@ -82,11 +82,11 @@ struct SiPixelRawDataError(
     fn setWord64(mut self, errorWord64: UInt64):
         self._errorWord64 = errorWord64
 
-    fn setType(mut self, errorType: Int):
+    fn setType(mut self, errorType: Int32):
         self._errorType = errorType
         self.setMessage()
 
-    fn setFedId(mut self, fedId: Int):
+    fn setFedId(mut self, fedId: Int32):
         self._fedId = fedId
 
     @always_inline
@@ -98,11 +98,11 @@ struct SiPixelRawDataError(
         return self._errorWord64
 
     @always_inline
-    fn getType(self) -> Int:
+    fn getType(self) -> Int32:
         return self._errorType
 
     @always_inline
-    fn getFedId(self) -> Int:
+    fn getFedId(self) -> Int32:
         return self._fedId
 
     fn setMessage(mut self):

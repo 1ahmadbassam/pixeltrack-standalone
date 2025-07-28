@@ -23,7 +23,7 @@ struct SiPixelFedCablingMapGPU(Copyable, Defaultable, Movable, Typeable):
     var rocInDet: Self._U
     var moduleId: Self._U
     var badRocs: Self._C
-    var size: UInt
+    var size: UInt32
 
     @always_inline
     fn __init__(out self):
