@@ -53,4 +53,4 @@ struct SiPixelGainCalibrationForHLTGPUESProducer(
         return "SiPixelGainCalibrationForHLTGPUESProducer"
 
 
-# TODO: DEFINE_FWK_EVENTSETUP_MODULE for this file once we find a way around the plugin factory
+# TODO-PLG: DEFINE_FWK_EVENTSETUP_MODULE for this file once we find a way around the plugin factory
