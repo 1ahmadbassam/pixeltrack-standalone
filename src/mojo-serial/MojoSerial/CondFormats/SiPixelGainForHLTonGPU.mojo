@@ -37,10 +37,10 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
     var pedPrecision: Float
     var gainPrecision: Float
 
-    var _numberOfRowsAveragedOver: UInt  # this is 80!!!!
-    var _nBinsToUseForEncoding: UInt
-    var _deadFlag: UInt
-    var _noisyFlag: UInt
+    var _numberOfRowsAveragedOver: UInt32  # this is 80!!!!
+    var _nBinsToUseForEncoding: UInt32
+    var _deadFlag: UInt32
+    var _noisyFlag: UInt32
 
     @always_inline
     fn __init__(out self):
@@ -90,19 +90,19 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
         var lp = self.v_pedestals
         var s = lp[offset // 2]
 
-        isDeadColumn = UInt(s.ped & 0xFF) == (self._deadFlag)
-        isNoisyColumn = UInt(s.ped & 0xFF) == (self._noisyFlag)
+        isDeadColumn = (s.ped.cast[DType.uint32]() & 0xFF) == (self._deadFlag)
+        isNoisyColumn = (s.ped.cast[DType.uint32]() & 0xFF) == (self._noisyFlag)
         return (
-            self.decodePed(UInt(s.ped & 0xFF)),
-            self.decodeGain(UInt(s.gain & 0xFF)),
+            self.decodePed(s.ped.cast[DType.uint32]() & 0xFF),
+            self.decodeGain(s.gain.cast[DType.uint32]() & 0xFF),
         )
 
     @always_inline
-    fn decodeGain(self, gain: UInt) -> Float:
+    fn decodeGain(self, gain: UInt32) -> Float:
         return Float(gain) * self.gainPrecision + self._minGain
 
     @always_inline
-    fn decodePed(self, ped: UInt) -> Float:
+    fn decodePed(self, ped: UInt32) -> Float:
         return Float(ped) * self.pedPrecision + self._minPed
 
     @always_inline
