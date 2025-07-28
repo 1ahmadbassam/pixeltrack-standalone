@@ -16,6 +16,14 @@ struct WrapperBase(Copyable, Defaultable, Movable, Typeable):
         self._ptr = UnsafePointer[NoneType]()
 
     @always_inline
+    fn __copyinit__(out self, other: Self):
+        self._ptr = other._ptr
+
+    @always_inline
+    fn __moveinit__(out self, owned other: Self):
+        self._ptr = other._ptr
+
+    @always_inline
     fn __del__(owned self):
         if self._ptr != UnsafePointer[NoneType]():
             self._ptr.destroy_pointee()
@@ -79,6 +87,12 @@ struct Event(Defaultable, Movable, Typeable):
         self._streamId = streamId
         self._eventId = eventId
         self._products = List[WrapperBase](capacity=reg.__len__())
+
+    @always_inline
+    fn __moveinit__(out self, owned other: Self):
+        self._streamId = other._streamId
+        self._eventId = other._eventId
+        self._products = other._products
 
     @always_inline
     fn streamID(self) -> StreamID:
