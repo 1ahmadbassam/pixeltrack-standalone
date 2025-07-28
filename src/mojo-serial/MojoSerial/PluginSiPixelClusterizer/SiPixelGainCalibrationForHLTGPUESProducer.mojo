@@ -1,6 +1,5 @@
 from memory import UnsafePointer
 from pathlib import Path
-from sys import sizeof
 
 from MojoSerial.CondFormats.SiPixelGainForHLTonGPU import SiPixelGainForHLTonGPU
 from MojoSerial.CondFormats.SiPixelGainCalibrationForHLTGPU import (
@@ -9,6 +8,7 @@ from MojoSerial.CondFormats.SiPixelGainCalibrationForHLTGPU import (
 from MojoSerial.Framework.ESProducer import ESProducer
 from MojoSerial.Framework.EventSetup import EventSetup
 from MojoSerial.MojoBridge.DTypes import Char, Typeable
+from MojoSerial.MojoBridge.File import read_simd, read_obj
 
 
 @fieldwise_init
@@ -24,19 +24,13 @@ struct SiPixelGainCalibrationForHLTGPUESProducer(
     fn produce(mut self, mut eventSetup: EventSetup):
         try:
             with open(self._data / "gain.bin", "r") as file:
-                var gain = rebind[UnsafePointer[SiPixelGainForHLTonGPU]](
-                    file.read_bytes(
-                        sizeof[SiPixelGainForHLTonGPU]()
-                    ).unsafe_ptr()
-                ).take_pointee()
-                var nbytes = rebind[UnsafePointer[UInt32]](
-                    file.read_bytes(DType.uint32.sizeof()).unsafe_ptr()
-                ).take_pointee()
-                var gainData = rebind[UnsafePointer[List[Char]]](
-                    file.read_bytes(Int(nbytes)).unsafe_ptr()
-                ).take_pointee()
+                var gain = read_obj[SiPixelGainForHLTonGPU](file)
+                var nbytes = read_simd[DType.uint32](file)
+                var gainData = file.read_bytes(Int(nbytes))
                 eventSetup.put[SiPixelGainCalibrationForHLTGPU](
-                    SiPixelGainCalibrationForHLTGPU(gain^, gainData^)
+                    SiPixelGainCalibrationForHLTGPU(
+                        gain^, rebind[List[Char]](gainData^)
+                    )
                 )
         except e:
             print(
@@ -53,4 +47,4 @@ struct SiPixelGainCalibrationForHLTGPUESProducer(
         return "SiPixelGainCalibrationForHLTGPUESProducer"
 
 
-# TODO-PLG: DEFINE_FWK_EVENTSETUP_MODULE for this file once we find a way around the plugin factory
+# TODO-PLG: DEFINE_FWK_EVENTSETUP_MODULE
