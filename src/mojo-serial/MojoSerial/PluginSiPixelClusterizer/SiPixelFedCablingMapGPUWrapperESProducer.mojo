@@ -15,7 +15,9 @@ from MojoSerial.MojoBridge.File import read_simd, read_obj
 
 
 @fieldwise_init
-struct SiPixelFedCablingMapGPUWrapperESProducer(ESProducer, Typeable):
+struct SiPixelFedCablingMapGPUWrapperESProducer(
+    Defaultable, ESProducer, Movable, Typeable
+):
     var _data: Path
 
     @always_inline
