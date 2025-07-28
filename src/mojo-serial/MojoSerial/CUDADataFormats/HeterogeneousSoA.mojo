@@ -1,5 +1,5 @@
 from memory import OwnedPointer, UnsafePointer
-from MojoSerial.CUDACore.CudaCompat import CudaStreamType
+from MojoSerial.CUDACore.CUDACompat import CUDAStreamType
 from MojoSerial.MojoBridge.DTypes import SizeType, Typeable
 
 # in principle, a heterogenous SoA implementation regardless of device it runs on should use UnsafePointers based on Mojo's intrinsics
@@ -22,23 +22,23 @@ struct CPUTraits[T: AnyType](Traits):
     alias UniquePointer = UnsafePointer[T]
 
     @staticmethod
-    fn make_unique(x: CudaStreamType) -> Self.UniquePointer:
+    fn make_unique(x: CUDAStreamType) -> Self.UniquePointer:
         return Self.UniquePointer.alloc(1)
 
     @staticmethod
-    fn make_unique(size: SizeType, x: CudaStreamType) -> Self.UniquePointer:
+    fn make_unique(size: SizeType, x: CUDAStreamType) -> Self.UniquePointer:
         return Self.UniquePointer.alloc(size)
 
     @staticmethod
-    fn make_host_unique(x: CudaStreamType) -> Self.UniquePointer:
+    fn make_host_unique(x: CUDAStreamType) -> Self.UniquePointer:
         return Self.UniquePointer.alloc(1)
 
     @staticmethod
-    fn make_device_unique(x: CudaStreamType) -> Self.UniquePointer:
+    fn make_device_unique(x: CUDAStreamType) -> Self.UniquePointer:
         return Self.UniquePointer.alloc(1)
 
     @staticmethod
     fn make_device_unique(
-        size: SizeType, x: CudaStreamType
+        size: SizeType, x: CUDAStreamType
     ) -> Self.UniquePointer:
         return Self.UniquePointer.alloc(size)

@@ -24,7 +24,7 @@ struct PixelGPUDetails:
 
 @fieldwise_init
 struct SiPixelFedCablingMapGPU(Copyable, Defaultable, Movable, Typeable):
-    alias _U = InlineArray[UInt, PixelGPUDetails.MAX_SIZE]
+    alias _U = InlineArray[UInt32, PixelGPUDetails.MAX_SIZE]
     alias _C = InlineArray[UChar, PixelGPUDetails.MAX_SIZE]
     var fed: Self._U
     var link: Self._U

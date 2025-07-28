@@ -3,7 +3,7 @@ from sys.ffi import OpaquePointer
 
 from MojoSerial.MojoBridge.Stable import NonePointer
 
-alias CudaStreamType = OpaquePointer
+alias CUDAStreamType = OpaquePointer
 alias cudaStreamDefault: OpaquePointer = NonePointer
 
 

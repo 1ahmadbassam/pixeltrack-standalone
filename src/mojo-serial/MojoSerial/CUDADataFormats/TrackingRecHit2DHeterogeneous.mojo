@@ -2,7 +2,7 @@ from sys import sizeof
 from memory import UnsafePointer
 
 from MojoSerial.CondFormats.PixelCPEforGPU import ParamsOnGPU
-from MojoSerial.CUDACore.CudaCompat import CudaStreamType, cudaStreamDefault
+from MojoSerial.CUDACore.CUDACompat import CUDAStreamType, cudaStreamDefault
 from MojoSerial.CUDADataFormats.HeterogeneousSoA import Traits, CPUTraits
 from MojoSerial.CUDADataFormats.TrackingRecHit2DSOAView import (
     Hist,
@@ -58,7 +58,7 @@ struct TrackingRecHit2DHeterogeneous(Defaultable, Movable, Typeable):
         nHits: UInt32,
         cpeParams: ParamsOnGPU,
         hitsModuleStart: UnsafePointer[UInt32],
-        stream: CudaStreamType = cudaStreamDefault,
+        stream: CUDAStreamType = cudaStreamDefault,
     ):
         self.m_store16 = []
         self.m_store32 = []
