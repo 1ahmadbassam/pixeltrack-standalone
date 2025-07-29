@@ -14,7 +14,7 @@ struct EDGetTokenT[T: Typeable](Copyable, Defaultable, Movable, Typeable):
         self.m_value = iOther.m_value
 
     @always_inline
-    fn __init__[O: Typeable, //](out self, iValue: UInt):
+    fn __init__[O: Typeable](out self, iValue: UInt):
         constrained[
             O.dtype() == "ProductRegistry",
             "Only the product registry can hand tokens",
@@ -49,7 +49,7 @@ struct EDGetToken(Copyable, Defaultable, Movable, Typeable):
         self.m_value = iOther.m_value
 
     @always_inline
-    fn __init__[O: Typeable, //](out self, iValue: UInt):
+    fn __init__[O: Typeable](out self, iValue: UInt):
         constrained[
             O.dtype() == "ProductRegistry",
             "Only the product registry can hand tokens",
