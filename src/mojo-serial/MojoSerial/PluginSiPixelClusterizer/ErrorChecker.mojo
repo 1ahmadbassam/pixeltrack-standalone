@@ -1,6 +1,7 @@
 from memory import UnsafePointer
 
 from MojoSerial.DataFormats.SiPixelRawDataError import SiPixelRawDataError
+from MojoSerial.DataFormats.PixelErrors import PixelFormatterErrors
 from MojoSerial.DataFormats.FEDHeader import FEDHeader
 from MojoSerial.DataFormats.FEDTrailer import FEDTrailer
 from MojoSerial.MojoBridge.DTypes import UChar, Typeable
@@ -10,8 +11,8 @@ from MojoSerial.MojoBridge.DTypes import UChar, Typeable
 struct ErrorChecker(Copyable, Defaultable, Movable, Typeable):
     alias Word32 = UInt32
     alias Word64 = UInt64
-    alias DetErrors = List[SiPixelRawDataError]
-    alias Errors = Dict[UInt, Self.DetErrors]
+    alias DetErrors = PixelFormatterErrors.V
+    alias Errors = PixelFormatterErrors
 
     alias CRC_bits = 1
     alias LINK_bits = 6

@@ -23,4 +23,4 @@ struct PixelErrorCompact(Copyable, Defaultable, Movable, Typeable):
         return "PixelErrorCompact"
 
 
-alias PixelFormatterErrors = Dict[Int, List[SiPixelRawDataError]]
+alias PixelFormatterErrors = Dict[UInt, List[SiPixelRawDataError]]
