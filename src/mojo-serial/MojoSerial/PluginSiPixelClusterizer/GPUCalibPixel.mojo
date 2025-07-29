@@ -1,5 +1,5 @@
 from MojoSerial.CondFormats.SiPixelGainForHLTonGPU import *
-from MojoSerial.CUDADataFormats.GPUClusteringConstants import GPUClustering
+from MojoSerial.CUDADataFormats.GPUClusteringConstants import GPUClusteringConstants
 
 
 struct GPUCalibPixel:
@@ -26,6 +26,6 @@ struct GPUCalibPixel:
         if first == 0:
             clusModuleStart[0] = 0
             moduleStart[0] = 0
-        for i in range(first, GPUClustering.MaxNumModules):
+        for i in range(first, GPUClusteringConstants.MaxNumModules):
             nClustersInModule[i] = 0
         # for i in range(first,  ) to be continued...

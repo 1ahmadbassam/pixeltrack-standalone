@@ -1,5 +1,5 @@
 @nonmaterializable(NoneType)
-struct GPUClustering:
+struct GPUClusteringConstants:
     alias maxNumberOfHits: UInt32 = 48 * 1024
 
     @staticmethod

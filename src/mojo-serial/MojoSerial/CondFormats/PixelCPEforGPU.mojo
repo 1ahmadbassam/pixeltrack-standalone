@@ -1,6 +1,6 @@
 from memory import UnsafePointer
 
-from MojoSerial.CUDADataFormats.GPUClusteringConstants import GPUClustering
+from MojoSerial.CUDADataFormats.GPUClusteringConstants import GPUClusteringConstants
 from MojoSerial.DataFormats.SOARotation import SOARotation, SOAFrame
 from MojoSerial.Geometry.Phase1PixelTopology import (
     Phase1PixelTopology,
@@ -201,7 +201,7 @@ struct ClusParamsT[N: UInt32](Copyable, Defaultable, Movable, Typeable):
         return "ClusParamsT[" + String(N) + "]"
 
 
-alias MaxHitsInIter: UInt32 = GPUClustering.maxHitsInIter()
+alias MaxHitsInIter: UInt32 = GPUClusteringConstants.maxHitsInIter()
 alias ClusParams = ClusParamsT[MaxHitsInIter]
 
 
