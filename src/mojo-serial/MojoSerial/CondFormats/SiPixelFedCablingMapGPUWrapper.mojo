@@ -33,6 +33,9 @@ struct SiPixelFedCablingMapGPUWrapper(Copyable, Defaultable, Movable, Typeable):
     fn getCPUProduct(self) -> UnsafePointer[SiPixelFedCablingMapGPU, mut=False]:
         return UnsafePointer(to=self.cablingMapHost)
 
+    fn getModToUnpAll(self) -> UnsafePointer[UChar, mut=False]:
+        return self.modToUnpDefault.unsafe_ptr()
+
     @always_inline
     @staticmethod
     fn dtype() -> String:
