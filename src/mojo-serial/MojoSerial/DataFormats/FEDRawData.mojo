@@ -57,7 +57,7 @@ struct FEDRawData(Copyable, Defaultable, Movable, Typeable):
         if self.size() == newsize:
             return
 
-        self._data.resize(newsize, 0)
+        self._data.resize(UInt(newsize), 0)
 
     @always_inline
     @staticmethod

@@ -56,10 +56,10 @@ struct SiPixelClustersSoA(Defaultable, Movable, Typeable):
         self.nClusters_h = 0
 
     fn __init__(out self, maxClusters: SizeType):
-        self.moduleStart_d = List[UInt32](capacity=maxClusters + 1)
-        self.clusInModule_d = List[UInt32](capacity=maxClusters)
-        self.moduleId_d = List[UInt32](capacity=maxClusters)
-        self.clusModuleStart_d = List[UInt32](capacity=maxClusters + 1)
+        self.moduleStart_d = List[UInt32](capacity=UInt(maxClusters) + 1)
+        self.clusInModule_d = List[UInt32](capacity=UInt(maxClusters))
+        self.moduleId_d = List[UInt32](capacity=UInt(maxClusters))
+        self.clusModuleStart_d = List[UInt32](capacity=UInt(maxClusters) + 1)
         self.view_d = DeviceConstView(
             self.moduleStart_d.unsafe_ptr(),
             self.clusInModule_d.unsafe_ptr(),

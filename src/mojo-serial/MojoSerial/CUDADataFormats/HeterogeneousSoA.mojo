@@ -27,7 +27,7 @@ struct CPUTraits[T: AnyType](Traits):
 
     @staticmethod
     fn make_unique(size: SizeType, x: CUDAStreamType) -> Self.UniquePointer:
-        return Self.UniquePointer.alloc(size)
+        return Self.UniquePointer.alloc(UInt(size))
 
     @staticmethod
     fn make_host_unique(x: CUDAStreamType) -> Self.UniquePointer:
@@ -41,4 +41,4 @@ struct CPUTraits[T: AnyType](Traits):
     fn make_device_unique(
         size: SizeType, x: CUDAStreamType
     ) -> Self.UniquePointer:
-        return Self.UniquePointer.alloc(size)
+        return Self.UniquePointer.alloc(UInt(size))

@@ -76,11 +76,11 @@ struct SiPixelDigisSoA(Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self, maxFedWords: SizeType):
-        self.xx_d = List[UInt16](capacity=maxFedWords)
-        self.yy_d = List[UInt16](capacity=maxFedWords)
-        self.adc_d = List[UInt16](capacity=maxFedWords)
-        self.moduleInd_d = List[UInt16](capacity=maxFedWords)
-        self.clus_d = List[Int32](capacity=maxFedWords)
+        self.xx_d = List[UInt16](capacity=UInt(maxFedWords))
+        self.yy_d = List[UInt16](capacity=UInt(maxFedWords))
+        self.adc_d = List[UInt16](capacity=UInt(maxFedWords))
+        self.moduleInd_d = List[UInt16](capacity=UInt(maxFedWords))
+        self.clus_d = List[Int32](capacity=UInt(maxFedWords))
         self.view_d = DeviceConstView(
             self.xx_d.unsafe_ptr(),
             self.yy_d.unsafe_ptr(),
@@ -89,8 +89,8 @@ struct SiPixelDigisSoA(Defaultable, Movable, Typeable):
             self.clus_d.unsafe_ptr(),
         )
 
-        self.pdigi_d = List[UInt32](capacity=maxFedWords)
-        self.rawIdArr_d = List[UInt32](capacity=maxFedWords)
+        self.pdigi_d = List[UInt32](capacity=UInt(maxFedWords))
+        self.rawIdArr_d = List[UInt32](capacity=UInt(maxFedWords))
 
         self.nModules_h = 0
         self.nDigis_h = 0

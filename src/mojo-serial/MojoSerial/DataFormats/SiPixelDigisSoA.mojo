@@ -27,16 +27,16 @@ struct SiPixelDigisSoA(Copyable, Defaultable, Movable, Sized, Typeable):
         adc: UnsafePointer[UInt16],
         clus: UnsafePointer[Int32],
     ):
-        self._pdigi = List[UInt32](capacity=nDigis)
-        self._rawIdArr = List[UInt32](capacity=nDigis)
-        self._adc = List[UInt16](capacity=nDigis)
-        self._clus = List[Int32](capacity=nDigis)
-        for i in range(nDigis):
+        self._pdigi = List[UInt32](capacity=UInt(nDigis))
+        self._rawIdArr = List[UInt32](capacity=UInt(nDigis))
+        self._adc = List[UInt16](capacity=UInt(nDigis))
+        self._clus = List[Int32](capacity=UInt(nDigis))
+        for i in range(UInt(nDigis)):
             self._pdigi[i] = pdigi[i]
             self._rawIdArr[i] = rawIdArr[i]
             self._adc[i] = adc[i]
             self._clus[i] = clus[i]
-        debug_assert(self._pdigi.__len__() == nDigis)
+        debug_assert(self._pdigi.__len__() == UInt(nDigis))
 
     @always_inline
     fn __len__(self) -> Int:

@@ -1,6 +1,6 @@
 from memory import bitcast
 
-alias SizeType = UInt  # size_t
+alias SizeType = UInt32  # size_t
 alias Short = Int16  # short
 alias Float = Float32  # float
 alias Double = Float64  # double

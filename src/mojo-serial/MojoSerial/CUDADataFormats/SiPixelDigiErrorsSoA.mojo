@@ -27,12 +27,12 @@ struct SiPixelDigiErrorsSoA(Defaultable, Movable, Typeable):
         out self, maxFedWords: SizeType, owned errors: PixelFormatterErrors
     ):
         self.formatterErrors_h = errors^
-        self.data_d = List[PixelErrorCompact](capacity=maxFedWords)
+        self.data_d = List[PixelErrorCompact](capacity=UInt(maxFedWords))
         self.error_d = make_SimpleVector[
             PixelErrorCompact, PixelErrorCompact.dtype()
-        ](maxFedWords, self.data_d.unsafe_ptr())
+        ](UInt(maxFedWords), self.data_d.unsafe_ptr())
         debug_assert(self.error_d.empty())
-        debug_assert(self.error_d.capacity() == maxFedWords)
+        debug_assert(self.error_d.capacity() == UInt(maxFedWords))
 
     @always_inline
     fn __moveinit__(out self, owned other: Self):
