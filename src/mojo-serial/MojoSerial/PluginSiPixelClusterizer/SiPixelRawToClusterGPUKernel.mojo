@@ -1,13 +1,25 @@
 from memory import UnsafePointer, memcpy, memset
 
-from MojoSerial.MojoBridge.DTypes import UChar, Double, Float, Typeable
-from MojoSerial.CUDADataFormats.SiPixelDigisSoA import SiPixelDigisSoA
-from MojoSerial.CUDADataFormats.SiPixelDigiErrorsSoA import SiPixelDigiErrorsSoA
-from MojoSerial.CUDADataFormats.SiPixelClustersSoA import SiPixelClustersSoA
 from MojoSerial.CondFormats.SiPixelFedCablingMapGPU import (
     SiPixelFedCablingMapGPU,
 )
+from MojoSerial.CondFormats.SiPixelGainForHLTonGPU import SiPixelGainForHLTonGPU
+from MojoSerial.CUDACore.SimpleVector import SimpleVector
+from MojoSerial.CUDACore.PrefixScan import blockPrefixScan
+from MojoSerial.CUDADataFormats.GPUClusteringConstants import (
+    GPUClusteringConstants,
+)
+from MojoSerial.CUDADataFormats.SiPixelDigisSoA import SiPixelDigisSoA
+from MojoSerial.CUDADataFormats.SiPixelDigiErrorsSoA import SiPixelDigiErrorsSoA
+from MojoSerial.CUDADataFormats.SiPixelClustersSoA import SiPixelClustersSoA
+from MojoSerial.DataFormats.PixelErrors import (
+    PixelErrorCompact,
+    PixelFormatterErrors,
+)
 from MojoSerial.PluginSiPixelClusterizer.PixelGPUDetails import PixelGPUDetails
+from MojoSerial.PluginSiPixelClusterizer.GPUClustering import GPUClustering
+from MojoSerial.PluginSiPixelClusterizer.GPUCalibPixel import GPUCalibPixel
+from MojoSerial.MojoBridge.DTypes import UChar, Double, Float, Typeable
 
 
 @fieldwise_init
@@ -144,14 +156,13 @@ fn pixelToChannel(row: Int, col: Int) -> UInt32:
 
 
 struct WordFedAppender(Defaultable, Movable, Typeable):
-    alias MAX_FED_WORDS: UInt32 = PixelGPUDetails.MAX_FED * PixelGPUDetails.MAX_WORD
-    var _word: InlineArray[UInt32, Int(Self.MAX_FED_WORDS)]
-    var _fedId: InlineArray[UChar, Int(Self.MAX_FED_WORDS)]
+    var _word: InlineArray[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)]
+    var _fedId: InlineArray[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)]
 
     @always_inline
     fn __init__(out self):
-        self._word = InlineArray[UInt32, Int(Self.MAX_FED_WORDS)](0)
-        self._fedId = InlineArray[UChar, Int(Self.MAX_FED_WORDS)](0)
+        self._word = InlineArray[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
+        self._fedId = InlineArray[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
 
     fn initializeWordFed(
         self,
@@ -210,7 +221,128 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
     fn getErrors(mut self) -> SiPixelDigiErrorsSoA:
         return self.digiErrors_d.take_pointee()
 
-    # void makeClusters...
+    fn makeClusters[
+        debug: Bool = False
+    ](
+        self,
+        isRun2: Bool,
+        ref cablingMap: SiPixelFedCablingMapGPU,
+        modToUnp: UnsafePointer[UChar],
+        ref gains: SiPixelGainForHLTonGPU,
+        ref wordFed: WordFedAppender,
+        owned errors: PixelFormatterErrors,
+        wordCounter: UInt32,
+        fedCounter: UInt32,
+        useQualityInfo: Bool,
+        includeErrors: Bool,
+    ):
+        @parameter
+        if debug:
+            print(
+                "decoding",
+                wordCounter,
+                "digis. Max is",
+                PixelGPUDetails.MAX_FED_WORDS,
+            )
+        self.digis_d.init_pointee_move(
+            SiPixelDigisSoA(PixelGPUDetails.MAX_FED_WORDS)
+        )
+        if includeErrors:
+            self.digiErrors_d.init_pointee_move(
+                SiPixelDigiErrorsSoA(PixelGPUDetails.MAX_FED_WORDS, errors^)
+            )
+        self.clusters_d.init_pointee_move(
+            SiPixelClustersSoA(GPUClusteringConstants.MaxNumModules)
+        )
+
+        if wordCounter:  # protect in case of empty event....
+            debug_assert(wordCounter % 2 == 0)
+            # Launch rawToDigi kernel
+            RawToDigi_kernel[debug](
+                cablingMap,
+                modToUnp,
+                wordCounter,
+                wordFed.word(),
+                wordFed.fedId(),
+                self.digis_d[].xx(),
+                self.digis_d[].yy(),
+                self.digis_d[].adc(),
+                self.digis_d[].pdigi(),
+                self.digis_d[].rawIdArr(),
+                self.digis_d[].moduleInd(),
+                self.digiErrors_d[].error(),  # returns nullptr if default-constructed
+                useQualityInfo,
+                includeErrors,
+            )
+        # End of Raw2Digi and passing data for clustering
+
+        # clusterizer
+        @parameter
+        if True:
+            GPUCalibPixel.calibDigis(
+                isRun2,
+                self.digis_d[].moduleInd(),
+                self.digis_d[].c_xx(),
+                self.digis_d[].c_yy(),
+                self.digis_d[].adc(),
+                gains,
+                Int(wordCounter),
+                self.clusters_d[].moduleStart(),
+                self.clusters_d[].clusInModule(),
+                self.clusters_d[].clusModuleStart(),
+            )
+
+            GPUClustering.countModules(
+                self.digis_d[].c_moduleInd(),
+                self.clusters_d[].moduleStart(),
+                self.digis_d[].clus(),
+                wordCounter,
+            )
+
+            # read the number of modules into a data member, used by getProduct())
+            self.digis_d[].setNModulesDigis(
+                self.clusters_d[].moduleStart()[0], wordCounter
+            )
+
+            GPUClustering.findClus(
+                self.digis_d[].c_moduleInd(),
+                self.digis_d[].c_xx(),
+                self.digis_d[].c_yy(),
+                self.clusters_d[].c_moduleStart(),
+                self.clusters_d[].clusInModule(),
+                self.clusters_d[].moduleId(),
+                self.digis_d[].clus(),
+                wordCounter,
+            )
+
+            # apply charge cut
+            GPUClustering.clusterChargeCut(
+                self.digis_d[].moduleInd(),
+                self.digis_d[].c_adc(),
+                self.clusters_d[].c_moduleStart(),
+                self.clusters_d[].clusInModule(),
+                self.clusters_d[].c_moduleId(),
+                self.digis_d[].clus(),
+                wordCounter,
+            )
+
+            # count the module start indices already here (instead of
+            # rechits) so that the number of clusters/hits can be made
+            # available in the rechit producer without additional points of
+            # synchronization/ExternalWork
+
+            # MUST be ONE block
+            fillHitsModuleStart(
+                self.clusters_d[].c_clusInModule(),
+                self.clusters_d[].clusModuleStart(),
+            )
+
+            # last element holds the number of all clusters
+            self.clusters_d[].setNClusters(
+                self.clusters_d[].clusModuleStart()[
+                    GPUClusteringConstants.MaxNumModules
+                ]
+            )
 
     @always_inline
     @staticmethod
@@ -369,7 +501,7 @@ fn frameConversion(
     return gl
 
 
-fn conversionErrorp[debug: Bool = False](fedId: UInt8, status: UInt8) -> UInt8:
+fn conversionError[debug: Bool = False](fedId: UInt8, status: UInt8) -> UInt8:
     var errorType: UInt8 = 0
 
     if status == 1:
@@ -522,4 +654,278 @@ fn checkROC[
         errorFound = True
     return errorType if errorFound else 0
 
-# uint32_t getErrRawID ...
+
+fn getErrRawID[
+    debug: Bool = False
+](
+    fedId: UInt8,
+    errWord: UInt32,
+    errorType: UInt32,
+    ref cablingMap: SiPixelFedCablingMapGPU,
+) -> UInt32:
+    var rID: UInt32 = 0xFFFFFFFF
+
+    if (
+        errorType == 25
+        or errorType == 30
+        or errorType == 31
+        or errorType == 36
+        or errorType == 40
+    ):
+        var roc: UInt32 = 1
+        var link = (
+            errWord >> PixelGPUDetails.LINK_shift
+        ) & PixelGPUDetails.LINK_mask
+        var rID_temp = getRawId(cablingMap, fedId, link, roc).RawId
+        if rID_temp != 9999:
+            rID = rID_temp
+    elif errorType == 29:
+        var chanNmbr: UInt32
+        alias DB0_shift = 0
+        alias DB1_shift = DB0_shift + 1
+        alias DB2_shift = DB1_shift + 1
+        alias DB3_shift = DB2_shift + 1
+        alias DB4_shift = DB3_shift + 1
+        alias DataBit_mask = ~(~UInt32(0) << 1)
+
+        var CH1 = (errWord >> DB0_shift) & DataBit_mask
+        var CH2 = (errWord >> DB1_shift) & DataBit_mask
+        var CH3 = (errWord >> DB2_shift) & DataBit_mask
+        var CH4 = (errWord >> DB3_shift) & DataBit_mask
+        var CH5 = (errWord >> DB4_shift) & DataBit_mask
+        alias BLOCK_bits = 3
+        alias BLOCK_shift = 8
+        alias BLOCK_mask = ~(~UInt32(0) << BLOCK_bits)
+        var BLOCK = (errWord >> BLOCK_shift) & BLOCK_mask
+        var localCH = 1 * CH1 + 2 * CH2 + 3 * CH3 + 4 * CH4 + 5 * CH5
+        if BLOCK % 2 == 0:
+            chanNmbr = (BLOCK / 2) * 9 + localCH
+        else:
+            chanNmbr = ((BLOCK - 1) / 2) * 9 + 4 + localCH
+        # inverse signifies unexpected result
+        if (chanNmbr >= 1) and (chanNmbr <= 36):
+            var roc: UInt32 = 1
+            var link: UInt32 = chanNmbr
+            var rID_temp = getRawId(cablingMap, fedId, link, roc).RawId
+            if rID_temp != 9999:
+                rID = rID_temp
+    elif errorType == 37 or errorType == 38:
+        var roc: UInt32 = (
+            errWord >> PixelGPUDetails.ROC_shift
+        ) & PixelGPUDetails.ROC_mask
+        var link: UInt32 = (
+            errWord >> PixelGPUDetails.LINK_shift
+        ) & PixelGPUDetails.LINK_mask
+        var rID_temp: UInt32 = getRawId(cablingMap, fedId, link, roc).RawId
+        if rID_temp != 9999:
+            rID = rID_temp
+    return rID
+
+
+fn RawToDigi_kernel[
+    debug: Bool = False
+](
+    ref cablingMap: SiPixelFedCablingMapGPU,
+    modToUnp: UnsafePointer[UChar],
+    wordCounter: UInt32,
+    word: UnsafePointer[UInt32],
+    fedIds: UnsafePointer[UInt8],
+    xx: UnsafePointer[UInt16, mut=True],
+    yy: UnsafePointer[UInt16, mut=True],
+    adc: UnsafePointer[UInt16, mut=True],
+    pdigi: UnsafePointer[UInt32, mut=True],
+    rawIdArr: UnsafePointer[UInt32, mut=True],
+    moduleId: UnsafePointer[UInt16, mut=True],
+    err: UnsafePointer[
+        SimpleVector[PixelErrorCompact, PixelErrorCompact.dtype()], mut=True
+    ],
+    useQualityInfo: Bool,
+    includeErrors: Bool,
+):
+    """Kernel to perform Raw to Digi conversion."""
+    for iloop in range(wordCounter):
+        xx[iloop] = 0
+        yy[iloop] = 0
+        adc[iloop] = 0
+        var skipROC = False
+
+        var fedId = fedIds[iloop / 2]  # +1200
+
+        # initialize (too many continue below)
+        pdigi[iloop] = 0
+        rawIdArr[iloop] = 0
+        moduleId[iloop] = 9999
+
+        var ww = word[iloop]
+        if ww == 0:
+            # 0 is an indicator of a noise/dead channel, skip these pixels during clusterization
+            continue
+
+        var link = getLink(ww)  # Extract link
+        var roc = getRoc(ww)  # Extract Roc in link
+        var detId = getRawId(cablingMap, fedId, link, roc)
+
+        var errorType = checkROC[debug](ww, fedId, link, cablingMap)
+        skipROC = False if roc < PixelGPUDetails.maxROCIndex else Bool(
+            errorType != 0
+        )
+        if includeErrors and skipROC:
+            var rID = getErrRawID[debug](
+                fedId, ww, errorType.cast[DType.uint32](), cablingMap
+            )
+            _ = err[].push_back(PixelErrorCompact(rID, ww, errorType, fedId))
+            continue
+
+        var rawId = detId.RawId
+        var rocIdInDetUnit = detId.rocInDet
+        var barrel = isBarrel(rawId)
+
+        var index: UInt32 = (
+            fedId.cast[DType.uint32]()
+            * PixelGPUDetails.MAX_LINK
+            * PixelGPUDetails.MAX_ROC
+            + (link - 1) * PixelGPUDetails.MAX_ROC
+            + roc
+        )
+        if useQualityInfo:
+            skipROC = cablingMap.badRocs[index].cast[DType.bool]()
+            if skipROC:
+                continue
+
+        skipROC = modToUnp[index].cast[DType.bool]()
+        if skipROC:
+            continue
+
+        var layer: UInt32  # ladder =0
+        var side: Int  # disk = 0, blade = 0
+        var panel = 0
+        var module = 0
+
+        if barrel:
+            layer = (
+                rawId >> PixelGPUDetails.layerStartBit
+            ) & PixelGPUDetails.layerMask
+            module = Int(
+                (rawId >> PixelGPUDetails.moduleStartBit)
+                & PixelGPUDetails.moduleMask
+            )
+            side = -1 if module < 5 else 1
+        else:
+            # endcap ids
+            layer = 0
+            panel = Int(
+                (rawId >> PixelGPUDetails.panelStartBit)
+                & PixelGPUDetails.panelMask
+            )
+            side = -1 if panel == 1 else 1
+
+        # ***special case of layer to 1 be handled here
+        var localPix: Pixel
+        if layer == 1:
+            var col = (
+                ww >> PixelGPUDetails.COL_shift
+            ) & PixelGPUDetails.COL_mask
+            var row = (
+                ww >> PixelGPUDetails.ROW_shift
+            ) & PixelGPUDetails.ROW_mask
+            localPix = Pixel(row, col)
+            if includeErrors and not rocRowColIsValid(row, col):
+                var error = conversionError[debug](
+                    fedId, 3
+                )  # use the device function and fill the arrays
+                _ = err[].push_back(PixelErrorCompact(rawId, ww, error, fedId))
+
+                @parameter
+                if debug:
+                    print("BPIX1  Error status: ", error)
+                continue
+        else:
+            # ***conversion rules for dcol and pxid
+            var dcol = (
+                ww >> PixelGPUDetails.DCOL_shift
+            ) & PixelGPUDetails.DCOL_mask
+            var pxid = (
+                ww >> PixelGPUDetails.PXID_shift
+            ) & PixelGPUDetails.PXID_mask
+            var row = PixelGPUDetails.numRowsInRoc - pxid / 2
+            var col = dcol * 2 + pxid % 2
+            localPix = Pixel(row, col)
+            if includeErrors and not dcolIsValid(dcol, pxid):
+                var error = conversionError[debug](fedId, 3)
+                _ = err[].push_back(PixelErrorCompact(rawId, ww, error, fedId))
+
+                @parameter
+                if debug:
+                    print("Error status: ", error, dcol, pxid, fedId, roc)
+                continue
+        var globalPix = frameConversion(
+            barrel, side, layer, rocIdInDetUnit, localPix
+        )
+        xx[iloop] = globalPix.row.cast[
+            DType.uint16
+        ]()  # origin shifting by 1 0-159
+        yy[iloop] = globalPix.col.cast[
+            DType.uint16
+        ]()  # origin shifting by 1 0-415
+        adc[iloop] = getADC(ww).cast[DType.uint16]()
+        pdigi[iloop] = pack(
+            globalPix.row, globalPix.col, adc[iloop].cast[DType.uint32]()
+        )
+        moduleId[iloop] = detId.moduleId.cast[DType.uint16]()
+        rawIdArr[iloop] = rawId
+
+
+fn fillHitsModuleStart[
+    debug: Bool = False
+](cluStart: UnsafePointer[UInt32], moduleStart: UnsafePointer[UInt32]):
+    debug_assert(
+        GPUClusteringConstants.MaxNumModules < 2048
+    )  # easy to extend at least till 32*1024
+
+    @parameter
+    for i in range(GPUClusteringConstants.MaxNumModules):
+        moduleStart[i + 1] = min(
+            GPUClusteringConstants.maxHitsInModule(), cluStart[i]
+        )
+
+    blockPrefixScan(moduleStart + 1, moduleStart + 1, 1024)
+    blockPrefixScan(
+        moduleStart + 1025,
+        moduleStart + 1025,
+        GPUClusteringConstants.MaxNumModules - 1024,
+    )
+
+    @parameter
+    for i in range(1025, GPUClusteringConstants.MaxNumModules + 1):
+        moduleStart[i] += moduleStart[1024]
+
+    @parameter
+    if debug:
+        debug_assert(moduleStart[0] == 0)
+        var c0 = min(GPUClusteringConstants.maxHitsInModule(), cluStart[0])
+        debug_assert(c0 == moduleStart[1])
+        debug_assert(moduleStart[1024] >= moduleStart[1023])
+        debug_assert(moduleStart[1025] >= moduleStart[1024])
+        debug_assert(
+            moduleStart[GPUClusteringConstants.MaxNumModules]
+            >= moduleStart[1025]
+        )
+
+        @parameter
+        for i in range(1, GPUClusteringConstants.MaxNumModules + 1):
+            debug_assert(moduleStart[i] >= moduleStart[i - i])
+            # [BPX1, BPX2, BPX3, BPX4,  FP1,  FP2,  FP3,  FN1,  FN2,  FN3, LAST_VALID]
+            # [   0,   96,  320,  672, 1184, 1296, 1408, 1520, 1632, 1744,       1856]
+            if (
+                i == 96
+                or i == 1184
+                or i == 1744
+                or i == Int(GPUClusteringConstants.MaxNumModules)
+            ):
+                print("moduleStart", i, moduleStart[i])
+    alias MAX_HITS = GPUClusteringConstants.MaxNumClusters
+
+    @parameter
+    for i in range(GPUClusteringConstants.MaxNumModules + 1):
+        if moduleStart[i] > GPUClusteringConstants.MaxNumClusters:
+            moduleStart[i] = GPUClusteringConstants.MaxNumClusters
