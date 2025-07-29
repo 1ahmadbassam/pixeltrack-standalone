@@ -3,7 +3,7 @@ from memory import UnsafePointer
 
 from MojoSerial.CondFormats.PixelCPEforGPU import ParamsOnGPU
 from MojoSerial.CUDACore.HistoContainer import HistoContainer
-from MojoSerial.CUDADataFormats.GPUClusteringConstants import PixelGPUConstants
+from MojoSerial.CUDADataFormats.GPUClusteringConstants import GPUClustering
 from MojoSerial.Geometry.Phase1PixelTopology import (
     Phase1PixelTopology,
     AverageGeometry,
@@ -13,7 +13,7 @@ from MojoSerial.MojoBridge.DTypes import Float, Typeable
 alias Hist = HistoContainer[
     DType.int16,
     128,
-    PixelGPUConstants.MaxNumClusters,
+    GPUClustering.MaxNumClusters,
     8 * sizeof[UInt16](),
     DType.int16,
     10,
@@ -25,7 +25,7 @@ struct TrackingRecHit2DSOAView(Defaultable, Movable, Typeable):
     @staticmethod
     @always_inline
     fn maxHits() -> UInt32:
-        return PixelGPUConstants.MaxNumClusters
+        return GPUClustering.MaxNumClusters
 
     alias HIndexType = UInt16  # if above is <=2^16
 
