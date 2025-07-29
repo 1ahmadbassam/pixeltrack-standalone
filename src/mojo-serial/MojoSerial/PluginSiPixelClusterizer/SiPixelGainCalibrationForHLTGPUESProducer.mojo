@@ -30,6 +30,7 @@ struct SiPixelGainCalibrationForHLTGPUESProducer(
                 eventSetup.put[SiPixelGainCalibrationForHLTGPU](
                     SiPixelGainCalibrationForHLTGPU(
                         gain^, rebind[List[Char]](gainData^)
+                        # rebind works because UInt8 and Int8 are bit-compatible
                     )
                 )
         except e:

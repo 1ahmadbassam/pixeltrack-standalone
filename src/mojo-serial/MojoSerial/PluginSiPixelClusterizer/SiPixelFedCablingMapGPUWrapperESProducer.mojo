@@ -11,7 +11,7 @@ from MojoSerial.CondFormats.SiPixelFedCablingMapGPUWrapper import (
 from MojoSerial.Framework.ESProducer import ESProducer
 from MojoSerial.Framework.EventSetup import EventSetup
 from MojoSerial.MojoBridge.DTypes import UChar, Typeable
-from MojoSerial.MojoBridge.File import read_simd, read_obj
+from MojoSerial.MojoBridge.File import read_simd, read_obj, read_list
 
 
 @fieldwise_init
@@ -28,10 +28,8 @@ struct SiPixelFedCablingMapGPUWrapperESProducer(
         try:
             with open(self._data / "fedIds.bin", "r") as file:
                 var nfeds = read_simd[DType.uint32](file)
-                var fedIds = file.read_bytes(Int(nfeds) * DType.uint32.sizeof())
-                eventSetup.put[SiPixelFedIds](
-                    SiPixelFedIds(rebind[List[UInt32]](fedIds^))
-                )
+                var fedIds = read_list[UInt32](file, Int(nfeds))
+                eventSetup.put[SiPixelFedIds](SiPixelFedIds(fedIds^))
             with open(self._data / "cablingMap.bin", "r") as file:
                 var obj = read_obj[SiPixelFedCablingMapGPU](file)
                 var modToUnpDefSize = read_simd[DType.uint32](file)
