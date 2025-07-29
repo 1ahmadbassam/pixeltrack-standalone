@@ -107,7 +107,7 @@ struct FEDHeader(Copyable, Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self, header: UnsafePointer[UChar]):
-        self.theHeader = rebind[UnsafePointer[FedhType]](header)
+        self.theHeader = header.bitcast[FedhType]()
 
     @always_inline
     fn triggerType(self) -> UInt8:
@@ -150,7 +150,7 @@ struct FEDHeader(Copyable, Defaultable, Movable, Typeable):
         version: UInt8 = 0,
         moreHeaders: Bool = False,
     ):
-        var h = rebind[UnsafePointer[FedhType]](header)
+        var h = header.bitcast[FedhType]()
         h[].eventid = (
             (FED_SLINK_START_MARKER << FED_HCTRLID_SHIFT)
             | ((Int(triggerType) << FED_EVTY_SHIFT) & FED_EVTY_MASK)

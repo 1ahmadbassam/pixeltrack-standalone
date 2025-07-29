@@ -15,9 +15,7 @@ fn read_simd[T: DType](mut file: FileHandle) raises -> Scalar[T]:
 
 @always_inline
 fn read_obj[T: Movable](mut file: FileHandle) raises -> T:
-    return rebind[UnsafePointer[T]](
-        file.read_bytes(sizeof[T]()).unsafe_ptr()
-    ).take_pointee()
+    return file.read_bytes(sizeof[T]()).unsafe_ptr().bitcast[T]().take_pointee()
 
 
 @always_inline
@@ -26,8 +24,7 @@ fn read_list[
 ](mut file: FileHandle, owned num: Int) raises -> List[T]:
     var ret = List[T](unsafe_uninit_length=num)
     var elements = file.read_bytes(num * sizeof[T]())
+    var data = elements.data.bitcast[T]()
     for i in range(num):
-        (rebind[UnsafePointer[T]](elements.data) + i).move_pointee_into(
-            ret.data + i
-        )
+        (data + i).move_pointee_into(ret.data + i)
     return ret^

@@ -129,7 +129,7 @@ struct FEDTrailer(Copyable, Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self, trailer: UnsafePointer[UChar]):
-        self.theTrailer = rebind[UnsafePointer[FedtType]](trailer)
+        self.theTrailer = trailer.bitcast[FedtType]()
 
     @always_inline
     fn fragmentLength(self) -> UInt32:
@@ -175,7 +175,7 @@ struct FEDTrailer(Copyable, Defaultable, Movable, Typeable):
 
     @staticmethod
     fn set(trailer: UnsafePointer[UInt8, mut=True], length: UInt32, crc: UInt16, evtStatus: UInt8, ttsBits: UInt8, moreTrailers: Bool = False):
-        var t = rebind[UnsafePointer[FedtType]](trailer)
+        var t = trailer.bitcast[FedtType]()
 
         t[].eventsize = (FED_SLINK_END_MARKER << FED_TCTRLID_SHIFT) | ((length << FED_EVSZ_SHIFT) & FED_EVSZ_MASK)
 

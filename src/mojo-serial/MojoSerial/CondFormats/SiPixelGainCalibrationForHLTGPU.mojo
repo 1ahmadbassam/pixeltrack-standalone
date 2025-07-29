@@ -21,9 +21,7 @@ struct SiPixelGainCalibrationForHLTGPU(
     ):
         self._gainData = gainData^
         self._gainForHLTonHost = gain
-        self._gainForHLTonHost.v_pedestals = rebind[
-            UnsafePointer[SiPixelGainForHLTonGPU.DecodingStructure]
-        ](self._gainData.unsafe_ptr())
+        self._gainForHLTonHost.v_pedestals = self._gainData.unsafe_ptr().bitcast[SiPixelGainForHLTonGPU.DecodingStructure]()
 
     @always_inline
     fn getCPUProduct(self) -> UnsafePointer[SiPixelGainForHLTonGPU, mut=False]:
