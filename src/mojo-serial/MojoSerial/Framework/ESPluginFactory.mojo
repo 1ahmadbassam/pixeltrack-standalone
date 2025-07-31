@@ -13,7 +13,7 @@ struct ESProducerWrapper(Copyable, Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(out self):
         self._ptr = UnsafePointer[NoneType]()
-   
+
     @always_inline
     fn producer(self) -> UnsafePointer[NoneType]:
         return self._ptr
@@ -82,7 +82,7 @@ struct ESProducerConcrete(Copyable, Movable, Typeable):
         self._create = other._create
         self._produce = other._produce
         self._det = other._det
-    
+
     @always_inline
     fn delete(self):
         self._det(self._producer)
@@ -107,7 +107,7 @@ struct Registry(Typeable):
     @always_inline
     fn __init__(out self):
         self._pluginRegistry = {}
-    
+
     @always_inline
     fn __del__(owned self):
         self.delete()
@@ -172,7 +172,9 @@ fn fwkEventSetupModule[T: Typeable & Movable & ESProducer]():
     ](esproducer: ESProducerWrapper):
         rebind[ESProducerWrapperT[T]](esproducer).delete()
 
-    var crp = ESProducerConcrete(create_templ[T], produce_templ[T], det_templ[T])
+    var crp = ESProducerConcrete(
+        create_templ[T], produce_templ[T], det_templ[T]
+    )
     try:
         __registry[T.dtype()] = crp^
     except e:
