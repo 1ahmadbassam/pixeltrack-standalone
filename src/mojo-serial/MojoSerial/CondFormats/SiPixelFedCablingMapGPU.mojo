@@ -9,7 +9,7 @@ from MojoSerial.CondFormats.PixelCPEforGPU import (
     ParamsOnGPU,
 )
 from MojoSerial.MojoBridge.DTypes import UChar, Typeable
-from MojoSerial.PluginSiPixelClusterizer.PixelGPUDetails import PixelGPUDetails
+from MojoSerial.CondFormats.PixelGPUDetails import PixelGPUDetails
 
 
 @fieldwise_init

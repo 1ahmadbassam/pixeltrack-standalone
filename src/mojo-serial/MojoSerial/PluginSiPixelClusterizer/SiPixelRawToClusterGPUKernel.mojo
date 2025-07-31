@@ -4,6 +4,7 @@ from MojoSerial.CondFormats.SiPixelFedCablingMapGPU import (
     SiPixelFedCablingMapGPU,
 )
 from MojoSerial.CondFormats.SiPixelGainForHLTonGPU import SiPixelGainForHLTonGPU
+from MojoSerial.CondFormats.PixelGPUDetails import PixelGPUDetails
 from MojoSerial.CUDACore.SimpleVector import SimpleVector
 from MojoSerial.CUDACore.PrefixScan import blockPrefixScan
 from MojoSerial.CUDADataFormats.GPUClusteringConstants import (
@@ -16,7 +17,6 @@ from MojoSerial.DataFormats.PixelErrors import (
     PixelErrorCompact,
     PixelFormatterErrors,
 )
-from MojoSerial.PluginSiPixelClusterizer.PixelGPUDetails import PixelGPUDetails
 from MojoSerial.PluginSiPixelClusterizer.GPUClustering import GPUClustering
 from MojoSerial.PluginSiPixelClusterizer.GPUCalibPixel import GPUCalibPixel
 from MojoSerial.MojoBridge.DTypes import UChar, Double, Float, Typeable
