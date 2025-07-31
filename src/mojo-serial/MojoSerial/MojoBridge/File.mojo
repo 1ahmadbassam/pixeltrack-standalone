@@ -15,7 +15,7 @@ fn read_simd[T: DType](mut file: FileHandle) raises -> Scalar[T]:
 
 @always_inline
 fn read_obj[T: Movable](mut file: FileHandle) raises -> T:
-    return file.read_bytes(sizeof[T]()).unsafe_ptr().bitcast[T]().take_pointee()
+    return file.read_bytes(sizeof[T]()).data.bitcast[T]().take_pointee()
 
 
 @always_inline
