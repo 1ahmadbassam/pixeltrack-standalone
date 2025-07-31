@@ -28,7 +28,9 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
     alias Range = Tuple[UInt32, UInt32]
 
     var v_pedestals: UnsafePointer[Self.DecodingStructure]
-    var rangeAndCols: InlineArray[Tuple[Self.Range, Int], 2000]
+    var rangeAndCols: InlineArray[
+        Tuple[Self.Range, Int], 2000, run_destructors=True
+    ]
     var _minPed: Float
     var _maxPed: Float
     var _minGain: Float
@@ -45,9 +47,9 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(out self):
         self.v_pedestals = UnsafePointer[Self.DecodingStructure]()
-        self.rangeAndCols = InlineArray[Tuple[Self.Range, Int], 2000](
-            Tuple[Self.Range, Int](Self.Range(0, 0), 0)
-        )
+        self.rangeAndCols = InlineArray[
+            Tuple[Self.Range, Int], 2000, run_destructors=True
+        ](Tuple[Self.Range, Int](Self.Range(0, 0), 0))
         self._minPed = 0.0
         self._maxPed = 0.0
         self._minGain = 0.0
