@@ -20,7 +20,7 @@ struct SiPixelFedCablingMapGPUWrapper(Copyable, Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(
         out self,
-        ref cablingMap: SiPixelFedCablingMapGPU,
+        owned cablingMap: SiPixelFedCablingMapGPU,
         owned modToUnp: List[UChar],
     ):
         self.modToUnpDefault = modToUnp^
