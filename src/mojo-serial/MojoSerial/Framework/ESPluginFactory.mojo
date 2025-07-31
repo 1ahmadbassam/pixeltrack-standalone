@@ -113,8 +113,6 @@ struct Registry(Typeable):
     fn __setitem__(
         mut self, owned name: String, owned esproducer: ESProducerConcrete
     ) raises:
-        if name in self._pluginRegistry:
-            raise Error("Plugin " + name + " is already registered.")
         self._pluginRegistry[name^] = esproducer^
 
     @staticmethod
