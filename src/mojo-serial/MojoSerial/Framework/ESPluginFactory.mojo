@@ -107,10 +107,7 @@ struct Registry(Typeable):
 
     @always_inline
     fn __getitem__(self, owned name: String) raises -> ESProducerConcrete:
-        try:
-            return self._pluginRegistry[name^]
-        except e:
-            raise Error("Plugin " + name + " is not registered.")
+        return self._pluginRegistry[name^]
 
     @always_inline
     fn __setitem__(
