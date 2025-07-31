@@ -78,9 +78,20 @@ struct GPUClustering:
                         #atomicAdd(&totGood, 1);
                 #endif
                 hist.finalize()
+                #ifdef GPU_DEBUG
+                    #assert(hist.size() == totGood);
+                    #if (thisModuleId % 100 == 1)
+                        #printf("histo size %d\n", hist.size());
+                #endif
+            for i in range(first, msize):
+                if (id[i] == Self.InvId):
+                    continue
+                hist.fill(y[i], UInt16(i - firstPixel))
 
-
-                #TODO: FINISH THIS FILE 
+                var maxiter = hist.size()
+                alias maxNeighbors = 10
+                # assert((hist.size() / 1) <= maxiter);
+                
                 
 
 
