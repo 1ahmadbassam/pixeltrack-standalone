@@ -13,13 +13,7 @@ struct ESProducerWrapper(Copyable, Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(out self):
         self._ptr = UnsafePointer[NoneType]()
-
-    @always_inline
-    fn __del__(owned self):
-        if self._ptr != UnsafePointer[NoneType]():
-            self._ptr.destroy_pointee()
-            self._ptr.free()
-
+   
     @always_inline
     fn producer(self) -> UnsafePointer[NoneType]:
         return self._ptr
@@ -41,13 +35,13 @@ struct ESProducerWrapperT[T: Typeable & Movable & ESProducer](
         self._ptr.init_pointee_move(obj^)
 
     @always_inline
-    fn __del__(owned self):
-        self._ptr.destroy_pointee()
-        self._ptr.free()
-
-    @always_inline
     fn __moveinit__(out self, owned other: Self):
         self._ptr = other._ptr
+
+    @always_inline
+    fn delete(self):
+        self._ptr.destroy_pointee()
+        self._ptr.free()
 
     @always_inline
     fn producer(self) -> UnsafePointer[T]:
@@ -62,31 +56,40 @@ struct ESProducerWrapperT[T: Typeable & Movable & ESProducer](
 struct ESProducerConcrete(Copyable, Movable, Typeable):
     alias _C = fn (owned Path) -> ESProducerWrapper
     alias _P = fn (mut ESProducerWrapper, mut EventSetup)
+    alias _D = fn (ESProducerWrapper)
     var _producer: ESProducerWrapper
     var _create: Self._C
     var _produce: Self._P
+    var _det: Self._D
 
     @always_inline
-    fn __init__(out self, create: Self._C, produce: Self._P):
+    fn __init__(out self, create: Self._C, produce: Self._P, det: Self._D):
         self._producer = ESProducerWrapper()
         self._create = create
         self._produce = produce
+        self._det = det
 
     @always_inline
     fn __copyinit__(out self, other: Self):
         self._producer = other._producer
         self._create = other._create
         self._produce = other._produce
+        self._det = other._det
 
     @always_inline
     fn __moveinit__(out self, owned other: Self):
         self._producer = other._producer^
         self._create = other._create
         self._produce = other._produce
+        self._det = other._det
+    
+    @always_inline
+    fn delete(self):
+        self._det(self._producer)
 
     @always_inline
     fn create(mut self, owned path: Path):
-        self._producer = self._create(path)
+        self._producer = self._create(path^)
 
     @always_inline
     fn produce(mut self, mut eventSetup: EventSetup):
@@ -104,6 +107,10 @@ struct Registry(Typeable):
     @always_inline
     fn __init__(out self):
         self._pluginRegistry = {}
+    
+    @always_inline
+    fn __del__(owned self):
+        self.delete()
 
     @always_inline
     fn __getitem__(self, owned name: String) raises -> ESProducerConcrete:
@@ -114,6 +121,12 @@ struct Registry(Typeable):
         mut self, owned name: String, owned esproducer: ESProducerConcrete
     ) raises:
         self._pluginRegistry[name^] = esproducer^
+
+    @always_inline
+    fn delete(self):
+        for i in range(self._pluginRegistry._entries.__len__()):
+            if self._pluginRegistry._entries[i]:
+                self._pluginRegistry._entries[i].unsafe_value().value.delete()
 
     @staticmethod
     @always_inline
@@ -153,7 +166,13 @@ fn fwkEventSetupModule[T: Typeable & Movable & ESProducer]():
             eventSetup
         )
 
-    var crp = ESProducerConcrete(create_templ[T], produce_templ[T])
+    @always_inline
+    fn det_templ[
+        T: Typeable & Movable & ESProducer
+    ](esproducer: ESProducerWrapper):
+        rebind[ESProducerWrapperT[T]](esproducer).delete()
+
+    var crp = ESProducerConcrete(create_templ[T], produce_templ[T], det_templ[T])
     try:
         __registry[T.dtype()] = crp^
     except e:
