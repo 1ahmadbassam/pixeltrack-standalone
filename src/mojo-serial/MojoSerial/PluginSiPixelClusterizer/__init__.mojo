@@ -1,5 +1,5 @@
 from MojoSerial.Framework.ESPluginFactory import fwkEventSetupModule
-#from MojoSerial.Framework.PluginFactory import fwkModule
+from MojoSerial.Framework.PluginFactory import fwkModule
 from MojoSerial.PluginSiPixelClusterizer.SiPixelFedCablingMapGPUWrapperESProducer import (
     SiPixelFedCablingMapGPUWrapperESProducer,
 )
@@ -9,4 +9,4 @@ from MojoSerial.PluginSiPixelClusterizer.SiPixelRawToClusterCUDA import SiPixelR
 fn init():
     fwkEventSetupModule[SiPixelFedCablingMapGPUWrapperESProducer]()
     fwkEventSetupModule[SiPixelGainCalibrationForHLTGPUESProducer]()
-    #fwkModule[SiPixelRawToClusterCUDA]()
+    fwkModule[SiPixelRawToClusterCUDA]()

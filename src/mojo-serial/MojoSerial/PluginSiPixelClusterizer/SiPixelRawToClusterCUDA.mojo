@@ -55,23 +55,27 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
         self._useQuality = False
 
     @always_inline
-    fn __init__(out self, mut reg: ProductRegistry) raises:
-        self._rawGetToken = reg.consumes[FEDRawDataCollection]()
-        self._digiPutToken = reg.produces[SiPixelDigisSoA]()
-        self._clusterPutToken = reg.produces[SiPixelClustersSoA]()
+    fn __init__(out self, mut reg: ProductRegistry):
+        try:
+            self._rawGetToken = reg.consumes[FEDRawDataCollection]()
+            self._digiPutToken = reg.produces[SiPixelDigisSoA]()
+            self._clusterPutToken = reg.produces[SiPixelClustersSoA]()
 
-        self._gpuAlgo = SiPixelRawToClusterGPUKernel()
-        self._wordFedAppender = WordFedAppender()
-        self._errors = PixelFormatterErrors()
+            self._gpuAlgo = SiPixelRawToClusterGPUKernel()
+            self._wordFedAppender = WordFedAppender()
+            self._errors = PixelFormatterErrors()
 
-        self._isRun2 = True
-        self._includeErrors = True
-        self._useQuality = True
+            self._isRun2 = True
+            self._includeErrors = True
+            self._useQuality = True
 
-        if self._includeErrors:
-            self._digiErrorPutToken = reg.produces[SiPixelDigiErrorsSoA]()
-        else:
-            self._digiErrorPutToken = EDPutTokenT[SiPixelDigiErrorsSoA]()
+            if self._includeErrors:
+                self._digiErrorPutToken = reg.produces[SiPixelDigiErrorsSoA]()
+            else:
+                self._digiErrorPutToken = EDPutTokenT[SiPixelDigiErrorsSoA]()
+        except e:
+            print("Handled exception in SiPixelRawToClusterCUDA, ", e)
+            return Self.__init__()
 
     fn produce(mut self, mut iEvent: Event, iSetup: EventSetup):
         try:

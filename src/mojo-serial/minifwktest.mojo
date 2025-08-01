@@ -30,5 +30,5 @@ def main():
         var esp = ESPluginFactory.create(plugin, "data")
         esp.produce(evt)
 
-    # for plugin in PluginFactory.getAll():
-    #     print(plugin)
+    for plugin in PluginFactory.getAll():
+        print(plugin)
