@@ -185,6 +185,7 @@ struct GPUClustering:
                 if (id[i] == Self.InvId):
                     continue
                 if (clusterId[i] == i):
+                    pass
                     #var old = CUDACompat.atomicInc(
                      #   UnsafePointer(to = Int(foundClusters)),
                       #  0xffffffff
