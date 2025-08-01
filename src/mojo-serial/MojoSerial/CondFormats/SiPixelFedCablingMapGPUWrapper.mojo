@@ -25,7 +25,7 @@ struct SiPixelFedCablingMapGPUWrapper(Copyable, Defaultable, Movable, Typeable):
     ):
         self.modToUnpDefault = modToUnp^
         self._hasQuality = False
-        self.cablingMapHost = cablingMap
+        self.cablingMapHost = cablingMap^
 
     fn hasQuality(self) -> Bool:
         return self._hasQuality

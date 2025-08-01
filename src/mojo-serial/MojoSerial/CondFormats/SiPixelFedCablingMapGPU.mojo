@@ -15,7 +15,9 @@ from MojoSerial.CondFormats.PixelGPUDetails import PixelGPUDetails
 @fieldwise_init
 struct SiPixelFedCablingMapGPU(Copyable, Defaultable, Movable, Typeable):
     alias _U = InlineArray[UInt32, Int(PixelGPUDetails.MAX_SIZE)]
+    alias _UD = Self._U(uninitialized=True)
     alias _C = InlineArray[UChar, Int(PixelGPUDetails.MAX_SIZE)]
+    alias _CD = Self._C(uninitialized=True)
     var fed: Self._U
     var link: Self._U
     var roc: Self._U
