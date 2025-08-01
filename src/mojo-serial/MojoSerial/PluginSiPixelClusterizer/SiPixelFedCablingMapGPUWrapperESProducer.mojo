@@ -17,7 +17,6 @@ from MojoSerial.MojoBridge.File import (
     read_aligned_obj,
     read_list,
 )
-from MojoSerial.MojoBridge.Print import pprint
 
 
 @fieldwise_init
