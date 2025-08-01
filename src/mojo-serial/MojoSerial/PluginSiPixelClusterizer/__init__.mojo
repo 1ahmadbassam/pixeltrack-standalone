@@ -1,10 +1,12 @@
-from MojoSerial.Framework.ESPluginFactory import Registry, fwkEventSetupModule
+from MojoSerial.Framework.ESPluginFactory import fwkEventSetupModule
+#from MojoSerial.Framework.PluginFactory import fwkModule
 from MojoSerial.PluginSiPixelClusterizer.SiPixelFedCablingMapGPUWrapperESProducer import (
     SiPixelFedCablingMapGPUWrapperESProducer,
 )
+from MojoSerial.PluginSiPixelClusterizer.SiPixelGainCalibrationForHLTGPUESProducer import SiPixelGainCalibrationForHLTGPUESProducer
+from MojoSerial.PluginSiPixelClusterizer.SiPixelRawToClusterCUDA import SiPixelRawToClusterCUDA
 
-
-@export("init")
-fn init(mut reg: Registry):
-    print("Now's your chance to be a big shot!")
-    var _ = fwkEventSetupModule[SiPixelFedCablingMapGPUWrapperESProducer](reg)
+fn init():
+    fwkEventSetupModule[SiPixelFedCablingMapGPUWrapperESProducer]()
+    fwkEventSetupModule[SiPixelGainCalibrationForHLTGPUESProducer]()
+    #fwkModule[SiPixelRawToClusterCUDA]()

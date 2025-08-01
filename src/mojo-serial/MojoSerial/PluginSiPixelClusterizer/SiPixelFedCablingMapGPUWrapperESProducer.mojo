@@ -78,6 +78,3 @@ struct SiPixelFedCablingMapGPUWrapperESProducer(
     @staticmethod
     fn dtype() -> String:
         return "SiPixelFedCablingMapGPUWrapperESProducer"
-
-
-# TODO-PLG: DEFINE_FWK_EVENTSETUP_MODULE

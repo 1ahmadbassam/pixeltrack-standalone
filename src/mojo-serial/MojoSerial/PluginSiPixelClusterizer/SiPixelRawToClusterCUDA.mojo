@@ -189,6 +189,3 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
     @staticmethod
     fn dtype() -> String:
         return "SiPixelRawToClusterCUDA"
-
-
-# TODO-PLG: DEFINE_FWK_MODULE

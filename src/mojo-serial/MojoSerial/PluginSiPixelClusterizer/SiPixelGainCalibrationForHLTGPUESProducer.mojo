@@ -46,6 +46,3 @@ struct SiPixelGainCalibrationForHLTGPUESProducer(
     @staticmethod
     fn dtype() -> String:
         return "SiPixelGainCalibrationForHLTGPUESProducer"
-
-
-# TODO-PLG: DEFINE_FWK_EVENTSETUP_MODULE
