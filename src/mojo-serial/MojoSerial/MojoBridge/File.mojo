@@ -6,6 +6,7 @@ import os
 @always_inline
 fn read_simd[T: DType](mut file: FileHandle) raises -> Scalar[T]:
     var bytes = file.read_bytes(T.sizeof())
+    # from_bytes requires an InlineArray, these should'nt be as big anyway
     var array = InlineArray[UInt8, T.sizeof()](uninitialized=True)
 
     @parameter

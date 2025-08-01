@@ -1,5 +1,6 @@
 from memory import UnsafePointer
 
+from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import Typeable
 
 
@@ -7,13 +8,13 @@ from MojoSerial.MojoBridge.DTypes import Typeable
 struct VecArray[T: Movable & Copyable, DT: StaticString, maxSize: Int](
     Copyable, Defaultable, Movable, Sized, Typeable
 ):
-    var m_data: InlineArray[T, maxSize, run_destructors=True]
+    var m_data: Array[T, maxSize, run_destructors=True]
     var m_size: Int
     alias ValueType = T
 
     @always_inline
     fn __init__(out self):
-        self.m_data = InlineArray[T, maxSize, run_destructors=True](uninitialized=True)
+        self.m_data = Array[T, maxSize, run_destructors=True](uninitialized=True)
         self.m_size = 0
 
     @always_inline

@@ -8,14 +8,15 @@ from MojoSerial.CondFormats.PixelCPEforGPU import (
     AverageGeometry,
     ParamsOnGPU,
 )
+from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import UChar, Typeable
 from MojoSerial.CondFormats.PixelGPUDetails import PixelGPUDetails
 
 
 struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
-    alias _U = InlineArray[UInt32, Int(PixelGPUDetails.MAX_SIZE)]
+    alias _U = Array[UInt32, Int(PixelGPUDetails.MAX_SIZE)]
     alias _UD = Self._U(uninitialized=True)
-    alias _C = InlineArray[UChar, Int(PixelGPUDetails.MAX_SIZE)]
+    alias _C = Array[UChar, Int(PixelGPUDetails.MAX_SIZE)]
     alias _CD = Self._C(uninitialized=True)
     var fed: Self._U
     var link: Self._U

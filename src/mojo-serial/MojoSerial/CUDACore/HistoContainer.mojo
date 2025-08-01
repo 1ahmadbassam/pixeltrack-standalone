@@ -4,6 +4,7 @@ from memory import UnsafePointer, memset
 from MojoSerial.CUDACore.AtomicPairCounter import AtomicPairCounter
 import MojoSerial.CUDACore.CUDAStdAlgorithm as CUDAStdAlgorithm
 from MojoSerial.CUDACore.PrefixScan import blockPrefixScan
+from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import Typeable, signed_to_unsigned
 
 
@@ -134,20 +135,20 @@ struct HistoContainer[
     alias UT = signed_to_unsigned[T]()
     alias UD = Scalar[Self.UT]
 
-    var off: InlineArray[UInt32, Int(Self.totbins())]
+    var off: Array[UInt32, Int(Self.totbins())]
     var psws: UInt32
-    var bins: InlineArray[Scalar[Self.IndexType], Int(Self.capacity())]
+    var bins: Array[Scalar[Self.IndexType], Int(Self.capacity())]
 
     @always_inline
     fn __init__(out self):
-        self.off = InlineArray[UInt32, Int(Self.totbins())](0)
+        self.off = Array[UInt32, Int(Self.totbins())](0)
         self.psws = 0
-        self.bins = InlineArray[Scalar[Self.IndexType], Int(Self.capacity())](0)
+        self.bins = Array[Scalar[Self.IndexType], Int(Self.capacity())](0)
 
     @staticmethod
     fn ilog2(v_in: UInt32) -> UInt32:
-        alias b = InlineArray[UInt32, 5](0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000)
-        alias s = InlineArray[UInt32, 5](1, 2, 4, 8, 16)
+        alias b = Array[UInt32, 5](0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000)
+        alias s = Array[UInt32, 5](1, 2, 4, 8, 16)
 
         var v = v_in
 

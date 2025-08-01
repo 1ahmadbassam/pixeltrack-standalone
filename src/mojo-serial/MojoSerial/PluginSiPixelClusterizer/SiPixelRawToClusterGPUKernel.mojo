@@ -19,6 +19,7 @@ from MojoSerial.DataFormats.PixelErrors import (
 )
 from MojoSerial.PluginSiPixelClusterizer.GPUClustering import GPUClustering
 from MojoSerial.PluginSiPixelClusterizer.GPUCalibPixel import GPUCalibPixel
+from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import UChar, Double, Float, Typeable
 
 
@@ -156,13 +157,13 @@ fn pixelToChannel(row: Int, col: Int) -> UInt32:
 
 
 struct WordFedAppender(Defaultable, Movable, Typeable):
-    var _word: InlineArray[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)]
-    var _fedId: InlineArray[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)]
+    var _word: Array[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)]
+    var _fedId: Array[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)]
 
     @always_inline
     fn __init__(out self):
-        self._word = InlineArray[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
-        self._fedId = InlineArray[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
+        self._word = Array[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
+        self._fedId = Array[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
 
     fn initializeWordFed(
         self,

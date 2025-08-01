@@ -1,7 +1,9 @@
 from collections import Set
+from compile.reflection import get_type_name
+
+from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.Matrix import Matrix
 
-from compile.reflection import get_type_name
 
 alias StringStandardType = Copyable & Movable & Stringable
 alias StringStandardKeyType = StringStandardType & KeyElement
@@ -20,7 +22,7 @@ fn pprint[T: StringStandardType](L: List[T]):
     print("]")
 
 
-fn pprint[T: StringStandardType, size: Int, //](L: InlineArray[T, size]):
+fn pprint[T: StringStandardType, size: Int, //](L: Array[T, size]):
     print("[", end="")
 
     @parameter

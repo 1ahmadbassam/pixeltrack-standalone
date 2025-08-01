@@ -1,5 +1,6 @@
 from memory import UnsafePointer
 
+from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import Float, Typeable
 
 
@@ -28,7 +29,7 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
     alias Range = Tuple[UInt32, UInt32]
 
     var v_pedestals: UnsafePointer[Self.DecodingStructure]
-    var rangeAndCols: InlineArray[
+    var rangeAndCols: Array[
         Tuple[Self.Range, Int], 2000, run_destructors=True
     ]
     var _minPed: Float
@@ -47,7 +48,7 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(out self):
         self.v_pedestals = UnsafePointer[Self.DecodingStructure]()
-        self.rangeAndCols = InlineArray[
+        self.rangeAndCols = Array[
             Tuple[Self.Range, Int], 2000, run_destructors=True
         ](Tuple[Self.Range, Int](Self.Range(0, 0), 0))
         self._minPed = 0.0

@@ -8,6 +8,7 @@ from utils.numerics import min_or_neg_inf as _min_or_neg_inf
 from hashlib._hasher import _HashableWithHasher, _Hasher
 from builtin.simd import _hash_simd
 
+from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import Double, Typeable
 from MojoSerial.MojoBridge.Vector import Vector
 from MojoSerial.MojoBridge.Stable import Iterator
@@ -64,7 +65,7 @@ struct _MatIterator[
         return "_MatIterator[" + String(mat_mutability) + ", " + W.__repr__() + ", " + String(rows) + ", " + String(colns) + ", Origin[" + String(mat_mutability) + "], " + String(row_wise) + "]"
 
 # A comment about this implementation: it is probably the speediest, but arguably not of the best memory efficiency (?)
-# Handling rows in a SIMD structure does give rows immense advantage over columns, it also simplfies implementation... but we are still using InlineArray for memory
+# Handling rows in a SIMD structure does give rows immense advantage over columns, it also simplfies implementation... but we are still using Array for memory
 # TODO: Is implementing a matrix as an inline array of vectors faster or slower than a direct memory implementation using an unsafe pointer?
 struct Matrix[T: DType, rows: Int, colns: Int](
     Absable,
@@ -81,11 +82,11 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     Writable,
 ):
     alias _L = List[List[Scalar[T]]]
-    alias _LS = InlineArray[InlineArray[Scalar[T], colns], rows]
+    alias _LS = Array[Array[Scalar[T], colns], rows]
     alias _R = Vector[T, colns]
     alias _D = Scalar[T]
-    alias _DC = InlineArray[Vector[T, colns], rows]
-    alias _DB = InlineArray[Vector[DType.bool, colns], rows]
+    alias _DC = Array[Vector[T, colns], rows]
+    alias _DB = Array[Vector[DType.bool, colns], rows]
     alias _Mask = Matrix[DType.bool, rows, colns]
     var _data: Self._DC
 
@@ -893,7 +894,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
             ]()
 
         # low level manip for efficiency
-        var res = InlineArray[Vector[target, colns], rows](uninitialized=True)
+        var res = Array[Vector[target, colns], rows](uninitialized=True)
 
         @parameter
         for i in range(rows):
@@ -1195,14 +1196,14 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     fn split[
         factor: Int = 2
-    ](self) -> InlineArray[
+    ](self) -> Array[
         Matrix[T, rows // factor, colns // factor], factor * factor
     ]:
         constrained[
             rows == colns and rows % factor == 0,
             "Can only do integral splits on square matrices",
         ]()
-        var res = InlineArray[
+        var res = Array[
             Matrix[T, rows // factor, colns // factor], factor * factor
         ](uninitialized=True)
         var i = 0

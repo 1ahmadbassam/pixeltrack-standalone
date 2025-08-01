@@ -6,6 +6,7 @@ from MojoSerial.Geometry.Phase1PixelTopology import (
     Phase1PixelTopology,
     AverageGeometry,
 )
+from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import Float, Typeable
 from MojoSerial.MojoBridge.Vector import Vector
 
@@ -51,8 +52,8 @@ struct DetParams(Copyable, Defaultable, Movable, Typeable):
     var y0: Float
     var z0: Float
 
-    var sx: InlineArray[Float, 3]  # errors
-    var sy: InlineArray[Float, 3]  # errors
+    var sx: Array[Float, 3]  # errors
+    var sy: Array[Float, 3]  # errors
 
     var frame: Frame
 
@@ -73,8 +74,8 @@ struct DetParams(Copyable, Defaultable, Movable, Typeable):
         self.y0 = 0.0
         self.z0 = 0.0
 
-        self.sx = InlineArray[Float, 3](0)
-        self.sy = InlineArray[Float, 3](0)
+        self.sx = Array[Float, 3](0)
+        self.sy = Array[Float, 3](0)
 
         self.frame = Frame()
 
@@ -86,17 +87,17 @@ struct DetParams(Copyable, Defaultable, Movable, Typeable):
 
 @fieldwise_init
 struct LayerGeometry(Defaultable, Movable, Typeable):
-    var layerStart: InlineArray[
+    var layerStart: Array[
         UInt32, Int(Phase1PixelTopology.numberOfLayers + 1)
     ]
-    var layer: InlineArray[UInt8, Int(Phase1PixelTopology.layerIndexSize)]
+    var layer: Array[UInt8, Int(Phase1PixelTopology.layerIndexSize)]
 
     @always_inline
     fn __init__(out self):
-        self.layerStart = InlineArray[
+        self.layerStart = Array[
             UInt32, Int(Phase1PixelTopology.numberOfLayers + 1)
         ](0)
-        self.layer = InlineArray[
+        self.layer = Array[
             UInt8, Int(Phase1PixelTopology.layerIndexSize)
         ](0)
 
@@ -151,49 +152,49 @@ struct ParamsOnGPU(Copyable, Defaultable, Movable, Typeable):
 
 @fieldwise_init
 struct ClusParamsT[N: UInt32](Copyable, Defaultable, Movable, Typeable):
-    var minRow: InlineArray[UInt32, Int(N)]
-    var maxRow: InlineArray[UInt32, Int(N)]
-    var minCol: InlineArray[UInt32, Int(N)]
-    var maxCol: InlineArray[UInt32, Int(N)]
+    var minRow: Array[UInt32, Int(N)]
+    var maxRow: Array[UInt32, Int(N)]
+    var minCol: Array[UInt32, Int(N)]
+    var maxCol: Array[UInt32, Int(N)]
 
-    var Q_f_X: InlineArray[Int32, Int(N)]
-    var Q_f_Y: InlineArray[Int32, Int(N)]
+    var Q_f_X: Array[Int32, Int(N)]
+    var Q_f_Y: Array[Int32, Int(N)]
 
-    var Q_l_X: InlineArray[Int32, Int(N)]
-    var Q_l_Y: InlineArray[Int32, Int(N)]
+    var Q_l_X: Array[Int32, Int(N)]
+    var Q_l_Y: Array[Int32, Int(N)]
 
-    var charge: InlineArray[Int32, Int(N)]
-    var xpos: InlineArray[Float, Int(N)]
-    var ypos: InlineArray[Float, Int(N)]
+    var charge: Array[Int32, Int(N)]
+    var xpos: Array[Float, Int(N)]
+    var ypos: Array[Float, Int(N)]
 
-    var xerr: InlineArray[Float, Int(N)]
-    var yerr: InlineArray[Float, Int(N)]
+    var xerr: Array[Float, Int(N)]
+    var yerr: Array[Float, Int(N)]
 
-    var xsize: InlineArray[Int16, Int(N)]  # clipped at 127 if negative is edge
-    var ysize: InlineArray[Int16, Int(N)]
+    var xsize: Array[Int16, Int(N)]  # clipped at 127 if negative is edge
+    var ysize: Array[Int16, Int(N)]
 
     @always_inline
     fn __init__(out self):
-        self.minRow = InlineArray[UInt32, Int(N)](0)
-        self.maxRow = InlineArray[UInt32, Int(N)](0)
-        self.minCol = InlineArray[UInt32, Int(N)](0)
-        self.maxCol = InlineArray[UInt32, Int(N)](0)
+        self.minRow = Array[UInt32, Int(N)](0)
+        self.maxRow = Array[UInt32, Int(N)](0)
+        self.minCol = Array[UInt32, Int(N)](0)
+        self.maxCol = Array[UInt32, Int(N)](0)
 
-        self.Q_f_X = InlineArray[Int32, Int(N)](0)
-        self.Q_f_Y = InlineArray[Int32, Int(N)](0)
+        self.Q_f_X = Array[Int32, Int(N)](0)
+        self.Q_f_Y = Array[Int32, Int(N)](0)
 
-        self.Q_l_X = InlineArray[Int32, Int(N)](0)
-        self.Q_l_Y = InlineArray[Int32, Int(N)](0)
+        self.Q_l_X = Array[Int32, Int(N)](0)
+        self.Q_l_Y = Array[Int32, Int(N)](0)
 
-        self.charge = InlineArray[Int32, Int(N)](0)
-        self.xpos = InlineArray[Float, Int(N)](0.0)
-        self.ypos = InlineArray[Float, Int(N)](0.0)
+        self.charge = Array[Int32, Int(N)](0)
+        self.xpos = Array[Float, Int(N)](0.0)
+        self.ypos = Array[Float, Int(N)](0.0)
 
-        self.xerr = InlineArray[Float, Int(N)](0.0)
-        self.yerr = InlineArray[Float, Int(N)](0.0)
+        self.xerr = Array[Float, Int(N)](0.0)
+        self.yerr = Array[Float, Int(N)](0.0)
 
-        self.xsize = InlineArray[Int16, Int(N)](0)
-        self.ysize = InlineArray[Int16, Int(N)](0)
+        self.xsize = Array[Int16, Int(N)](0)
+        self.ysize = Array[Int16, Int(N)](0)
 
     @always_inline
     @staticmethod
@@ -397,9 +398,9 @@ fn errorFromSize(
     cp.xerr[ic] = 0.0050
     cp.yerr[ic] = 0.0085
 
-    alias xerr_barrel_l1 = InlineArray[Float, 3](0.00115, 0.00120, 0.00088)
+    alias xerr_barrel_l1 = Array[Float, 3](0.00115, 0.00120, 0.00088)
     alias xerr_barrel_l1_def = 0.00200  # 0.01030
-    alias yerr_barrel_l1 = InlineArray[Float, 9](
+    alias yerr_barrel_l1 = Array[Float, 9](
         0.00375,
         0.00230,
         0.00250,
@@ -411,9 +412,9 @@ fn errorFromSize(
         0.00240,
     )
     alias yerr_barrel_l1_def = 0.00210
-    alias xerr_barrel_ln = InlineArray[Float, 3](0.00115, 0.00120, 0.00088)
+    alias xerr_barrel_ln = Array[Float, 3](0.00115, 0.00120, 0.00088)
     alias xerr_barrel_ln_def = 0.00200  # 0.01030
-    alias yerr_barrel_ln = InlineArray[Float, 9](
+    alias yerr_barrel_ln = Array[Float, 9](
         0.00375,
         0.00230,
         0.00250,
@@ -425,9 +426,9 @@ fn errorFromSize(
         0.00240,
     )
     alias yerr_barrel_ln_def = 0.00210
-    alias xerr_endcap = InlineArray[Float, 2](0.0020, 0.0020)
+    alias xerr_endcap = Array[Float, 2](0.0020, 0.0020)
     alias xerr_endcap_def = 0.0020
-    alias yerr_endcap = InlineArray[Float, 1](0.00210)
+    alias yerr_endcap = Array[Float, 1](0.00210)
     alias yerr_endcap_def = 0.00210
 
     var sx = cp.maxRow[ic] - cp.minRow[ic]
