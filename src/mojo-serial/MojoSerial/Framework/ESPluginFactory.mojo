@@ -149,7 +149,7 @@ struct ESPluginFactory:
 
 
 @always_inline
-fn fwkEventSetupModule[T: Typeable & Movable & ESProducer](mut reg: Registry):
+fn fwkEventSetupModule[T: Typeable & Movable & ESProducer]():
     @always_inline
     fn create_templ[
         T: Typeable & Movable & ESProducer
@@ -175,12 +175,8 @@ fn fwkEventSetupModule[T: Typeable & Movable & ESProducer](mut reg: Registry):
     var crp = ESProducerConcrete(
         create_templ[T], produce_templ[T], det_templ[T]
     )
-    print("Now's your second chance!")
-    for k in reg._pluginRegistry:
-        print(k, end=" ")
-    print("Now's your third chance!")
     try:
-        reg[T.dtype()] = crp^
+        __registry[T.dtype()] = crp^
     except e:
         print(
             "Framework/ESPluginFactory.mojo, failed to register plugin ",
