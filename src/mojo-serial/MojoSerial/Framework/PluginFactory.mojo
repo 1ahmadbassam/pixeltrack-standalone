@@ -1,3 +1,4 @@
+from collections.dict import _DictKeyIter
 from memory import UnsafePointer
 
 from MojoSerial.Framework.EDProducer import EDProducer
@@ -112,7 +113,8 @@ struct EDProducerConcrete(Copyable, Movable, Typeable):
 
 
 struct Registry(Typeable):
-    var _pluginRegistry: Dict[String, EDProducerConcrete]
+    alias _pluginRegistryType = Dict[String, EDProducerConcrete]
+    var _pluginRegistry: Self._pluginRegistryType
 
     @always_inline
     fn __init__(out self):
@@ -151,6 +153,16 @@ var __registry: Registry = Registry()
 
 @nonmaterializable(NoneType)
 struct PluginFactory:
+    @staticmethod
+    @always_inline
+    fn getAll() -> (
+        _DictKeyIter[
+            Registry._pluginRegistryType.K,
+            Registry._pluginRegistryType.V,
+            __origin_of(__registry._pluginRegistry),
+        ]
+    ):
+        return __registry._pluginRegistry.keys()
     @staticmethod
     @always_inline
     fn create(

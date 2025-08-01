@@ -1,3 +1,4 @@
+from collections.dict import _DictKeyIter
 from pathlib import Path
 from memory import UnsafePointer
 
@@ -102,7 +103,8 @@ struct ESProducerConcrete(Copyable, Movable, Typeable):
 
 
 struct Registry(Typeable):
-    var _pluginRegistry: Dict[String, ESProducerConcrete]
+    alias _pluginRegistryType = Dict[String, ESProducerConcrete]
+    var _pluginRegistry: Self._pluginRegistryType
 
     @always_inline
     fn __init__(out self):
@@ -139,6 +141,17 @@ var __registry: Registry = Registry()
 
 @nonmaterializable(NoneType)
 struct ESPluginFactory:
+    @staticmethod
+    @always_inline
+    fn getAll() -> (
+        _DictKeyIter[
+            Registry._pluginRegistryType.K,
+            Registry._pluginRegistryType.V,
+            __origin_of(__registry._pluginRegistry),
+        ]
+    ):
+        return __registry._pluginRegistry.keys()
+
     @staticmethod
     @always_inline
     fn create(
