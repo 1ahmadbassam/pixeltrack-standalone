@@ -88,11 +88,107 @@ struct GPUClustering:
                     continue
                 hist.fill(y[i], UInt16(i - firstPixel))
 
-                var maxiter = hist.size()
-                alias maxNeighbors = 10
-                # assert((hist.size() / 1) <= maxiter);
-                
-                
+            var maxiter = hist.size()
+            alias maxNeighbours = 10
+            # assert((hist.size() / 1) <= maxiter);
+            var nn = List[List[UInt16]](capacity = Int(maxiter))
+            for i in range(maxiter):
+                nn.append(List[UInt16](capacity = Int(maxNeighbours)))
+            var nnn = List[UInt8](capacity = Int(maxiter))
+            for k in range(maxiter):
+                nnn[k] = 0
+            #ifdef GPU_DEBUG
+                #// look for anomalous high occupancy
+                # uint32_t n40, n60;
+                #n40 = n60 = 0;
+
+                #for (uint32_t j = 0; j < Hist::nbins(); j++) {
+                    #   if (hist.size(j) > 60)
+                    #   atomicAdd(&n60, 1);
+                #    if (hist.size(j) > 40)
+                #    atomicAdd(&n40, 1);
+                #}
+
+                #if (n60 > 0)
+                #    printf("columns with more than 60 px %d in %d\n", n60, thisModuleId);
+                #else if (n40 > 0)
+                    #   printf("columns with more than 40 px %d in %d\n", n40, thisModuleId);
+
+            #endif
+            var j: UInt32 = 0
+            var k: UInt32 = 0
+            while j < hist.size():
+                # assert(k < maxiter)
+                var p = hist.begin() + j
+                var i = UInt32(p[]) +firstPixel
+                #assert(id[i] != InvId);
+                #assert(id[i] == thisModuleId);
+                var be: Int32 = Hist.bin(y[i]+1).cast[DType.int32]()
+                var e = hist.end(be.cast[DType.uint32]())
+                p+=1
+                # assert(0 == nnn[k])
+                while p < e:
+                    var m = UInt32(p[]) + firstPixel
+                    #assert(m != i);
+                    #assert(int(y[m]) - int(y[i]) >= 0);
+                    #assert(int(y[m]) - int(y[i]) <= 1);
+                    if (abs((x[m]) - (x[i])) > 1):
+                        continue
+                    var l = nnn[k]
+                    nnn[k] += 1
+                    #assert(l < maxNeighbours)
+                    nn[k][l] = p[]
+                    p += 1
+                j += 1
+                k += 1
+            var more: Bool = True
+            var nloops: Int32 = 0
+            while (more):
+                if (nloops % 2 == 1):
+                    var j: UInt32 = 0
+                    var k: UInt32 = 0
+                    while j < hist.size():
+                        var p = hist.begin() + j
+                        var i = UInt32(p[]) + firstPixel
+                        var m = clusterId[i]
+                        while (m != clusterId[m]):
+                            m = clusterId[m]
+                        clusterId[i] = m
+                        j += 1
+                        k += 1
+                else:
+                    var more = False
+                    var j: UInt32 = 0
+                    var k: UInt32 = 0
+                    while j < hist.size():
+                        var p = hist.begin() + j
+                        var i = UInt32(p[]) + firstPixel
+                        for kk in range( nnn[k]):
+                            var l = nn[k][kk]
+                            var m = UInt32(l) + firstPixel
+                            var old = CUDACompat.atomicMin(
+                                UnsafePointer(to = Int(clusterId[m])),
+                                Int(clusterId[i]),
+                            )
+                            if old != Int(clusterId[i]):
+                                more = True
+                            CUDACompat.atomicMin(
+                                UnsafePointer(to = Int(clusterId[i])),
+                                Int(old),
+                            )
+                        j += 1
+                        k += 1
+                nloops += 1
+            
+            var foundClusters: UInt32 = 0
+            for i in range(first, msize):
+                if (id[i] == Self.InvId):
+                    continue
+                if (clusterId[i] == i):
+                    #var old = CUDACompat.atomicInc(
+                     #   UnsafePointer(to = Int(foundClusters)),
+                      #  0xffffffff
+                    #)
 
 
 
