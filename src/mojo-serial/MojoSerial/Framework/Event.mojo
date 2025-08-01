@@ -24,12 +24,6 @@ struct WrapperBase(Copyable, Defaultable, Movable, Typeable):
         self._ptr = other._ptr
 
     @always_inline
-    fn __del__(owned self):
-        if self._ptr != UnsafePointer[NoneType]():
-            self._ptr.destroy_pointee()
-            self._ptr.free()
-
-    @always_inline
     fn product(self) -> UnsafePointer[NoneType, mut=False]:
         return self._ptr
 
@@ -46,11 +40,6 @@ struct Wrapper[T: Typeable & Movable](Movable, Typeable):
     fn __init__(out self, owned obj: T):
         self._ptr = UnsafePointer[T].alloc(1)
         self._ptr.init_pointee_move(obj^)
-
-    @always_inline
-    fn __del__(owned self):
-        self._ptr.destroy_pointee()
-        self._ptr.free()
 
     @always_inline
     fn __moveinit__(out self, owned other: Self):

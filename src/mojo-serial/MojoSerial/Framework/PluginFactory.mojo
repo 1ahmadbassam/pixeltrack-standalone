@@ -16,12 +16,6 @@ struct EDProducerWrapper(Copyable, Defaultable, Movable, Typeable):
         self._ptr = UnsafePointer[NoneType]()
 
     @always_inline
-    fn __del__(owned self):
-        if self._ptr != UnsafePointer[NoneType]():
-            self._ptr.destroy_pointee()
-            self._ptr.free()
-
-    @always_inline
     fn producer(self) -> UnsafePointer[NoneType]:
         return self._ptr
 
@@ -42,7 +36,7 @@ struct EDProducerWrapperT[T: Typeable & Movable & EDProducer](
         self._ptr.init_pointee_move(obj^)
 
     @always_inline
-    fn __del__(owned self):
+    fn delete(self):
         self._ptr.destroy_pointee()
         self._ptr.free()
 
@@ -64,17 +58,20 @@ struct EDProducerConcrete(Copyable, Movable, Typeable):
     alias _C = fn (mut ProductRegistry) raises -> EDProducerWrapper
     alias _P = fn (mut EDProducerWrapper, mut Event, EventSetup)
     alias _E = fn (mut EDProducerWrapper)
+    alias _D = fn (EDProducerWrapper)
     var _producer: EDProducerWrapper
     var _create: Self._C
     var _produce: Self._P
     var _end: Self._E
+    var _det: Self._D
 
     @always_inline
-    fn __init__(out self, create: Self._C, produce: Self._P, end: Self._E):
+    fn __init__(out self, create: Self._C, produce: Self._P, end: Self._E, det: Self._D):
         self._producer = EDProducerWrapper()
         self._create = create
         self._produce = produce
         self._end = end
+        self._det = det
 
     @always_inline
     fn __copyinit__(out self, other: Self):
@@ -82,6 +79,7 @@ struct EDProducerConcrete(Copyable, Movable, Typeable):
         self._create = other._create
         self._produce = other._produce
         self._end = other._end
+        self._det = other._det
 
     @always_inline
     fn __moveinit__(out self, owned other: Self):
@@ -89,6 +87,7 @@ struct EDProducerConcrete(Copyable, Movable, Typeable):
         self._create = other._create
         self._produce = other._produce
         self._end = other._end
+        self._det = other._det
 
     @always_inline
     fn create(mut self, mut reg: ProductRegistry) raises:
@@ -101,6 +100,10 @@ struct EDProducerConcrete(Copyable, Movable, Typeable):
     @always_inline
     fn endJob(mut self):
         self._end(self._producer)
+
+    @always_inline
+    fn delete(self):
+        self._det(self._producer)
 
     @staticmethod
     @always_inline
@@ -116,6 +119,10 @@ struct Registry(Typeable):
         self._pluginRegistry = {}
 
     @always_inline
+    fn __del__(owned self):
+        self.delete()
+
+    @always_inline
     fn __getitem__(self, owned name: String) raises -> EDProducerConcrete:
         return self._pluginRegistry[name^]
 
@@ -126,6 +133,12 @@ struct Registry(Typeable):
         if name in self._pluginRegistry:
             raise Error("Plugin " + name + " is already registered.")
         self._pluginRegistry[name^] = esproducer^
+
+    @always_inline
+    fn delete(self):
+        for i in range(self._pluginRegistry._entries.__len__()):
+            if self._pluginRegistry._entries[i]:
+                self._pluginRegistry._entries[i].unsafe_value().value.delete()
 
     @staticmethod
     @always_inline
@@ -175,8 +188,14 @@ fn fwkModule[T: Typeable & Movable & EDProducer]():
     ](mut edproducer: EDProducerWrapper):
         rebind[EDProducerWrapperT[T]](edproducer).producer()[].endJob()
 
+    @always_inline
+    fn det_templ[
+        T: Typeable & Movable & EDProducer
+    ](edproducer: EDProducerWrapper):
+        rebind[EDProducerWrapperT[T]](edproducer).delete()
+
     var crp = EDProducerConcrete(
-        create_templ[T], produce_templ[T], end_templ[T]
+        create_templ[T], produce_templ[T], end_templ[T], det_templ[T]
     )
     try:
         __registry[T.dtype()] = crp^
