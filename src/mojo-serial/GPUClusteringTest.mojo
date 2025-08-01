@@ -1,4 +1,5 @@
 from MojoSerial.PluginSiPixelClusterizer.GPUClustering import GPUClustering
+from MojoSerial.MojoBridge.Array import Array
 from memory import memset
 from collections import Set
 
@@ -7,8 +8,8 @@ alias MaxNumModules : Int = 2000
 alias InvId : Int = 9999 # must be greater than MaxNumModules
 
 @always_inline
-fn generate_clusters(kn: Int, mut h_id: InlineArray[UInt16, numElements], mut h_x: InlineArray[UInt16, numElements],
-                    mut h_y: InlineArray[UInt16, numElements], mut h_adc: InlineArray[UInt16, numElements],
+fn generate_clusters(kn: Int, mut h_id: Array[UInt16, numElements], mut h_x: Array[UInt16, numElements],
+                    mut h_y: Array[UInt16, numElements], mut h_adc: Array[UInt16, numElements],
                     mut y : List[Int], mut n: Int, mut ncl: Int):
     var add_big_noise : Bool = (kn % 2 == 1)
 
@@ -203,15 +204,15 @@ fn generate_clusters(kn: Int, mut h_id: InlineArray[UInt16, numElements], mut h_
 
 
 fn main():
-    var h_id = InlineArray[UInt16, numElements](0)
-    var h_x = InlineArray[UInt16, numElements](0)
-    var h_y = InlineArray[UInt16, numElements](0)
-    var h_adc = InlineArray[UInt16, numElements](0)
-    var h_clus = InlineArray[Int32, numElements](0)
+    var h_id = Array[UInt16, numElements](0)
+    var h_x = Array[UInt16, numElements](0)
+    var h_y = Array[UInt16, numElements](0)
+    var h_adc = Array[UInt16, numElements](0)
+    var h_clus = Array[Int32, numElements](0)
 
-    var h_moduleStart = InlineArray[UInt32, MaxNumModules + 1](0)
-    var h_clusInModule = InlineArray[UInt32, MaxNumModules](0)
-    var h_moduleId = InlineArray[UInt32, MaxNumModules](0)
+    var h_moduleStart = Array[UInt32, MaxNumModules + 1](0)
+    var h_clusInModule = Array[UInt32, MaxNumModules](0)
+    var h_moduleId = Array[UInt32, MaxNumModules](0)
 
     var n : Int = 0
     var ncl : Int = 0
