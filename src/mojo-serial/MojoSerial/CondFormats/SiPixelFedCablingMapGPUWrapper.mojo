@@ -6,7 +6,7 @@ from MojoSerial.CondFormats.SiPixelFedCablingMapGPU import (
 from MojoSerial.MojoBridge.DTypes import UChar, Typeable
 
 
-struct SiPixelFedCablingMapGPUWrapper(Copyable, Defaultable, Movable, Typeable):
+struct SiPixelFedCablingMapGPUWrapper(Defaultable, Movable, Typeable):
     var modToUnpDefault: List[UChar]
     var _hasQuality: Bool
     var cablingMapHost: SiPixelFedCablingMapGPU
@@ -26,6 +26,12 @@ struct SiPixelFedCablingMapGPUWrapper(Copyable, Defaultable, Movable, Typeable):
         self.modToUnpDefault = modToUnp^
         self._hasQuality = False
         self.cablingMapHost = cablingMap^
+
+    @always_inline
+    fn __moveinit__(out self, owned other: Self):
+        self.modToUnpDefault = other.modToUnpDefault^
+        self._hasQuality = other._hasQuality
+        self.cablingMapHost = other.cablingMapHost^
 
     fn hasQuality(self) -> Bool:
         return self._hasQuality

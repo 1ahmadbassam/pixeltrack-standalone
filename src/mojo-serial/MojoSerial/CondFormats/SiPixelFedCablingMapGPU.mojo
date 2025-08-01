@@ -12,8 +12,7 @@ from MojoSerial.MojoBridge.DTypes import UChar, Typeable
 from MojoSerial.CondFormats.PixelGPUDetails import PixelGPUDetails
 
 
-@fieldwise_init
-struct SiPixelFedCablingMapGPU(Copyable, Defaultable, Movable, Typeable):
+struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
     alias _U = InlineArray[UInt32, Int(PixelGPUDetails.MAX_SIZE)]
     alias _UD = Self._U(uninitialized=True)
     alias _C = InlineArray[UChar, Int(PixelGPUDetails.MAX_SIZE)]
