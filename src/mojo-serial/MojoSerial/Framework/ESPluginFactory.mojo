@@ -25,15 +25,13 @@ struct ESProducerWrapper(Copyable, Defaultable, Movable, Typeable):
         return "ESProducerWrapper"
 
 
-struct ESProducerWrapperT[T: Typeable & Movable & ESProducer](
-    Movable, Typeable
-):
+struct ESProducerWrapperT[T: Typeable & ESProducer](Movable, Typeable):
     var _ptr: UnsafePointer[T]
 
     @always_inline
-    fn __init__(out self, owned obj: T):
+    fn __init__(out self, owned path: Path):
         self._ptr = UnsafePointer[T].alloc(1)
-        self._ptr.init_pointee_move(obj^)
+        __get_address_as_uninit_lvalue(self._ptr.address) = T.__init__(path)
 
     @always_inline
     fn __moveinit__(out self, owned other: Self):
@@ -162,27 +160,23 @@ struct ESPluginFactory:
 
 
 @always_inline
-fn fwkEventSetupModule[T: Typeable & Movable & ESProducer]():
+fn fwkEventSetupModule[T: Typeable & ESProducer]():
     @always_inline
     fn create_templ[
-        T: Typeable & Movable & ESProducer
+        T: Typeable & ESProducer
     ](owned path: Path) -> ESProducerWrapper:
-        var obj: T = T.__init__(path^)
-        var wrapper = ESProducerWrapperT[T](obj^)
-        return rebind[ESProducerWrapper](wrapper^)
+        return rebind[ESProducerWrapper](ESProducerWrapperT[T](path^))
 
     @always_inline
     fn produce_templ[
-        T: Typeable & Movable & ESProducer
+        T: Typeable & ESProducer
     ](mut esproducer: ESProducerWrapper, mut eventSetup: EventSetup):
         rebind[ESProducerWrapperT[T]](esproducer).producer()[].produce(
             eventSetup
         )
 
     @always_inline
-    fn det_templ[
-        T: Typeable & Movable & ESProducer
-    ](esproducer: ESProducerWrapper):
+    fn det_templ[T: Typeable & ESProducer](esproducer: ESProducerWrapper):
         rebind[ESProducerWrapperT[T]](esproducer).delete()
 
     var crp = ESProducerConcrete(
