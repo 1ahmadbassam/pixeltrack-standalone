@@ -39,7 +39,7 @@ struct ESWrapper[T: Typeable & Movable](Movable, Typeable):
     @staticmethod
     @always_inline
     fn dtype() -> String:
-        return "ESWrapper[" + T.dtype() + ']'
+        return "ESWrapper[" + T.dtype() + "]"
 
 
 struct EventSetup(Defaultable, Movable, Typeable):

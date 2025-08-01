@@ -20,6 +20,19 @@ fn pprint[T: StringStandardType](L: List[T]):
     print("]")
 
 
+fn pprint[T: StringStandardType, size: Int, //](L: InlineArray[T, size]):
+    print("[", end="")
+
+    @parameter
+    if size > 0:
+        print(L[0].__str__(), end="")
+
+        @parameter
+        for i in range(1, size):
+            print(", " + L[i].__str__(), end="")
+    print("]")
+
+
 fn pprint[T1: StringStandardKeyType, T2: StringStandardType](D: Dict[T1, T2]):
     print("{", end="")
     if D.__len__() > 0:
