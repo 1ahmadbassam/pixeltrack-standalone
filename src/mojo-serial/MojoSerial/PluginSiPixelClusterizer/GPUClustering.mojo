@@ -113,7 +113,7 @@ struct GPUClustering:
                 #    printf("columns with more than 60 px %d in %d\n", n60, thisModuleId);
                 #else if (n40 > 0)
                     #   printf("columns with more than 40 px %d in %d\n", n40, thisModuleId);
-
+#include "gpuClusteringConstants.h"
             #endif
             var j: UInt32 = 0
             var k: UInt32 = 0
@@ -186,10 +186,10 @@ struct GPUClustering:
                     continue
                 if (clusterId[i] == i):
                     pass
-                    #var old = CUDACompat.atomicInc(
-                     #   UnsafePointer(to = Int(foundClusters)),
-                      #  0xffffffff
-                    #)
+                    var old = CUDACompat.atomicInc(
+                       UnsafePointer(to = Int32(foundClusters)),
+                       0xffffffff
+                    )
 
 
 
@@ -206,6 +206,49 @@ struct GPUClustering:
         clusterId: UnsafePointer[Int32, mut=True],
         numElements: UInt32,
     ):
-        pass
+        var charge = List[Int32](capacity = Int(GPUClusteringConstants.MaxNumClustersPerModules))
+        var ok = List[UInt8](capacity = Int(GPUClusteringConstants.MaxNumClustersPerModules))
+        var newclusId = List[UInt16](capacity = Int(GPUClusteringConstants.MaxNumClustersPerModules))
+        #var firstModule: UInt32 = 0
+        var endModule = moduleStart[0]
+        for module in range(endModule):
+            var firstPixel = moduleStart[1 + module]
+            var thisModuleId = id[firstPixel]
+            #there is an assert here, need to check it
+            var nclus = nClustersInModule[thisModuleId]
+            if nclus == 0:
+                continue
+            var first = firstPixel
+            if nclus > UInt32(GPUClusteringConstants.MaxNumClustersPerModules):
+                print("Warning too many clusters in module %d in block %d: %d > %d\n",
+               thisModuleId,
+               0,
+               nclus,
+               GPUClusteringConstants.MaxNumClustersPerModules)
+                for i in range(first, numElements):
+                    if id[i] == Self.InvId:
+                        continue
+                    if id[i] != thisModuleId:
+                        break
+                    if clusterId[i] >= GPUClusteringConstants.MaxNumClustersPerModules:
+                        id[i] = Self.InvId
+                        clusterId[i] = Self.InvId.cast[DType.int32]()
+                nclus = GPUClusteringConstants.MaxNumClustersPerModules.cast[DType.uint32]()
+            for i in range(nclus):
+                charge[i] = 0
 
-    # TODO: Finish this stub
+            for i in range(numElements):
+                if id[i] == Self.InvId:
+                    continue
+                if id[i] != thisModuleId:
+                    break
+                CUDACompat.atomicAdd(
+                    UnsafePointer(to = Int32(charge[clusterId[i]])),
+                    Int(adc[i]),
+                )
+            var chargeCut = 2000 if thisModuleId < 96 else 4000
+            for i in range(nclus):
+                newclusId[i] = UInt16(charge[i] > chargeCut) 
+                ok[i] = UInt8(charge[i] > chargeCut)
+
+            
