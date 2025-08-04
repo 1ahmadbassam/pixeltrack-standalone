@@ -203,7 +203,7 @@ fn generate_clusters(kn: Int, mut h_id: Array[UInt16, numElements], mut h_x: Arr
                     n += 1
 
 
-fn main():
+fn main() raises:
     var h_id = Array[UInt16, numElements](0)
     var h_x = Array[UInt16, numElements](0)
     var h_y = Array[UInt16, numElements](0)
@@ -214,8 +214,8 @@ fn main():
     var h_clusInModule = Array[UInt32, MaxNumModules](0)
     var h_moduleId = Array[UInt32, MaxNumModules](0)
 
-    var n : Int = 0
-    var ncl : Int = 0
+    var n : Int
+    var ncl : Int
     var y : List[Int] = [5, 7, 9, 1, 3, 0, 4, 8, 2, 6]
 
     for kkk in range(5):
@@ -266,41 +266,43 @@ fn main():
             clids.add(UInt(h_id[i]) * 1000 + UInt(h_clus[i]))
 
         # verify no hole in numbering
-        var p = clids.begin()
-        var cmid = (*p) / 1000
-        debug_assert(0 == (*p) % 1000)
+        var p = clids.__iter__()
+        var p_element = p.__next__()
+        var cmid = p_element // 1000
+        debug_assert(0 == p_element % 1000)
+
+        var c_element = p.__next__()
         var c = p
-        c+= 1
+        p = clids.__iter__()
 
-        print("first clusters " , *p , ' ' , *c , ' ' , h_clusInModule[cmid] , ' ' , h_clusInModule[(*c) // 1000])
-        print("last cluster " , *clids.rbegin() , ' ' , h_clusInModule[(*clids.rbegin()) // 1000])
+        var last_element = clids.pop()
+        print("first clusters " , p_element , ' ' , c_element , ' ' , h_clusInModule[cmid] , ' ' , h_clusInModule[c_element // 1000])
+        print("last cluster " , last_element , ' ' , h_clusInModule[last_element // 1000])
+        clids.add(last_element)
         
-        for ( c != clids.end() ++c) {
-        var cc = *c
-        var pp = *p
-        var mid = cc / 1000
-        var pnc = pp % 1000
-        var nc = cc % 1000
-        if (mid != cmid) {
-            assert(0 == cc % 1000)
-            assert(h_clusInModule[cmid] - 1 == pp % 1000)
-            // if (h_clusInModule[cmid]-1 != pp%1000) std::cout << "error size " << mid << ": "  << h_clusInModule[mid] << ' ' << pp << std::endl
-            cmid = mid
-            p = c
-            continue
-        }
-        p = c
-        // assert(nc==pnc+1)
-        if (nc != pnc + 1)
-            std::cout << "error " << mid << ": " << nc << ' ' << pnc << std::endl
-        }
+        for _ in range(len(clids) - 1):
+            var cc = c.__next__()
+            var pp = p.__next__()
+            var mid = cc // 1000
+            var pnc = pp % 1000
+            var nc = cc % 1000
 
-        std::cout << "found " << std::accumulate(h_clusInModule, h_clusInModule + MaxNumModules, 0) << ' ' << clids.size() << " clusters"
-                << std::endl
-        for (var i = MaxNumModules i > 0 i--)
-        if (h_clusInModule[i - 1] > 0) {
-            std::cout << "last module is " << i - 1 << ' ' << h_clusInModule[i - 1] << std::endl
-            break
-        }
-        // << " and " << seeds.size() << " seeds" << std::endl
-    }  /// end loop kkk
+            if mid != cmid:
+                debug_assert(0 == cc % 1000)
+                debug_assert(h_clusInModule[cmid] - 1 == pp % 1000)
+                cmid = mid
+                continue
+
+            if nc != pnc + 1:
+                print("error " , mid , ": " , nc , ' ' , pnc)
+
+        summ : UInt32 = 0
+        for i in range(len(h_clusInModule)):
+            summ += h_clusInModule[i]
+
+        print("found " , summ , ' ' , len(clids) , " clusters")
+
+        for i in range(MaxNumModules, 0, -1):
+            if h_clusInModule[i - 1] > 0:
+                print("last module is " , i - 1 , ' ' , h_clusInModule[i - 1])
+                break
