@@ -44,3 +44,25 @@ fn enumerate[T: Movable & Copyable](K: Span[T]) -> List[Tuple[Int, T]]:
     for i in range(len(K)):
         L.append((i, K[i]))
     return L
+
+
+@fieldwise_init
+@register_passable("trivial")
+struct TypeableInt(Copyable, Movable, Typeable):
+    var val: Int
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "TypeableInt"
+
+
+@fieldwise_init
+@register_passable("trivial")
+struct TypeableUInt(Copyable, Movable, Typeable):
+    var val: UInt
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "TypeableUInt"
