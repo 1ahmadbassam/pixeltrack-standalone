@@ -3,7 +3,7 @@ from pathlib import Path
 from MojoSerial.Bin.EventProcessor import EventProcessor
 
 
-def main():
+fn main() raises:
     var warmupEvents = 10
     var maxEvents = 1000
     var path = Path("data")

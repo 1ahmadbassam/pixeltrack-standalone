@@ -7,7 +7,7 @@ from MojoSerial.Framework.PluginFactory import PluginFactory
 from MojoSerial.Framework.ESProducer import ESProducer
 from MojoSerial.MojoBridge.DTypes import Typeable
 
-def main():
+fn main() raises:
     MojoSerial.PluginSiPixelClusterizer.init()
     var evt = EventSetup()
 

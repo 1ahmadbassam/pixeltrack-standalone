@@ -7,7 +7,7 @@ from MojoSerial.Framework.ESProducer import ESProducer
 from MojoSerial.MojoBridge.DTypes import Typeable
 
 
-def main():
+fn main() raises:
     MojoSerial.PluginTest1.init()
     MojoSerial.PluginTest2.init()
     var evt = EventSetup()
