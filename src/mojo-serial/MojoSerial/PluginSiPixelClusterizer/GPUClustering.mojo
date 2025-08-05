@@ -91,7 +91,6 @@ struct GPUClustering:
             ]
             var hist = Hist()
 
-            @parameter
             for j in range(Hist.totbins()):
                 hist.off[j] = 0
 
