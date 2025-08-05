@@ -4,8 +4,8 @@ from MojoSerial.Bin.EventProcessor import EventProcessor
 
 
 def main():
-    var warmupEvents = 1000
-    var maxEvents = 10000
+    var warmupEvents = 10
+    var maxEvents = 1000
     var path = Path("data")
     var validation = False
 
