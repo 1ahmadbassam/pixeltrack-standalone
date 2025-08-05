@@ -29,8 +29,9 @@ struct GPUClustering:
             if j < 0 or id[j] != id[i]:
                 # boundary
                 var loc = moduleStart[]
-                moduleStart[] += GPUClusteringConstants.MaxNumModules
-                moduleStart[loc + 1] += 1
+                if moduleStart[] < GPUClusteringConstants.MaxNumModules:
+                    moduleStart[] += 1
+                moduleStart[loc + 1] += i.cast[DType.uint32]()
 
     @staticmethod
     fn findClus(
