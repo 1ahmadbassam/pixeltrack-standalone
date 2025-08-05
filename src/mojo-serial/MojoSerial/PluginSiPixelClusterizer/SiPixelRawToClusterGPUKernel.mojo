@@ -883,7 +883,6 @@ fn fillHitsModuleStart[
         GPUClusteringConstants.MaxNumModules < 2048
     )  # easy to extend at least till 32*1024
 
-    @parameter
     for i in range(0, GPUClusteringConstants.MaxNumModules):
         moduleStart[i + 1] = min(
             GPUClusteringConstants.maxHitsInModule(), cluStart[i]
@@ -896,7 +895,6 @@ fn fillHitsModuleStart[
         GPUClusteringConstants.MaxNumModules - 1024,
     )
 
-    @parameter
     for i in range(1025, GPUClusteringConstants.MaxNumModules + 1):
         moduleStart[i] += moduleStart[1024]
 
@@ -912,7 +910,6 @@ fn fillHitsModuleStart[
             >= moduleStart[1025]
         )
 
-        @parameter
         for i in range(1, GPUClusteringConstants.MaxNumModules + 1):
             debug_assert(moduleStart[i] >= moduleStart[i - i])
             # [BPX1, BPX2, BPX3, BPX4,  FP1,  FP2,  FP3,  FN1,  FN2,  FN3, LAST_VALID]
@@ -926,7 +923,6 @@ fn fillHitsModuleStart[
                 print("moduleStart", i, moduleStart[i])
     alias MAX_HITS = GPUClusteringConstants.MaxNumClusters
 
-    @parameter
     for i in range(0, GPUClusteringConstants.MaxNumModules + 1):
         if moduleStart[i] > GPUClusteringConstants.MaxNumClusters:
             moduleStart[i] = GPUClusteringConstants.MaxNumClusters
