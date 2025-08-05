@@ -3,23 +3,30 @@ from MojoSerial.MojoBridge.Array import Array
 from memory import memset
 from collections import Set
 
-alias numElements : Int = 256 * 2000
-alias MaxNumModules : Int = 2000
-alias InvId : Int = 9999 # must be greater than MaxNumModules
+alias numElements: Int = 256 * 2000
+alias MaxNumModules: Int = 2000
+alias InvId: Int = 9999  # must be greater than MaxNumModules
+
 
 @always_inline
-fn generate_clusters(kn: Int, mut h_id: Array[UInt16, numElements], mut h_x: Array[UInt16, numElements],
-                    mut h_y: Array[UInt16, numElements], mut h_adc: Array[UInt16, numElements],
-                    mut y : List[Int], mut n: Int, mut ncl: Int):
-    var add_big_noise : Bool = (kn % 2 == 1)
+fn generate_clusters(
+    kn: Int,
+    mut h_id: Array[UInt16, numElements],
+    mut h_x: Array[UInt16, numElements],
+    mut h_y: Array[UInt16, numElements],
+    mut h_adc: Array[UInt16, numElements],
+    mut y: List[Int],
+    mut n: Int,
+    mut ncl: Int,
+):
+    var add_big_noise: Bool = kn % 2 == 1
 
     if add_big_noise:
-        alias MaxPixels : Int = 1000
-        alias id : Int = 666
+        alias MaxPixels: Int = 1000
+        alias id: Int = 666
 
         for x in range(0, 140, 3):
             for y in range(0, 400, 3):
-
                 h_id[n] = id
                 h_x[n] = x
                 h_y[n] = y
@@ -35,7 +42,7 @@ fn generate_clusters(kn: Int, mut h_id: Array[UInt16, numElements], mut h_x: Arr
                 break
 
     @parameter
-    if True: # Isolated
+    if True:  # Isolated
         var id = 42
         var x = 10
 
@@ -64,7 +71,7 @@ fn generate_clusters(kn: Int, mut h_id: Array[UInt16, numElements], mut h_x: Arr
         h_y[n] = 2
         h_adc[n] = 5000
         n += 1
-        
+
         h_id[n] = id
         h_x[n] = x + 80
         h_y[n] = 1
@@ -101,7 +108,7 @@ fn generate_clusters(kn: Int, mut h_id: Array[UInt16, numElements], mut h_x: Arr
             h_y[n] = x
             h_adc[n] = 1000
             n += 1
-        
+
         # reversed
         ncl += 1
         for x in range(45, 40, -1):
@@ -115,7 +122,7 @@ fn generate_clusters(kn: Int, mut h_id: Array[UInt16, numElements], mut h_x: Arr
         h_id[n] = InvId  # error
         n += 1
 
-        var xx : List[Int] = [21, 25, 23, 24, 22]
+        var xx: List[Int] = [21, 25, 23, 24, 22]
         for k in range(5):
             h_id[n] = id
             h_x[n] = xx[k]
@@ -142,8 +149,8 @@ fn generate_clusters(kn: Int, mut h_id: Array[UInt16, numElements], mut h_x: Arr
                 h_adc[n] = 1000
                 n += 1
 
-    var id : Int = 0
-    var x : Int = 10
+    var id: Int = 0
+    var x: Int = 10
 
     ncl += 1
     h_id[n] = id
@@ -185,14 +192,14 @@ fn generate_clusters(kn: Int, mut h_id: Array[UInt16, numElements], mut h_x: Arr
                         h_adc[n] = 1000
                     n += 1
 
-                    if y[k] == 3: # hole
+                    if y[k] == 3:  # hole
                         continue
-                    if id == 51: # error
+                    if id == 51:  # error
                         h_id[n] = InvId
                         n += 1
                         h_id[n] = InvId
                         n += 1
-                        
+
                     h_id[n] = id
                     h_x[n] = x + 1
                     h_y[n] = x + y[k] + 2
@@ -214,9 +221,9 @@ fn main() raises:
     var h_clusInModule = Array[UInt32, MaxNumModules](0)
     var h_moduleId = Array[UInt32, MaxNumModules](0)
 
-    var n : Int
-    var ncl : Int
-    var y : List[Int] = [5, 7, 9, 1, 3, 0, 4, 8, 2, 6]
+    var n: Int
+    var ncl: Int
+    var y: List[Int] = [5, 7, 9, 1, 3, 0, 4, 8, 2, 6]
 
     for kkk in range(5):
         n = 0
@@ -226,17 +233,30 @@ fn main() raises:
         print("created ", n, " digis in ", ncl, " clusters")
         debug_assert(n <= numElements)
 
-        var nModules : UInt32 = 0
+        var nModules: UInt32 = 0
 
         h_moduleStart[0] = nModules
-        GPUClustering.countModules(h_id.unsafe_ptr(), h_moduleStart.unsafe_ptr(), h_clus.unsafe_ptr(), n)
+        GPUClustering.countModules(
+            h_id.unsafe_ptr(),
+            h_moduleStart.unsafe_ptr(),
+            h_clus.unsafe_ptr(),
+            n,
+        )
         memset(h_clusInModule.unsafe_ptr(), 0, MaxNumModules)
 
-        GPUClustering.findClus(h_id.unsafe_ptr(), h_x.unsafe_ptr(), h_y.unsafe_ptr(), h_moduleStart.unsafe_ptr(),
-                            h_clusInModule.unsafe_ptr(), h_moduleId.unsafe_ptr(), h_clus.unsafe_ptr(), n)
+        GPUClustering.findClus(
+            h_id.unsafe_ptr(),
+            h_x.unsafe_ptr(),
+            h_y.unsafe_ptr(),
+            h_moduleStart.unsafe_ptr(),
+            h_clusInModule.unsafe_ptr(),
+            h_moduleId.unsafe_ptr(),
+            h_clus.unsafe_ptr(),
+            n,
+        )
 
         nModules = h_moduleStart[0]
-        var summ : UInt32 = 0
+        var summ: UInt32 = 0
         for i in range(len(h_clusInModule)):
             summ += h_clusInModule[i]
 
@@ -244,22 +264,29 @@ fn main() raises:
 
         for i in range(MaxNumModules, 0, -1):
             if h_clusInModule[i - 1] > 0:
-                print("last module is ", i - 1, ' ', h_clusInModule[i - 1])
+                print("last module is ", i - 1, " ", h_clusInModule[i - 1])
                 break
 
         if UInt32(ncl) != summ:
             print("ERROR! wrong number of clusters found")
 
-        GPUClustering.clusterChargeCut(h_id.unsafe_ptr(), h_adc.unsafe_ptr(), h_moduleStart.unsafe_ptr(),
-                                    h_clusInModule.unsafe_ptr(), h_moduleId.unsafe_ptr(), h_clus.unsafe_ptr(), n)
+        GPUClustering.clusterChargeCut(
+            h_id.unsafe_ptr(),
+            h_adc.unsafe_ptr(),
+            h_moduleStart.unsafe_ptr(),
+            h_clusInModule.unsafe_ptr(),
+            h_moduleId.unsafe_ptr(),
+            h_clus.unsafe_ptr(),
+            n,
+        )
 
-        print("found " , nModules , " Modules active")
+        print("found ", nModules, " Modules active")
 
         var clids = Set[UInt]()
 
         for i in range(n):
             debug_assert(h_id[i] != 666)  # only noise
-            if (h_id[i] == InvId):
+            if h_id[i] == InvId:
                 continue
             debug_assert(h_clus[i] >= 0)
             debug_assert(h_clus[i] < Int(h_clusInModule[h_id[i]]))
@@ -276,10 +303,24 @@ fn main() raises:
         p = clids.__iter__()
 
         var last_element = clids.pop()
-        print("first clusters " , p_element , ' ' , c_element , ' ' , h_clusInModule[cmid] , ' ' , h_clusInModule[c_element // 1000])
-        print("last cluster " , last_element , ' ' , h_clusInModule[last_element // 1000])
+        print(
+            "first clusters ",
+            p_element,
+            " ",
+            c_element,
+            " ",
+            h_clusInModule[cmid],
+            " ",
+            h_clusInModule[c_element // 1000],
+        )
+        print(
+            "last cluster ",
+            last_element,
+            " ",
+            h_clusInModule[last_element // 1000],
+        )
         clids.add(last_element)
-        
+
         for _ in range(len(clids) - 1):
             var cc = c.__next__()
             var pp = p.__next__()
@@ -294,15 +335,15 @@ fn main() raises:
                 continue
 
             if nc != pnc + 1:
-                print("error " , mid , ": " , nc , ' ' , pnc)
+                print("error ", mid, ": ", nc, " ", pnc)
 
-        summ : UInt32 = 0
+        summ: UInt32 = 0
         for i in range(len(h_clusInModule)):
             summ += h_clusInModule[i]
 
-        print("found " , summ , ' ' , len(clids) , " clusters")
+        print("found ", summ, " ", len(clids), " clusters")
 
         for i in range(MaxNumModules, 0, -1):
             if h_clusInModule[i - 1] > 0:
-                print("last module is " , i - 1 , ' ' , h_clusInModule[i - 1])
+                print("last module is ", i - 1, " ", h_clusInModule[i - 1])
                 break
