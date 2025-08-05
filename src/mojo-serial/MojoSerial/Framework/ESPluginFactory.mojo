@@ -152,6 +152,11 @@ struct ESPluginFactory:
 
     @staticmethod
     @always_inline
+    fn size() -> Int:
+        return __registry._pluginRegistry.__len__()
+
+    @staticmethod
+    @always_inline
     fn create(
         owned name: String, owned path: Path
     ) raises -> ref [__registry] ESProducerConcrete:

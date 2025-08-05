@@ -16,6 +16,22 @@ fn read_simd[T: DType](mut file: FileHandle) raises -> Scalar[T]:
 
 
 @always_inline
+fn read_simd_eof[
+    T: DType
+](mut file: FileHandle) raises -> Tuple[Bool, Scalar[T]]:
+    var bytes = file.read_bytes(T.sizeof())
+    if bytes.__len__() < T.sizeof():
+        return True, 0
+    # from_bytes requires an InlineArray, these should'nt be as big anyway
+    var array = InlineArray[UInt8, T.sizeof()](uninitialized=True)
+
+    @parameter
+    for i in range(T.sizeof()):
+        array[i] = (bytes.data + i).take_pointee()
+    return False, Scalar[T].from_bytes(array^)
+
+
+@always_inline
 fn read_obj[T: Movable](mut file: FileHandle) raises -> T:
     return file.read_bytes(sizeof[T]()).data.bitcast[T]().take_pointee()
 

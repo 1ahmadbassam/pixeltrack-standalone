@@ -7,7 +7,7 @@ from MojoSerial.MojoBridge.DTypes import Typeable
 
 @fieldwise_init
 @register_passable("trivial")
-struct Indices(Copyable, Movable, Typeable):
+struct Indices(Copyable, Movable, Representable, Typeable):
     var _moduleIndex: UInt
     var _productIndex: UInt
 
@@ -20,6 +20,16 @@ struct Indices(Copyable, Movable, Typeable):
         return self._productIndex
 
     @always_inline
+    fn __repr__(self) -> String:
+        return (
+            "Indices("
+            + String(self._moduleIndex)
+            + ", "
+            + String(self._productIndex)
+            + ")"
+        )
+
+    @always_inline
     @staticmethod
     fn dtype() -> String:
         return "Indices"
@@ -28,7 +38,7 @@ struct Indices(Copyable, Movable, Typeable):
 struct ProductRegistry(Movable, Sized, Typeable):
     alias kSourceIndex: Int = 0
     var _typeToIndex: Dict[String, Indices]
-    var _currentModuleIndex: Int
+    var _currentModuleIndex: Int32
     var _consumedModules: Set[UInt]
 
     @always_inline
@@ -47,7 +57,9 @@ struct ProductRegistry(Movable, Sized, Typeable):
         if T.dtype() in self._typeToIndex:
             raise "RuntimeError: Product of type " + T.dtype() + " already exists."
         var ind = self.__len__()
-        self._typeToIndex[T.dtype()] = Indices(self._currentModuleIndex, ind)
+        self._typeToIndex[T.dtype()] = Indices(
+            UInt(self._currentModuleIndex), ind
+        )
         return EDPutTokenT[T].__init__[Self](ind)
 
     fn consumes[T: Typeable](mut self) raises -> EDGetTokenT[T]:
@@ -58,7 +70,7 @@ struct ProductRegistry(Movable, Sized, Typeable):
         return EDGetTokenT[T].__init__[Self](item.productIndex())
 
     # internal interface
-    fn beginModuleConstruction(mut self, i: Int):
+    fn beginModuleConstruction(mut self, i: Int32):
         self._currentModuleIndex = i
         self._consumedModules.clear()
 

@@ -132,8 +132,6 @@ struct Registry(Typeable):
     fn __setitem__(
         mut self, owned name: String, owned esproducer: EDProducerConcrete
     ) raises:
-        if name in self._pluginRegistry:
-            raise Error("Plugin " + name + " is already registered.")
         self._pluginRegistry[name^] = esproducer^
 
     @always_inline
@@ -163,6 +161,11 @@ struct PluginFactory:
         ]
     ):
         return __registry._pluginRegistry.keys()
+
+    @staticmethod
+    @always_inline
+    fn size() -> Int:
+        return __registry._pluginRegistry.__len__()
 
     @staticmethod
     @always_inline
