@@ -123,7 +123,7 @@ struct HistoContainer[
     T: DType,  # the type of the discretized input values
     NBINS: UInt32,  # number of bins
     SIZE: UInt32,  # max number of elements
-    S: UInt32 = T.sizeof(),  # number of significant bits in T
+    S: UInt32 = T.sizeof() * 8,  # number of significant bits in T
     I: DType = DType.uint32,  # type stored in the container (usually an index in a vector of the input values)
     NHISTS: UInt32 = 1,  # number of histos stored
 ](Defaultable, Movable, Sized, Typeable):

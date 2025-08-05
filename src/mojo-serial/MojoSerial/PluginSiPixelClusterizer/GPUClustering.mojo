@@ -80,9 +80,9 @@ struct GPUClustering:
 
             # init hist  (ymax=416 < 512 : 9bits)
             alias maxPixInModule: UInt32 = 4000
-            alias nbins = Phase1PixelTopology.numRowsInModule.cast[
+            alias nbins = Phase1PixelTopology.numColsInModule.cast[
                 DType.uint32
-            ]() + 2  # 2+2
+            ]() + 2
             alias Hist = HistoContainer[
                 DType.uint16,
                 nbins,
