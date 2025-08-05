@@ -1,4 +1,5 @@
 from memory import UnsafePointer
+from collections import Deque
 
 from MojoSerial.Framework.Event import Event
 from MojoSerial.Framework.EventSetup import EventSetup
@@ -34,12 +35,47 @@ struct StreamSchedule(Movable, Defaultable, Typeable):
             self._registry = reg
             self._source = source
             self._eventSetup = eventSetup
-            self._path = List[EDProducerConcrete](capacity=PluginFactory.size())
             self._streamId = streamId
-            for plugin in PluginFactory.getAll():
-                self._path.append(
-                    PluginFactory.create(plugin, self._registry[])
-                )
+
+            var nModules = PluginFactory.size()
+
+            var producers = List[EDProducerConcrete](capacity=nModules)
+            var adj = List[List[Int]](length=nModules, fill=[])
+            var in_degree = List[Int](length=nModules, fill=0)
+
+            var i: UInt = 0
+            for name in PluginFactory.getAll():
+                self._registry[].beginModuleConstruction(i + 1)
+                producers.append(PluginFactory.create(name, self._registry[]))
+                var dep_indices = self._registry[].consumedModules()
+                in_degree[i] = dep_indices.__len__()
+
+                for dep_index in dep_indices:
+                    adj[dep_index - 1].append(i)
+                i += 1
+
+            var q = Deque[Int]()
+            for i in range(nModules):
+                if in_degree[i] == 0:
+                    q.append(i)
+            
+            var sorted_indices = List[Int](capacity=nModules)
+            while q.__len__() > 0:
+                var u = q.pop()
+                sorted_indices.append(u)
+
+                for v in adj[u]:
+                    in_degree[v] -= 1
+                    if in_degree[v] == 0:
+                        q.append(v)
+            
+            if sorted_indices.__len__() != nModules:
+                raise Error("A cycle was detected in the module dependency graph.")
+            
+            self._path = List[EDProducerConcrete](capacity=nModules)
+            var data = producers.steal_data()
+            for index in sorted_indices:
+                self._path.append((data + index).take_pointee())
         except e:
             print("Error in StreamSchedule.mojo,", e)
             return Self()
