@@ -156,28 +156,25 @@ struct Source(Defaultable, Movable, Typeable):
         return self._numEvents
 
     fn produce(
-        self, streamId: Int32, ref reg: ProductRegistry
+        mut self, streamId: Int32, ref reg: ProductRegistry
     ) -> UnsafePointer[Event]:
-        var old = self._numEvents + 1
-        var iev = old + 1
         var res = UnsafePointer[Event]()
-
-        if old >= self._maxEvents:
+        if self._numEvents >= self._maxEvents:
             return res
-        else:
-            var ev = Event(Int(streamId), Int(iev), reg)
-            var index = old % self._raw.__len__()
+        self._numEvents += 1
+        var ev = Event(Int(streamId), Int(self._numEvents), reg)
+        var index = (self._numEvents - 1) % self._raw.__len__()
 
-            ev.put[FEDRawDataCollection](self._rawToken, self._raw[index])
-            if self._validation:
-                ev.put[DigiClusterCount](
-                    self._digiClusterToken, self._digiclusters[index]
-                )
-                ev.put[TrackCount](self._trackToken, self._tracks[index])
-                ev.put[VertexCount](self._vertexToken, self._vertices[index])
-            res = UnsafePointer[Event].alloc(1)
-            res.init_pointee_move(ev^)
-            return res
+        ev.put[FEDRawDataCollection](self._rawToken, self._raw[index])
+        if self._validation:
+            ev.put[DigiClusterCount](
+                self._digiClusterToken, self._digiclusters[index]
+            )
+            ev.put[TrackCount](self._trackToken, self._tracks[index])
+            ev.put[VertexCount](self._vertexToken, self._vertices[index])
+        res = UnsafePointer[Event].alloc(1)
+        res.init_pointee_move(ev^)
+        return res
 
     @staticmethod
     @always_inline
