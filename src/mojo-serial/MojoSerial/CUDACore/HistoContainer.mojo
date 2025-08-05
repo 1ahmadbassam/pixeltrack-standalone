@@ -216,14 +216,14 @@ struct HistoContainer[
 
     @always_inline
     fn countDirect(mut self, b: Self.D):
-        debug_assert(UInt32(b) < Self.nbins())
+        debug_assert(b.cast[DType.uint32]() < Self.nbins())
         self.off[b] += 1
 
     @always_inline
     fn fillDirect(mut self, b: Self.D, j: Scalar[Self.IndexType]):
         debug_assert(UInt32(b) < Self.nbins())
-        self.off[b] -= 1
         var w = self.off[b]
+        self.off[b] -= 1
         debug_assert(w > 0)
         self.bins[w - 1] = j
 
@@ -262,22 +262,22 @@ struct HistoContainer[
 
     @always_inline
     fn count(mut self, t: Self.D):
-        var b: UInt32 = Self.bin(t).cast[DType.uint32]()
+        var b = Self.bin(t).cast[DType.uint32]()
         debug_assert(b < Self.nbins())
         self.off[b] += 1
 
     @always_inline
     fn fill(mut self, t: Self.D, j: Scalar[Self.IndexType]):
-        var b: UInt32 = Self.bin(t).cast[DType.uint32]()
+        var b = Self.bin(t).cast[DType.uint32]()
         debug_assert(b < Self.nbins())
-        self.off[b] -= 1
         var w = self.off[b]
+        self.off[b] -= 1
         debug_assert(w > 0)
         self.bins[w - 1] = j
 
     @always_inline
     fn count(mut self, t: Self.D, nh: UInt32):
-        var b: UInt32 = Self.bin(t).cast[DType.uint32]()
+        var b = Self.bin(t).cast[DType.uint32]()
         debug_assert(b < Self.nbins())
         b += Self.histOff(nh)
         debug_assert(b < Self.totbins())
@@ -285,12 +285,12 @@ struct HistoContainer[
 
     @always_inline
     fn fill(mut self, t: Self.D, j: Scalar[Self.IndexType], nh: UInt32):
-        var b: UInt32 = Self.bin(t).cast[DType.uint32]()
+        var b = Self.bin(t).cast[DType.uint32]()
         debug_assert(b < Self.nbins())
         b += Self.histOff(nh)
         debug_assert(b < Self.totbins())
-        self.off[b] -= 1
         var w = self.off[b]
+        self.off[b] -= 1
         debug_assert(w > 0)
         self.bins[w - 1] = j
 
