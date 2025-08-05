@@ -126,7 +126,7 @@ struct HistoContainer[
     S: UInt32 = T.sizeof(),  # number of significant bits in T
     I: DType = DType.uint32,  # type stored in the container (usually an index in a vector of the input values)
     NHISTS: UInt32 = 1,  # number of histos stored
-](Movable, Defaultable, Typeable, Sized):
+](Defaultable, Movable, Sized, Typeable):
     alias CountersOnly = HistoContainer[T, NBINS, 0, S, I, NHISTS]
     alias Counter = UInt32
     alias IndexType = I
@@ -135,8 +135,8 @@ struct HistoContainer[
     alias UT = signed_to_unsigned[T]()
     alias UD = Scalar[Self.UT]
 
-    var off: Array[UInt32, Int(Self.totbins())]
-    var psws: UInt32
+    var off: Array[Self.Counter, Int(Self.totbins())]
+    var psws: Int32
     var bins: Array[Scalar[Self.IndexType], Int(Self.capacity())]
 
     @always_inline
@@ -202,9 +202,7 @@ struct HistoContainer[
     fn bin(t: Self.D) -> Self.UD:
         var shift = Self.sizeT() - Self.nbits()
         var mask = (1 << Self.nbits()) - 1
-        return (t.cast[Self.UT]() >> shift.cast[Self.UT]()) & mask.cast[
-            Self.UT
-        ]()
+        return ((t >> shift.cast[T]()) & mask.cast[T]()).cast[Self.UT]()
 
     @always_inline
     fn zero(mut self):
