@@ -48,6 +48,8 @@ struct StreamSchedule(Movable, Defaultable, Typeable):
                 self._registry[].beginModuleConstruction(i + 1)
                 producers.append(PluginFactory.create(name, self._registry[]))
                 var dep_indices = self._registry[].consumedModules()
+                if 0 in dep_indices:
+                    dep_indices.remove(0)
                 in_degree[i] = dep_indices.__len__()
 
                 for dep_index in dep_indices:
