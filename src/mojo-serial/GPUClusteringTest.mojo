@@ -270,7 +270,6 @@ fn main() raises:
 
         print("before charge cut found", summ, "clusters")
 
-        @parameter
         for i in range(GPUClusteringConstants.MaxNumModules, 0, -1):
             if h_clusInModule[i - 1] > 0:
                 print("last module is", i - 1, h_clusInModule[i - 1])
@@ -348,7 +347,6 @@ fn main() raises:
 
         print("found", summ, clids.__len__(), "clusters")
 
-        @parameter
         for i in range(GPUClusteringConstants.MaxNumModules, 0, -1):
             if h_clusInModule[i - 1] > 0:
                 print("last module is", i - 1, h_clusInModule[i - 1])
