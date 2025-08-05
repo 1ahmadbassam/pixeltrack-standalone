@@ -77,7 +77,7 @@ struct StreamSchedule(Movable, Defaultable, Typeable):
             for index in sorted_indices:
                 self._path.append((data + index).take_pointee())
         except e:
-            print("Error in StreamSchedule.mojo,", e)
+            print("Error occurred in Bin/StreamSchedule.mojo,", e)
             return Self()
 
     @always_inline

@@ -121,7 +121,7 @@ struct Source(Defaultable, Movable, Typeable):
             if self._maxEvents < 0:
                 self._maxEvents = self._raw.__len__()
         except e:
-            print("Error occurred in Source.mojo,", e)
+            print("Error occurred in Bin/Source.mojo,", e)
             return Self()
 
     @always_inline
