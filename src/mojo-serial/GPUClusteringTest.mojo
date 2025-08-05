@@ -1,7 +1,8 @@
+from collections import Set
+from memory import memset
+
 from MojoSerial.PluginSiPixelClusterizer.GPUClustering import GPUClustering
 from MojoSerial.MojoBridge.Array import Array
-from memory import memset
-from collections import Set
 
 alias numElements: Int = 256 * 2000
 alias MaxNumModules: Int = 2000
