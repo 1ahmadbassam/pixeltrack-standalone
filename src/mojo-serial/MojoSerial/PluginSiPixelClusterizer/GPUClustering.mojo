@@ -31,137 +31,148 @@ struct GPUClustering:
 
     @staticmethod
     fn findClus(
-        id: UnsafePointer[UInt16],
-        x: UnsafePointer[UInt16],
-        y: UnsafePointer[UInt16],
-        moduleStart: UnsafePointer[UInt32],
-        nClustersInModule: UnsafePointer[UInt32, mut=True],
-        moduleId: UnsafePointer[UInt32, mut=True],
-        clusterId: UnsafePointer[Int32, mut=True],
+        id: UnsafePointer[UInt16],  # module id of each pixel
+        x: UnsafePointer[UInt16],  # local coordinates of each pixel
+        y: UnsafePointer[UInt16],  #
+        moduleStart: UnsafePointer[
+            UInt32
+        ],  # index of the first pixel of each module
+        nClustersInModule: UnsafePointer[
+            UInt32, mut=True
+        ],  # output: number of clusters found in each module
+        moduleId: UnsafePointer[
+            UInt32, mut=True
+        ],  # output: module id of each module
+        clusterId: UnsafePointer[
+            Int32, mut=True
+        ],  # output: cluster id of each pixel
         numElements: UInt32,
     ):
-        var msize: Int32 = 0
-        # var firstModule: UInt32 = 0
+        var msize: UInt32
+
         var endModule = moduleStart[0]
         for module in range(endModule):
-            var firstPixel = moduleStart[module]
+            var firstPixel = moduleStart[module + 1]
             var thisModuleId = id[firstPixel]
-            # there is an assert here, need to check it
-            # also there is a gpudebug thing
+            debug_assert(
+                thisModuleId.cast[DType.uint32]()
+                < GPUClusteringConstants.MaxNumModules
+            )
+
             var first = firstPixel
-            msize = Int32(numElements)
+
+            # find the index of the first pixel not belonging to this module (or invalid)
+            msize = numElements
+
+            # skip threads not associated to an existing pixel
             for i in range(first, numElements):
-                if id[i] == GPUClusteringConstants.InvId:
+                if id[i] == GPUClusteringConstants.InvId:  # skip invalid pixels
                     continue
-                if id[i] != thisModuleId:
-                    CUDACompat.atomicMin(UnsafePointer(to=Int(msize)), Int(i))
+                if (
+                    id[i] != thisModuleId
+                ):  # find the first pixel in a different module
+                    msize = min(msize, i)
                     break
+
+            # init hist  (ymax=416 < 512 : 9bits)
             alias maxPixInModule: UInt32 = 4000
-            alias nbins = Phase1PixelTopology.numRowsInModule + 2
+            alias nbins = Phase1PixelTopology.numRowsInModule.cast[
+                DType.uint32
+            ]() + 2  # 2+2
             alias Hist = HistoContainer[
                 DType.uint16,
-                (nbins).cast[DType.uint32](),
+                nbins,
                 maxPixInModule,
                 9,
                 DType.uint16,
             ]
             var hist = Hist()
 
-            for i in range(Hist.totbins()):
-                hist.off[i] = 0
-                # reput the assert, needed
-                if Int32(msize) - Int32(firstPixel) > Int32(maxPixInModule):
-                    print(
-                        "too many pixels in module %d: %d > %d\n",
-                        thisModuleId,
-                        Int32(msize) - Int32(firstPixel),
-                        maxPixInModule,
-                    )
-                    msize = Int32(maxPixInModule) + Int32(firstPixel)
-                    # another assert here
-                    # another debug line here
+            @parameter
+            for j in range(Hist.totbins()):
+                hist.off[j] = 0
+
+            debug_assert(
+                (msize == numElements)
+                or ((msize < numElements) and (id[msize] != thisModuleId))
+            )
+
+            if msize - firstPixel > maxPixInModule:
+                print(
+                    "too many pixels in module ",
+                    thisModuleId,
+                    ": ",
+                    msize - firstPixel,
+                    " > ",
+                    maxPixInModule,
+                    sep="",
+                )
+                msize = maxPixInModule + firstPixel
+
+            debug_assert(msize - firstPixel <= maxPixInModule)
 
             for i in range(first, msize):
-                if id[i] == GPUClusteringConstants.InvId:
+                if id[i] == GPUClusteringConstants.InvId:  # skip invalid pixels
                     continue
                 hist.count(y[i])
-                # those lines are in the original code, what to do with them? :
-                # ifdef GPU_DEBUG
-                # atomicAdd(&totGood, 1);
-                # endif
-                hist.finalize()
-                # ifdef GPU_DEBUG
-                # assert(hist.size() == totGood);
-                # if (thisModuleId % 100 == 1)
-                # printf("histo size %d\n", hist.size());
-                # endif
+
+            hist.finalize()
+
             for i in range(first, msize):
-                if id[i] == GPUClusteringConstants.InvId:
+                if id[i] == GPUClusteringConstants.InvId:  # skip invalid pixels
                     continue
-                hist.fill(y[i], UInt16(i - firstPixel))
+                hist.fill(y[i], (i - firstPixel).cast[DType.uint16]())
 
             var maxiter = hist.size()
+            # allocate space for duplicate pixels: a pixel can appear more than once with different charge in the same event
             alias maxNeighbours = 10
-            # assert((hist.size() / 1) <= maxiter);
+            debug_assert((hist.size() / 1) <= maxiter)
+            # nearest neighbour
             var nn = List[List[UInt16]](capacity=Int(maxiter))
             for i in range(maxiter):
                 nn.append(List[UInt16](capacity=Int(maxNeighbours)))
-            var nnn = List[UInt8](capacity=Int(maxiter))
-            for k in range(maxiter):
-                nnn[k] = 0
-            # ifdef GPU_DEBUG
-            # // look for anomalous high occupancy
-            # uint32_t n40, n60;
-            # n40 = n60 = 0;
+            var nnn = List[UInt8](length=Int(maxiter), fill=0)  # number of nn
 
-            # for (uint32_t j = 0; j < Hist::nbins(); j++) {
-            #   if (hist.size(j) > 60)
-            #   atomicAdd(&n60, 1);
-            #    if (hist.size(j) > 40)
-            #    atomicAdd(&n40, 1);
-            # }
-
-            # if (n60 > 0)
-            #    printf("columns with more than 60 px %d in %d\n", n60, thisModuleId);
-            # else if (n40 > 0)
-            #   printf("columns with more than 40 px %d in %d\n", n40, thisModuleId);
-            # include "gpuClusteringConstants.h"
-            # endif
             var j: UInt32 = 0
             var k: UInt32 = 0
             while j < hist.size():
-                # assert(k < maxiter)
+                debug_assert(k < maxiter)
                 var p = hist.begin() + j
-                var i = UInt32(p[]) + firstPixel
-                # assert(id[i] != InvId);
-                # assert(id[i] == thisModuleId);
-                var be: Int32 = Hist.bin(y[i] + 1).cast[DType.int32]()
-                var e = hist.end(be.cast[DType.uint32]())
+                var i = p[].cast[DType.uint32]() + firstPixel
+                debug_assert(id[i] != GPUClusteringConstants.InvId)
+                debug_assert(id[i] == thisModuleId)  # same module
+                var be = Hist.bin(y[i] + 1).cast[DType.uint32]()
+                var e = hist.end(be)
                 p += 1
-                # assert(0 == nnn[k])
+                debug_assert(nnn[k] == 0)
                 while p < e:
-                    var m = UInt32(p[]) + firstPixel
-                    # assert(m != i);
-                    # assert(int(y[m]) - int(y[i]) >= 0);
-                    # assert(int(y[m]) - int(y[i]) <= 1);
-                    if abs((x[m]) - (x[i])) > 1:
+                    var m = p[].cast[DType.uint32]() + firstPixel
+                    debug_assert(m != i)
+                    debug_assert(Int(y[m]) - Int(y[i]) >= 0)
+                    debug_assert(Int(y[m]) - Int(y[i]) <= 1)
+                    if abs(Int(x[m]) - Int(x[i])) > 1:
                         continue
                     var l = nnn[k]
                     nnn[k] += 1
-                    # assert(l < maxNeighbours)
+                    debug_assert(l < maxNeighbours)
                     nn[k][l] = p[]
                     p += 1
                 j += 1
                 k += 1
-            var more: Bool = True
-            var nloops: Int32 = 0
+
+            # for each pixel, look at all the pixels until the end of the module;
+            # when two valid pixels within +/- 1 in x or y are found, set their id to the minimum;
+            # after the loop, all the pixel in each cluster should have the id equeal to the lowest
+            # pixel in the cluster ( clus[i] == i ).
+            var more = True
+            var nloops = 0
             while more:
                 if nloops % 2 == 1:
                     var j: UInt32 = 0
                     var k: UInt32 = 0
                     while j < hist.size():
                         var p = hist.begin() + j
-                        var i = UInt32(p[]) + firstPixel
+                        var i = p[].cast[DType.uint32]() + firstPixel
                         var m = clusterId[i]
                         while m != clusterId[m]:
                             m = clusterId[m]
@@ -174,33 +185,51 @@ struct GPUClustering:
                     var k: UInt32 = 0
                     while j < hist.size():
                         var p = hist.begin() + j
-                        var i = UInt32(p[]) + firstPixel
+                        var i = p[].cast[DType.uint32]() + firstPixel
                         for kk in range(nnn[k]):
                             var l = nn[k][kk]
-                            var m = UInt32(l) + firstPixel
-                            var old = CUDACompat.atomicMin(
-                                UnsafePointer(to=Int(clusterId[m])),
-                                Int(clusterId[i]),
-                            )
-                            if old != Int(clusterId[i]):
+                            var m = l.cast[DType.uint32]() + firstPixel
+                            debug_assert(m != i)
+                            var old = clusterId[m]
+                            clusterId[m] = min(clusterId[m], clusterId[i])
+                            if old != clusterId[i]:
+                                # end the loop only if no changes were applied
                                 more = True
-                            CUDACompat.atomicMin(
-                                UnsafePointer(to=Int(clusterId[i])),
-                                Int(old),
-                            )
+                            clusterId[i] = min(clusterId[i], old)
                         j += 1
                         k += 1
                 nloops += 1
 
             var foundClusters: UInt32 = 0
+
+            # find the number of different clusters, identified by a pixels with clus[i] == i;
+            # mark these pixels with a negative id.
             for i in range(first, msize):
-                if id[i] == GPUClusteringConstants.InvId:
+                if id[i] == GPUClusteringConstants.InvId:   # skip invalid pixels
                     continue
-                if clusterId[i] == i:
-                    pass
-                    var old = CUDACompat.atomicInc(
-                        UnsafePointer(to=Int32(foundClusters)), 0xFFFFFFFF
-                    )
+                if clusterId[i] == i.cast[DType.int32]():
+                    var old = foundClusters
+                    foundClusters = foundClusters + 1 if foundClusters <  0xFFFFFFFF else foundClusters
+                    clusterId[i] = -((old + 1).cast[DType.int32]())
+            
+            # propagate the negative id to all the pixels in the cluster.
+            for i in range(first, msize):
+                if id[i] == GPUClusteringConstants.InvId:   # skip invalid pixels
+                    continue
+                if clusterId[i] >= 0:
+                    # mark each pixel in a cluster with the same id as the first one
+                    clusterId[i] = clusterId[clusterId[i]]
+            
+            # adjust the cluster id to be a positive value starting from 0
+            for i in range(first, msize):
+                if id[i] == GPUClusteringConstants.InvId:   # skip invalid pixels
+                    clusterId[i] = -9999
+                    continue
+                clusterId[i] = -clusterId[i] - 1
+            
+            nClustersInModule[thisModuleId] = foundClusters
+            moduleId[module] = thisModuleId.cast[DType.uint32]()
+
 
     @staticmethod
     fn clusterChargeCut(
