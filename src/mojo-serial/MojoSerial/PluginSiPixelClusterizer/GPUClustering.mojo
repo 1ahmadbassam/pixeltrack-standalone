@@ -257,13 +257,13 @@ struct GPUClustering:
     ):
         var charge = Array[
             Int32, Int(GPUClusteringConstants.MaxNumClustersPerModules)
-        ](0)
+        ](uninitialized=True)
         var ok = Array[
             UInt8, Int(GPUClusteringConstants.MaxNumClustersPerModules)
-        ](0)
+        ](uninitialized=True)
         var newclusId = Array[
             UInt16, Int(GPUClusteringConstants.MaxNumClustersPerModules)
-        ](0)
+        ](uninitialized=True)
 
         var endModule = moduleStart[0]
         for module in range(endModule):
