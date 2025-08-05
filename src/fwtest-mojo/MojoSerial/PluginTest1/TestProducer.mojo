@@ -14,6 +14,7 @@ struct TestProducer(Defaultable, EDProducer, Typeable):
     var _rawGetToken: EDGetTokenT[FEDRawDataCollection]
     var _putToken: EDPutTokenT[TypeableUInt]
 
+    @always_inline
     fn __init__(out self):
         self._rawGetToken = EDGetTokenT[FEDRawDataCollection]()
         self._putToken = EDPutTokenT[TypeableUInt]()

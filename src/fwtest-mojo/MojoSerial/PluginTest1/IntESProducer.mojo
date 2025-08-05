@@ -6,14 +6,17 @@ from MojoSerial.MojoBridge.DTypes import Typeable, TypeableInt
 
 
 struct IntESProducer(Defaultable, ESProducer, Movable, Typeable):
+    # an esproducer cant have null size in memory
+    var x: Int
+
     fn __init__(out self):
-        pass
+        self.x = 0
 
     fn __moveinit__(out self, owned other: Self):
-        pass
+        self.x = other.x
 
     fn __init__(out self, owned path: Path):
-        pass
+        self.x = 0
 
     fn produce(mut self, mut eventSetup: EventSetup):
         try:
