@@ -37,28 +37,33 @@ struct GPUCalibPixel:
             if Self.InvId == id[i]:
                 continue
             var conversionFactor: Float = (
-            Self.VCaltoElectronGain_L1 if isRun2 and id[i] < 96
-            else Self.VCaltoElectronGain if isRun2
-            else 1.0
-            )
+                Self.VCaltoElectronGain_L1 if id[i]
+                < 96 else Self.VCaltoElectronGain
+            ) if isRun2 else 1.0
             var offset: Float = (
-            Self.VCaltoElectronOffset_L1 if isRun2 and id[i] < 96
-            else Self.VCaltoElectronOffset if isRun2
-            else 0
-            )
-            var isDeadColumn: Bool = False
-            var isNoisyColumn: Bool = False
+                Self.VCaltoElectronOffset_L1 if id[i]
+                < 96 else Self.VCaltoElectronOffset
+            ) if isRun2 else 0.0
+            var isDeadColumn = False
+            var isNoisyColumn = False
 
-            var row: UInt32 = UInt32(x[i])
-            var col: UInt32 = UInt32(y[i])
-            var ret = ped.getPedAndGain(UInt32(id[i]), Int(col), Int(row), isDeadColumn, isNoisyColumn)
-            var pedestal: Float = ret[0]
-            var gain: Float = ret[1]
-            if (isDeadColumn or isNoisyColumn):
+            var row = x[i].cast[DType.int32]()
+            var col = y[i].cast[DType.int32]()
+            var ret = ped.getPedAndGain(
+                id[i].cast[DType.uint32](),
+                col,
+                row,
+                isDeadColumn,
+                isNoisyColumn,
+            )
+            var pedestal = ret[0]
+            var gain = ret[1]
+            if isDeadColumn or isNoisyColumn:
                 id[i] = Self.InvId
                 adc[i] = 0
-                print("bad pixel at ", i, " in ", id[i])
+                print("bad pixel at", i, "in", id[i])
             else:
-                var vcal: Float = Float(adc[i]) * gain - pedestal * gain
-                adc[i] = max(100, Int(vcal * conversionFactor + offset))
-                
+                var vcal = adc[i].cast[DType.float32]() * gain - pedestal * gain
+                adc[i] = max(
+                    100, (vcal * conversionFactor + offset).cast[DType.uint16]()
+                )

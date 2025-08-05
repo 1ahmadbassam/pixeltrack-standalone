@@ -68,8 +68,8 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
     fn getPedAndGain(
         self,
         moduleInd: UInt32,
-        col: Int,
-        row: Int,
+        col: Int32,
+        row: Int32,
         mut isDeadColumn: Bool,
         mut isNoisyColumn: Bool,
     ) -> Tuple[Float, Float]:
@@ -80,10 +80,10 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
         var lengthOfColumnData: UInt32 = (range[1] - range[0]) / ncols
         # we always only have two values per column averaged block
         var lengthOfAveragedDataInEachColumn = 2
-        var numberOfDataBlocksToSkip = row // self._numberOfRowsAveragedOver
+        var numberOfDataBlocksToSkip = row.cast[DType.uint32]() // self._numberOfRowsAveragedOver
         var offset = (
             range[0]
-            + col * lengthOfColumnData
+            + col.cast[DType.uint32]() * lengthOfColumnData
             + lengthOfAveragedDataInEachColumn * numberOfDataBlocksToSkip
         )
         debug_assert(offset < range[1])
