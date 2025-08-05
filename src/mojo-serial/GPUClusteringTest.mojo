@@ -10,7 +10,6 @@ from MojoSerial.MojoBridge.Array import Array
 alias numElements = 256 * 2000
 
 
-@always_inline
 fn generate_clusters(
     kn: Int,
     mut h_id: Array[UInt16, numElements],
@@ -165,7 +164,6 @@ fn generate_clusters(
         n += 1
 
     # all odd id
-    @parameter
     for id in range(11, 1801, 2):
         if (id // 20) % 2 == 1:
             h_id[n] = GPUClusteringConstants.InvId  # error
