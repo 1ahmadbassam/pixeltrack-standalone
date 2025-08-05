@@ -166,6 +166,11 @@ struct PluginFactory:
 
     @staticmethod
     @always_inline
+    fn size() -> Int:
+        return __registry._pluginRegistry.__len__()
+
+    @staticmethod
+    @always_inline
     fn create(
         owned name: String, mut reg: ProductRegistry
     ) raises -> ref [__registry] EDProducerConcrete:
