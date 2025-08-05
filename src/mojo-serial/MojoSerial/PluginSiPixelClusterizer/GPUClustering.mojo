@@ -154,6 +154,7 @@ struct GPUClustering:
                     debug_assert(Int(y[m]) - Int(y[i]) >= 0)
                     debug_assert(Int(y[m]) - Int(y[i]) <= 1)
                     if abs(Int(x[m]) - Int(x[i])) > 1:
+                        p += 1
                         continue
                     var l = nnn[k]
                     nnn[k] += 1
@@ -183,7 +184,7 @@ struct GPUClustering:
                         j += 1
                         k += 1
                 else:
-                    var more = False
+                    more = False
                     var j: UInt32 = 0
                     var k: UInt32 = 0
                     while j < hist.size():
