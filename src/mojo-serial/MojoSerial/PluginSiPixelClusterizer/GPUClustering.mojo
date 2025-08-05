@@ -1,10 +1,13 @@
 from memory import UnsafePointer
+
 from MojoSerial.Geometry.Phase1PixelTopology import Phase1PixelTopology
 from MojoSerial.CUDACore.HistoContainer import HistoContainer
 from MojoSerial.CUDACore.CUDACompat import CUDACompat
+from MojoSerial.CUDACore.PrefixScan import blockPrefixScan
 from MojoSerial.CUDADataFormats.GPUClusteringConstants import (
     GPUClusteringConstants,
 )
+from MojoSerial.MojoBridge.Array import Array
 
 
 @nonmaterializable(NoneType)
@@ -129,7 +132,7 @@ struct GPUClustering:
             debug_assert((hist.size() / 1) <= maxiter)
             # nearest neighbour
             var nn = List[List[UInt16]](capacity=Int(maxiter))
-            for i in range(maxiter):
+            for _ in range(maxiter):
                 nn.append(List[UInt16](capacity=Int(maxNeighbours)))
             var nnn = List[UInt8](length=Int(maxiter), fill=0)  # number of nn
 
@@ -205,77 +208,107 @@ struct GPUClustering:
             # find the number of different clusters, identified by a pixels with clus[i] == i;
             # mark these pixels with a negative id.
             for i in range(first, msize):
-                if id[i] == GPUClusteringConstants.InvId:   # skip invalid pixels
+                if id[i] == GPUClusteringConstants.InvId:  # skip invalid pixels
                     continue
                 if clusterId[i] == i.cast[DType.int32]():
                     var old = foundClusters
-                    foundClusters = foundClusters + 1 if foundClusters <  0xFFFFFFFF else foundClusters
+                    foundClusters = (
+                        foundClusters + 1 if foundClusters
+                        < 0xFFFFFFFF else foundClusters
+                    )
                     clusterId[i] = -((old + 1).cast[DType.int32]())
-            
+
             # propagate the negative id to all the pixels in the cluster.
             for i in range(first, msize):
-                if id[i] == GPUClusteringConstants.InvId:   # skip invalid pixels
+                if id[i] == GPUClusteringConstants.InvId:  # skip invalid pixels
                     continue
                 if clusterId[i] >= 0:
                     # mark each pixel in a cluster with the same id as the first one
                     clusterId[i] = clusterId[clusterId[i]]
-            
+
             # adjust the cluster id to be a positive value starting from 0
             for i in range(first, msize):
-                if id[i] == GPUClusteringConstants.InvId:   # skip invalid pixels
+                if id[i] == GPUClusteringConstants.InvId:  # skip invalid pixels
                     clusterId[i] = -9999
                     continue
                 clusterId[i] = -clusterId[i] - 1
-            
+
             nClustersInModule[thisModuleId] = foundClusters
             moduleId[module] = thisModuleId.cast[DType.uint32]()
 
-
     @staticmethod
     fn clusterChargeCut(
-        id: UnsafePointer[UInt16],
-        adc: UnsafePointer[UInt16],
-        moduleStart: UnsafePointer[UInt32],
-        nClustersInModule: UnsafePointer[UInt32, mut=True],
-        moduleId: UnsafePointer[UInt32],
-        clusterId: UnsafePointer[Int32, mut=True],
+        id: UnsafePointer[
+            UInt16
+        ],  # module id of each pixel (modified if bad cluster)
+        adc: UnsafePointer[UInt16],  # charge of each pixel
+        moduleStart: UnsafePointer[
+            UInt32
+        ],  # index of the first pixel of each module
+        nClustersInModule: UnsafePointer[
+            UInt32, mut=True
+        ],  # modified: number of clusters found in each module
+        moduleId: UnsafePointer[UInt32],  # module id of each module
+        clusterId: UnsafePointer[
+            Int32, mut=True
+        ],  # modified: cluster id of each pixel
         numElements: UInt32,
     ):
-        var charge = List[Int32](
-            capacity=Int(GPUClusteringConstants.MaxNumClustersPerModules)
-        )
-        var ok = List[UInt8](
-            capacity=Int(GPUClusteringConstants.MaxNumClustersPerModules)
-        )
-        var newclusId = List[UInt16](
-            capacity=Int(GPUClusteringConstants.MaxNumClustersPerModules)
-        )
-        # var firstModule: UInt32 = 0
+        var charge = Array[
+            Int32, Int(GPUClusteringConstants.MaxNumClustersPerModules)
+        ](uninitialized=True)
+        var ok = Array[
+            UInt8, Int(GPUClusteringConstants.MaxNumClustersPerModules)
+        ](uninitialized=True)
+        var newclusId = Array[
+            UInt16, Int(GPUClusteringConstants.MaxNumClustersPerModules)
+        ](uninitialized=True)
+
         var endModule = moduleStart[0]
         for module in range(endModule):
-            var firstPixel = moduleStart[1 + module]
+            var firstPixel = moduleStart[module + 1]
             var thisModuleId = id[firstPixel]
-            # there is an assert here, need to check it
+            debug_assert(
+                thisModuleId.cast[DType.uint32]()
+                < GPUClusteringConstants.MaxNumModules
+            )
+            debug_assert(thisModuleId.cast[DType.uint32]() == moduleId[module])
+
             var nclus = nClustersInModule[thisModuleId]
             if nclus == 0:
                 continue
-            var first = firstPixel
-            if nclus > UInt32(GPUClusteringConstants.MaxNumClustersPerModules):
+
+            if (
+                nclus
+                > GPUClusteringConstants.MaxNumClustersPerModules.cast[
+                    DType.uint32
+                ]()
+            ):
                 print(
-                    (
-                        "Warning too many clusters in module %d in block %d: %d"
-                        " > %d\n"
-                    ),
+                    "Warning too many clusters in module ",
                     thisModuleId,
+                    " in block ",
                     0,
+                    ": ",
                     nclus,
+                    " > ",
                     GPUClusteringConstants.MaxNumClustersPerModules,
+                    sep="",
                 )
+
+            var first = firstPixel
+
+            if (
+                nclus
+                > GPUClusteringConstants.MaxNumClustersPerModules.cast[
+                    DType.uint32
+                ]()
+            ):
                 for i in range(first, numElements):
                     if id[i] == GPUClusteringConstants.InvId:
-                        continue
+                        continue  # not valid
                     if id[i] != thisModuleId:
-                        break
+                        break  # end of module
                     if (
                         clusterId[i]
                         >= GPUClusteringConstants.MaxNumClustersPerModules
@@ -287,19 +320,54 @@ struct GPUClustering:
                 nclus = GPUClusteringConstants.MaxNumClustersPerModules.cast[
                     DType.uint32
                 ]()
+
+            debug_assert(
+                nclus
+                <= GPUClusteringConstants.MaxNumClustersPerModules.cast[
+                    DType.uint32
+                ]()
+            )
             for i in range(nclus):
                 charge[i] = 0
 
-            for i in range(numElements):
+            for i in range(first, numElements):
                 if id[i] == GPUClusteringConstants.InvId:
-                    continue
+                    continue  # not valid
                 if id[i] != thisModuleId:
-                    break
-                CUDACompat.atomicAdd(
-                    UnsafePointer(to=Int32(charge[clusterId[i]])),
-                    Int(adc[i]),
-                )
+                    break  # end of module
+                charge[clusterId[i]] += adc[i].cast[DType.int32]()
             var chargeCut = 2000 if thisModuleId < 96 else 4000
             for i in range(nclus):
-                newclusId[i] = UInt16(charge[i] > chargeCut)
-                ok[i] = UInt8(charge[i] > chargeCut)
+                newclusId[i] = 1 if charge[i] > chargeCut else 0
+                ok[i] = 1 if charge[i] > chargeCut else 0
+
+            # renumber
+
+            blockPrefixScan(newclusId.unsafe_ptr(), nclus)
+
+            debug_assert(nclus >= newclusId[nclus - 1].cast[DType.uint32]())
+
+            if nclus == newclusId[nclus - 1].cast[DType.uint32]():
+                continue
+
+            nClustersInModule[thisModuleId] = newclusId[nclus - 1].cast[
+                DType.uint32
+            ]()
+
+            # mark bad cluster again
+            for i in range(nclus):
+                if ok[i] == 0:
+                    newclusId[i] = GPUClusteringConstants.InvId + 1
+
+            # reassign id
+            for i in range(first, numElements):
+                if id[i] == GPUClusteringConstants.InvId:
+                    continue  # not valid
+                if id[i] != thisModuleId:
+                    break  # end of module
+                clusterId[i] = newclusId[clusterId[i]].cast[DType.int32]() - 1
+                if (
+                    clusterId[i]
+                    == GPUClusteringConstants.InvId.cast[DType.int32]()
+                ):
+                    id[i] = GPUClusteringConstants.InvId
