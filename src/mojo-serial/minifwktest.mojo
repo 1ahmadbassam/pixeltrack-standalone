@@ -19,3 +19,7 @@ fn main() raises:
 
     for plugin in PluginFactory.getAll(_edreg):
         print(plugin)
+
+    # Lifetime registry extension
+    _ = _esreg^
+    _ = _edreg^

@@ -29,3 +29,7 @@ fn main() raises:
     processor.endJob()
 
     print("Processed ", processor.processedEvents(), " events.", sep="")
+
+    # Lifetime registry extension
+    _ = _esreg^
+    _ = _edreg^
