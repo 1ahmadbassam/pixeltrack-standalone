@@ -221,7 +221,9 @@ fn main() raises:
     var h_clusInModule = InlineArray[
         UInt32, Int(GPUClusteringConstants.MaxNumModules)
     ](0)
-    var h_moduleId = InlineArray[UInt32, Int(GPUClusteringConstants.MaxNumModules)](0)
+    var h_moduleId = InlineArray[
+        UInt32, Int(GPUClusteringConstants.MaxNumModules)
+    ](0)
 
     var n: Int
     var ncl: Int
@@ -263,18 +265,20 @@ fn main() raises:
         )
 
         nModules = h_moduleStart[0]
-        var summ: UInt32 = 0
-        for i in range(h_clusInModule.__len__()):
-            summ += h_clusInModule[i]
+        var nclus = h_clusInModule.unsafe_ptr()
 
-        print("before charge cut found", summ, "clusters")
+        var s = 0
+        for i in range(Int(GPUClusteringConstants.MaxNumModules)):
+            s += Int(h_clusInModule[i])
+
+        print("before charge cut found", s, "clusters")
 
         for i in range(GPUClusteringConstants.MaxNumModules, 0, -1):
             if h_clusInModule[i - 1] > 0:
                 print("last module is", i - 1, h_clusInModule[i - 1])
                 break
 
-        if UInt32(ncl) != summ:
+        if ncl != s:
             print("ERROR!!!!! wrong number of cluster found")
 
         GPUClustering.clusterChargeCut(
@@ -338,14 +342,14 @@ fn main() raises:
                 continue
 
             if nc != pnc + 1:
-                print("error ", mid, ": ", nc, " ", pnc)
+                print("error ", mid, ": ", nc, " ", pnc, sep="")
             p = c
 
-        summ = 0
+        s = 0
         for i in range(len(h_clusInModule)):
-            summ += h_clusInModule[i]
+            s += Int(h_clusInModule[i])
 
-        print("found", summ, clids.__len__(), "clusters")
+        print("found", s, clids.__len__(), "clusters")
 
         for i in range(GPUClusteringConstants.MaxNumModules, 0, -1):
             if h_clusInModule[i - 1] > 0:

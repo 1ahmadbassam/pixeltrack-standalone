@@ -14,9 +14,9 @@ struct GPUClustering:
         id: UnsafePointer[UInt16],
         moduleStart: UnsafePointer[UInt32, mut=True],
         clusterId: UnsafePointer[Int32, mut=True],
-        numElements: UInt32,
+        numElements: Int32,
     ):
-        for i in range(Int32(numElements)):
+        for i in range(numElements):
             clusterId[i] = i
             if id[i] == GPUClusteringConstants.InvId:
                 continue
@@ -28,7 +28,7 @@ struct GPUClustering:
                 var loc = moduleStart[]
                 if moduleStart[] < GPUClusteringConstants.MaxNumModules:
                     moduleStart[] += 1
-                moduleStart[loc + 1] += i.cast[DType.uint32]()
+                moduleStart[loc + 1] = i.cast[DType.uint32]()
 
     @staticmethod
     fn findClus(
@@ -47,9 +47,9 @@ struct GPUClustering:
         clusterId: UnsafePointer[
             Int32, mut=True
         ],  # output: cluster id of each pixel
-        numElements: UInt32,
+        numElements: Int32,
     ):
-        var msize: UInt32
+        var msize: Int32
 
         var endModule = moduleStart[0]
         for module in range(endModule):
@@ -97,19 +97,25 @@ struct GPUClustering:
                 or ((msize < numElements) and (id[msize] != thisModuleId))
             )
 
-            if msize - firstPixel > maxPixInModule:
+            if (
+                msize - firstPixel.cast[DType.int32]()
+                > maxPixInModule.cast[DType.int32]()
+            ):
                 print(
                     "too many pixels in module ",
                     thisModuleId,
                     ": ",
-                    msize - firstPixel,
+                    msize - firstPixel.cast[DType.int32](),
                     " > ",
                     maxPixInModule,
                     sep="",
                 )
-                msize = maxPixInModule + firstPixel
+                msize = (maxPixInModule + firstPixel).cast[DType.int32]()
 
-            debug_assert(msize - firstPixel <= maxPixInModule)
+            debug_assert(
+                msize - firstPixel.cast[DType.int32]()
+                <= maxPixInModule.cast[DType.int32]()
+            )
 
             for i in range(first, msize):
                 if id[i] == GPUClusteringConstants.InvId:  # skip invalid pixels
@@ -126,13 +132,14 @@ struct GPUClustering:
             var maxiter = hist.size()
             # allocate space for duplicate pixels: a pixel can appear more than once with different charge in the same event
             alias maxNeighbours = 10
-            debug_assert((hist.size() / 1) <= maxiter)
+            debug_assert((hist.size() // 1) <= maxiter)
             # nearest neighbour
             var nn = List[List[UInt16]](capacity=Int(maxiter))
             for _ in range(maxiter):
                 nn.append(List[UInt16](capacity=Int(maxNeighbours)))
             var nnn = List[UInt8](length=Int(maxiter), fill=0)  # number of nn
 
+            # fill NN
             var j: UInt32 = 0
             var k: UInt32 = 0
             while j < hist.size():
@@ -208,12 +215,10 @@ struct GPUClustering:
             for i in range(first, msize):
                 if id[i] == GPUClusteringConstants.InvId:  # skip invalid pixels
                     continue
-                if clusterId[i] == i.cast[DType.int32]():
+                if Int(clusterId[i]) == i:
                     var old = foundClusters
-                    foundClusters = (
-                        foundClusters + 1 if foundClusters
-                        < 0xFFFFFFFF else foundClusters
-                    )
+                    if foundClusters < 0xFFFFFFFF:
+                        foundClusters += 1
                     clusterId[i] = -((old + 1).cast[DType.int32]())
 
             # propagate the negative id to all the pixels in the cluster.
@@ -254,13 +259,13 @@ struct GPUClustering:
     ):
         var charge = InlineArray[
             Int32, Int(GPUClusteringConstants.MaxNumClustersPerModules)
-        ](uninitialized=True)
+        ](0)
         var ok = InlineArray[
             UInt8, Int(GPUClusteringConstants.MaxNumClustersPerModules)
-        ](uninitialized=True)
+        ](0)
         var newclusId = InlineArray[
             UInt16, Int(GPUClusteringConstants.MaxNumClustersPerModules)
-        ](uninitialized=True)
+        ](0)
 
         var endModule = moduleStart[0]
         for module in range(endModule):
@@ -334,6 +339,7 @@ struct GPUClustering:
                 if id[i] != thisModuleId:
                     break  # end of module
                 charge[clusterId[i]] += adc[i].cast[DType.int32]()
+
             var chargeCut = 2000 if thisModuleId < 96 else 4000
             for i in range(nclus):
                 newclusId[i] = 1 if charge[i] > chargeCut else 0
