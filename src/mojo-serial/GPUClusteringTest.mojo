@@ -289,7 +289,7 @@ fn main() raises:
 
         print("found", nModules, "Modules active")
 
-        var clids = Set[UInt]()
+        var clids_set = Set[UInt]()
 
         for i in range(n):
             debug_assert(h_id[i] != 666)  # only noise
@@ -297,36 +297,35 @@ fn main() raises:
                 continue
             debug_assert(h_clus[i] >= 0)
             debug_assert(h_clus[i] < Int(h_clusInModule[h_id[i]]))
-            clids.add(UInt(h_id[i]) * 1000 + UInt(h_clus[i]))
+            clids_set.add(UInt(h_id[i]) * 1000 + UInt(h_clus[i]))
+
+        var clids = List[UInt](capacity=clids_set.__len__())
+        for item in clids_set:
+            clids.append(item)
+        sort(clids)
 
         # verify no hole in numbering
-        var p = clids.__iter__()
-        var p_element = p.__next__()
-        var cmid = p_element // 1000
-        debug_assert(0 == p_element % 1000)
+        var p = clids[0]
+        var cmid = p // 1000
+        debug_assert(0 == p % 1000)
 
-        var c = p
-        var c_element = c.__next__()
-        p = clids.__iter__()
-
-        var last_element = clids.pop()
         print(
             "first clusters",
-            p_element,
-            c_element,
+            p,
+            clids[1],
             h_clusInModule[cmid],
-            h_clusInModule[c_element // 1000],
+            h_clusInModule[clids[1] // 1000],
         )
         print(
             "last cluster",
-            last_element,
-            h_clusInModule[last_element // 1000],
+            clids[-1],
+            h_clusInModule[clids[-1] // 1000],
         )
-        clids.add(last_element)
 
-        for _ in range(1, clids.__len__()):
-            var cc = c.__next__()
-            var pp = p.__next__()
+        for i in range(1, clids.__len__()):
+            c = clids[i]
+            var cc = c
+            var pp = p
             var mid = cc // 1000
             var pnc = pp % 1000
             var nc = cc % 1000
@@ -335,10 +334,12 @@ fn main() raises:
                 debug_assert(0 == cc % 1000)
                 debug_assert(h_clusInModule[cmid] - 1 == pp % 1000)
                 cmid = mid
+                p = c
                 continue
 
             if nc != pnc + 1:
-                print("error ", mid, ": ", nc, " ", pnc, sep="")
+                print("error ", mid, ": ", nc, " ", pnc)
+            p = c
 
         summ = 0
         for i in range(len(h_clusInModule)):
