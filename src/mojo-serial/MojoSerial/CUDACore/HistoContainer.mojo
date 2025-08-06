@@ -85,7 +85,8 @@ fn forEachInBins[
     ref hist: HistoContainer[V, *_],
     value: Scalar[V],
     n: Int,
-    func: fn (Scalar[hist.IndexType]),
+    func: fn (mut Int, Scalar[hist.IndexType]),
+    mut tot : Int
 ):
     """Iterate over N bins left and right of the one containing "v"."""
     var bs = Int(hist.bin(value))
@@ -95,7 +96,7 @@ fn forEachInBins[
 
     var pj = hist.begin(bs)
     while pj < hist.end(be):
-        func(pj[])
+        func(tot, pj[])
         pj += 1
 
 
@@ -105,7 +106,7 @@ fn forEachInWindow[
     ref hist: HistoContainer[V, *_],
     wmin: Scalar[V],
     wmax: Scalar[V],
-    func: fn (Scalar[hist.IndexType]),
+    func: fn (Scalar[hist.IndexType])
 ):
     """Iterate over bins containing all values in window wmin, wmax."""
     var bs = Int(hist.bin(wmin))

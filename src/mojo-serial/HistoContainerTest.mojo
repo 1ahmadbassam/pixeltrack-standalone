@@ -34,8 +34,15 @@ fn go[T : DType, NBINS : Int = 128, S : Int = 8 * T.sizeof(), DELTA : Int = 1000
         print("bins " , Int(Hist4.bin(0)) + Hist4.histOff(nh) , ' ' , Int(Hist.bin(rmin)) + Hist4.histOff(nh)
                 , ' ' , Int(Hist.bin(rmax)) + Hist4.histOff(nh) , sep="")
 
-    h : Hist
-    h4 : Hist4
+    fn verify(i : UInt32, j : UInt32, k : UInt32, t1 : UInt32, t2 : UInt32, v : InlineArray[Scalar[T], N]):
+        var N = 50
+        debug_assert(t1 < N)
+        debug_assert(t2 < N)
+        if (i != j) and (Scalar[T](v[t1] - v[t2]) <= 0):
+            print("for " , i , ':' , v[k] , " failed " , v[t1] , ' ' , v[t2] , sep="")
+
+    h = Hist()
+    h4 = Hist4()
     for it in range(5):
         for j in range(N):
             v[j] = Scalar[T](random.random_si64(Int64(rmin), Int64(rmax)))
@@ -76,12 +83,6 @@ fn go[T : DType, NBINS : Int = 128, S : Int = 8 * T.sizeof(), DELTA : Int = 1000
         debug_assert(h.size() == N)
         debug_assert(h4.size() == N)
 
-        fn verify(i : UInt32, j : UInt32, k : UInt32, t1 : UInt32, t2 : UInt32):
-            debug_assert(t1 < N)
-            debug_assert(t2 < N)
-            if (i != j) and (Scalar[T](v[t1] - v[t2]) <= 0):
-                print("for " , i , ':' , v[k] , " failed " , v[t1] , ' ' , v[t2] , sep="")
-
         for i in range(Hist.nbins()):
             if h.size(i) == 0:
                 continue
@@ -103,48 +104,50 @@ fn go[T : DType, NBINS : Int = 128, S : Int = 8 * T.sizeof(), DELTA : Int = 1000
             j = h.begin(kl)
             end = h.end(kl)
             while j != end:
-                verify(i, kl, k, k, j[])
+                verify(i, kl, k, k, j[], v)
                 j += 1
 
             j = h.begin(kh)
             end = h.end(kh)
             while j != end:
-                verify(i, kh, k, j[], k)
+                verify(i, kh, k, j[], k, v)
                 j += 1
+
+    fn ftest(mut tot : Int, k : UInt32):
+        debug_assert(k >= 0 and k < N)
+        tot += 1
 
     for j in range(N):
         var b0 = h.bin(v[j])
-        var w = 0
-        var tot = 0
+        var w : Int = 0
+        var tot : Int = 0
 
-        fn ftest(k : Int):
-            debug_assert(k >= 0 and k < N)
-            tot += 1
-
-        Histo.forEachInBins[T](h, v[j], w, ftest)
-        var rtot : Int = h.end(b0) - h.begin(b0)
+        Histo.forEachInBins(h, v[j], w, ftest, tot)
+        var rtot = Int(h.end(b0.cast[DType.uint32]())) - Int(h.begin(b0.cast[DType.uint32]()))
         debug_assert(tot == rtot)
 
         w = 1
         tot = 0
-        forEachInBins(h, v[j], w, ftest)
+        Histo.forEachInBins(h, v[j], w, ftest, tot)
         var bp = b0 + 1
         var bm = b0 - 1
+
         if bp < Int(h.nbins()):
-            rtot += h.end(bp) - h.begin(bp)
+            rtot += Int(h.end(bp.cast[DType.uint32]())) - Int(h.begin(bp.cast[DType.uint32]()))
         if bm >= 0:
-            rtot += h.end(bm) - h.begin(bm)
+            rtot += Int(h.end(bm.cast[DType.uint32]())) - Int(h.begin(bm.cast[DType.uint32]()))
+
         debug_assert(tot == rtot)
         w = 2
         tot = 0
-        forEachInBins(h, v[j], w, ftest)
+        Histo.forEachInBins(h, v[j], w, ftest, tot)
         bp += 1
         bm -= 1
 
         if bp < Int(h.nbins()):
-            rtot += h.end(bp) - h.begin(bp)
+            rtot += Int(h.end(bp.cast[DType.uint32]())) - Int(h.begin(bp.cast[DType.uint32]()))
         if bm >= 0:
-            rtot += h.end(bm) - h.begin(bm)
+            rtot += Int(h.end(bm.cast[DType.uint32]())) - Int(h.begin(bm.cast[DType.uint32]()))
 
         debug_assert(tot == rtot)
 
