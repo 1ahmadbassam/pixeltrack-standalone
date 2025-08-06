@@ -296,7 +296,7 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
                 self.digis_d[].c_moduleInd(),
                 self.clusters_d[].moduleStart(),
                 self.digis_d[].clus(),
-                wordCounter,
+                wordCounter.cast[DType.int32](),
             )
 
             # read the number of modules into a data member, used by getProduct())
@@ -312,7 +312,7 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
                 self.clusters_d[].clusInModule(),
                 self.clusters_d[].moduleId(),
                 self.digis_d[].clus(),
-                wordCounter,
+                wordCounter.cast[DType.int32](),
             )
 
             # apply charge cut

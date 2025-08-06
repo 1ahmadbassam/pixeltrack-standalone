@@ -22,7 +22,7 @@ struct SiPixelFedCablingMapGPUWrapper(Defaultable, Movable, Typeable):
         var modToUnp: List[UChar],
     ):
         self.modToUnpDefault = modToUnp^
-        self._hasQuality = False
+        self._hasQuality = True
         self.cablingMapHost = cablingMap^
 
     @always_inline
