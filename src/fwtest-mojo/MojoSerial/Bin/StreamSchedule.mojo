@@ -1,4 +1,3 @@
-from memory import UnsafePointer
 from collections import Deque
 
 from MojoSerial.Framework.Event import Event
@@ -9,7 +8,7 @@ from MojoSerial.MojoBridge.DTypes import Typeable
 from MojoSerial.Bin.Source import Source
 
 
-struct StreamSchedule(Movable, Defaultable, Typeable):
+struct StreamSchedule(Defaultable, Movable, Typeable):
     var _registry: UnsafePointer[ProductRegistry]
     var _source: UnsafePointer[Source]
     var _eventSetup: UnsafePointer[EventSetup]
@@ -29,6 +28,7 @@ struct StreamSchedule(Movable, Defaultable, Typeable):
         reg: UnsafePointer[ProductRegistry],
         source: UnsafePointer[Source],
         eventSetup: UnsafePointer[EventSetup],
+        mut edreg: MojoSerial.Framework.PluginFactory.Registry,
         streamId: Int32 = 0,
     ):
         try:
@@ -37,16 +37,18 @@ struct StreamSchedule(Movable, Defaultable, Typeable):
             self._eventSetup = eventSetup
             self._streamId = streamId
 
-            var nModules = PluginFactory.size()
+            var nModules = PluginFactory.size(edreg)
 
             var producers = List[EDProducerConcrete](capacity=nModules)
             var adj = List[List[Int]](length=nModules, fill=[])
             var in_degree = List[Int](length=nModules, fill=0)
 
             var i: UInt = 0
-            for name in PluginFactory.getAll():
+            for name in PluginFactory.getAll(edreg):
                 self._registry[].beginModuleConstruction(i + 1)
-                producers.append(PluginFactory.create(name, self._registry[]))
+                producers.append(
+                    PluginFactory.create(name, self._registry[], edreg)
+                )
                 var dep_indices = self._registry[].consumedModules()
                 if 0 in dep_indices:
                     dep_indices.remove(0)
@@ -60,7 +62,7 @@ struct StreamSchedule(Movable, Defaultable, Typeable):
             for i in range(nModules):
                 if in_degree[i] == 0:
                     q.append(i)
-            
+
             var sorted_indices = List[Int](capacity=nModules)
             while q.__len__() > 0:
                 var u = q.pop()
@@ -70,10 +72,12 @@ struct StreamSchedule(Movable, Defaultable, Typeable):
                     in_degree[v] -= 1
                     if in_degree[v] == 0:
                         q.append(v)
-            
+
             if sorted_indices.__len__() != nModules:
-                raise Error("A cycle was detected in the module dependency graph.")
-            
+                raise Error(
+                    "A cycle was detected in the module dependency graph."
+                )
+
             self._path = List[EDProducerConcrete](capacity=nModules)
             var data = producers.steal_data()
             for index in sorted_indices:
@@ -83,7 +87,7 @@ struct StreamSchedule(Movable, Defaultable, Typeable):
             return Self()
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._registry = other._registry
         self._source = other._source
         self._eventSetup = other._eventSetup

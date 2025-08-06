@@ -31,9 +31,9 @@ struct SiPixelRawDataError(
     # constructor for 32-bit error word
     fn __init__(
         out self,
-        owned errorWord32: UInt32,
-        owned errorType: Int32,
-        owned fedId: Int32,
+        var errorWord32: UInt32,
+        var errorType: Int32,
+        var fedId: Int32,
     ):
         self._errorWord64 = 0
         # Mojo currently does not infer setting constructor fields outside of the constructor
@@ -48,9 +48,9 @@ struct SiPixelRawDataError(
     # constructor for 32-bit error word
     fn __init__(
         out self,
-        owned errorWord64: UInt64,
-        owned errorType: Int32,
-        owned fedId: Int32,
+        var errorWord64: UInt64,
+        var errorType: Int32,
+        var fedId: Int32,
     ):
         self._errorWord32 = 0
         # Mojo currently does not infer setting constructor fields outside of the constructor
@@ -62,7 +62,7 @@ struct SiPixelRawDataError(
 
         self.setMessage()
 
-    fn __moveinit__(out self, owned existing: Self):
+    fn __moveinit__(out self, var existing: Self):
         self._errorWord32 = existing._errorWord32
         self._errorWord64 = existing._errorWord64
         self._errorType = existing._errorType

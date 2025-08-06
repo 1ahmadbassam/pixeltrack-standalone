@@ -10,7 +10,7 @@ struct EDGetTokenT[T: Typeable](Copyable, Defaultable, Movable, Typeable):
         self.m_value = Self.s_uninitializedValue
 
     @always_inline
-    fn __init__(out self, owned iOther: EDGetToken):
+    fn __init__(out self, var iOther: EDGetToken):
         self.m_value = iOther.m_value
 
     @always_inline
@@ -45,7 +45,7 @@ struct EDGetToken(Copyable, Defaultable, Movable, Typeable):
         self.m_value = Self.s_uninitializedValue
 
     @always_inline
-    fn __init__[T: Typeable, //](out self, owned iOther: EDGetTokenT[T]):
+    fn __init__[T: Typeable, //](out self, var iOther: EDGetTokenT[T]):
         self.m_value = iOther.m_value
 
     @always_inline

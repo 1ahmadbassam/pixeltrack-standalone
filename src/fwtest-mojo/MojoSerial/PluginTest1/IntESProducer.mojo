@@ -12,10 +12,10 @@ struct IntESProducer(Defaultable, ESProducer, Movable, Typeable):
     fn __init__(out self):
         self.x = 0
 
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self.x = other.x
 
-    fn __init__(out self, owned path: Path):
+    fn __init__(out self, var path: Path):
         self.x = 0
 
     fn produce(mut self, mut eventSetup: EventSetup):

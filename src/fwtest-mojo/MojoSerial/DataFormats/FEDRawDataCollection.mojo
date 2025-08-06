@@ -11,7 +11,7 @@ struct FEDRawDataCollection(Copyable, Defaultable, Movable, Typeable):
         self._data = List[FEDRawData](capacity=FEDNumbering.lastFEDId() + 1)
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._data = other._data^
 
     @always_inline

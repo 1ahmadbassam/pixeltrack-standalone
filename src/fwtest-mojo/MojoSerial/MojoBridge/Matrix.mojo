@@ -1,17 +1,14 @@
 from sys import alignof, is_gpu
-from sys.ffi import OpaquePointer
 from bit import pop_count
+from math import Ceilable, CeilDivable, Floorable, Truncable
 from utils.numerics import max_finite as _max_finite
 from utils.numerics import max_or_inf as _max_or_inf
 from utils.numerics import min_finite as _min_finite
 from utils.numerics import min_or_neg_inf as _min_or_neg_inf
-from hashlib._hasher import _HashableWithHasher, _Hasher
-from builtin.simd import _hash_simd
+from hashlib.hasher import Hasher
 
-from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import Double, Typeable
 from MojoSerial.MojoBridge.Vector import Vector
-from MojoSerial.MojoBridge.Stable import Iterator
 
 
 @fieldwise_init
@@ -62,31 +59,50 @@ struct _MatIterator[
     @always_inline
     @staticmethod
     fn dtype() -> String:
-        return "_MatIterator[" + String(mat_mutability) + ", " + W.__repr__() + ", " + String(rows) + ", " + String(colns) + ", Origin[" + String(mat_mutability) + "], " + String(row_wise) + "]"
+        return (
+            "_MatIterator["
+            + String(mat_mutability)
+            + ", "
+            + W.__repr__()
+            + ", "
+            + String(rows)
+            + ", "
+            + String(colns)
+            + ", Origin["
+            + String(mat_mutability)
+            + "], "
+            + String(row_wise)
+            + "]"
+        )
+
 
 # A comment about this implementation: it is probably the speediest, but arguably not of the best memory efficiency (?)
-# Handling rows in a SIMD structure does give rows immense advantage over columns, it also simplfies implementation... but we are still using Array for memory
+# Handling rows in a SIMD structure does give rows immense advantage over columns, it also simplfies implementation... but we are still using InlineArray for memory
 # TODO: Is implementing a matrix as an inline array of vectors faster or slower than a direct memory implementation using an unsafe pointer?
 struct Matrix[T: DType, rows: Int, colns: Int](
     Absable,
+    CeilDivable,
+    Ceilable,
     Copyable,
     Defaultable,
     ExplicitlyCopyable,
+    Floorable,
     Hashable,
     Movable,
     Representable,
     Roundable,
     Sized,
     Stringable,
+    Truncable,
     Typeable,
     Writable,
 ):
     alias _L = List[List[Scalar[T]]]
-    alias _LS = Array[Array[Scalar[T], colns], rows]
+    alias _LS = InlineArray[InlineArray[Scalar[T], colns], rows]
     alias _R = Vector[T, colns]
     alias _D = Scalar[T]
-    alias _DC = Array[Vector[T, colns], rows]
-    alias _DB = Array[Vector[DType.bool, colns], rows]
+    alias _DC = InlineArray[Vector[T, colns], rows]
+    alias _DB = InlineArray[Vector[DType.bool, colns], rows]
     alias _Mask = Matrix[DType.bool, rows, colns]
     var _data: Self._DC
 
@@ -138,13 +154,13 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         return Self.__copyinit__(self)
 
     @always_inline
-    fn __init__[U: DType, //](out self, *, owned row: Vector[U, colns]):
+    fn __init__[U: DType, //](out self, *, var row: Vector[U, colns]):
         """Initialize a matrix from a Vector row object of the same coln-size, splattered across all rows.
         """
         self._data = Self._DC(Self._R(row))
 
     @always_inline
-    fn __init__[U: DType, //](out self, *, owned coln: Vector[U, colns]):
+    fn __init__[U: DType, //](out self, *, var coln: Vector[U, colns]):
         """Initialize a matrix from a Vector coln object of the same row-size, splattered across all columns.
         """
         self._data = Self._DC(uninitialized=True)
@@ -214,7 +230,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
                 self[i, j] = mat[i][j]
 
     @implicit
-    fn __init__(out self, owned data: Self._DC):
+    fn __init__(out self, var data: Self._DC):
         """Constructs a matrix via a matrix inline array internal data object (implicit).
         """
         self._data = data^
@@ -767,7 +783,15 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     @always_inline
     @staticmethod
     fn dtype() -> String:
-        return "Matrix[" + T.__repr__() + ", " + String(rows) + ", " + String(colns) + "]"
+        return (
+            "Matrix["
+            + T.__repr__()
+            + ", "
+            + String(rows)
+            + ", "
+            + String(colns)
+            + "]"
+        )
 
     @always_inline
     fn __str__(self) -> String:
@@ -842,15 +866,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
     fn __ceildiv__(self, denominator: Self) -> Self:
         return self.__truediv__(denominator).__round__()
 
-    fn __hash__(self) -> UInt:
-        var res: UInt = 37
-
-        @parameter
-        for i in range(rows):
-            res += self._data[i].__hash__()
-        return res
-
-    fn __hash__[H: _Hasher](self, mut hasher: H):
+    fn __hash__[H: Hasher](self, mut hasher: H):
         @parameter
         for i in range(rows):
             self._data[i].__hash__[H](hasher)
@@ -894,7 +910,7 @@ struct Matrix[T: DType, rows: Int, colns: Int](
             ]()
 
         # low level manip for efficiency
-        var res = Array[Vector[target, colns], rows](uninitialized=True)
+        var res = InlineArray[Vector[target, colns], rows](uninitialized=True)
 
         @parameter
         for i in range(rows):
@@ -1196,14 +1212,14 @@ struct Matrix[T: DType, rows: Int, colns: Int](
 
     fn split[
         factor: Int = 2
-    ](self) -> Array[
+    ](self) -> InlineArray[
         Matrix[T, rows // factor, colns // factor], factor * factor
     ]:
         constrained[
             rows == colns and rows % factor == 0,
             "Can only do integral splits on square matrices",
         ]()
-        var res = Array[
+        var res = InlineArray[
             Matrix[T, rows // factor, colns // factor], factor * factor
         ](uninitialized=True)
         var i = 0
@@ -1309,4 +1325,3 @@ struct Matrix[T: DType, rows: Int, colns: Int](
         for i in range(rows):
             res[i] = Vector[T, colns](pop_count(self._data[i]._data))
         return Self(res)
-

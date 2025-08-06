@@ -1,7 +1,6 @@
 from collections import Set
 from compile.reflection import get_type_name
 
-from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.Matrix import Matrix
 
 
@@ -22,7 +21,7 @@ fn pprint[T: StringStandardType](L: List[T]):
     print("]")
 
 
-fn pprint[T: StringStandardType, size: Int, //](L: Array[T, size]):
+fn pprint[T: StringStandardType, size: Int, //](L: InlineArray[T, size]):
     print("[", end="")
 
     @parameter
@@ -88,12 +87,10 @@ fn pprint[T: DType, //](M: Matrix[T, _, _]):
 
 
 @always_inline
-@parameter
 fn type[T: UnknownDestructibility](it: T, out type: String):
     return get_type_name[__type_of(it)]().split(".")[-1]
 
 
 @always_inline
-@parameter
 fn tprint[T: UnknownDestructibility](it: T):
     print(type(it))

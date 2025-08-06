@@ -1,4 +1,3 @@
-from memory import UnsafePointer
 from pathlib import Path
 
 from MojoSerial.DataFormats.FEDRawDataCollection import FEDRawDataCollection
@@ -52,10 +51,10 @@ struct Source(Defaultable, Movable, Typeable):
 
     fn __init__(
         out self,
-        owned maxEvents: Int32,
+        var maxEvents: Int32,
         mut reg: ProductRegistry,
-        owned path: Path,
-        owned validation: Bool,
+        var path: Path,
+        var validation: Bool,
     ):
         try:
             self._maxEvents = maxEvents
@@ -125,7 +124,7 @@ struct Source(Defaultable, Movable, Typeable):
             return Self()
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._maxEvents = other._maxEvents
         self._numEvents = other._numEvents
         self._rawToken = other._rawToken
@@ -139,7 +138,7 @@ struct Source(Defaultable, Movable, Typeable):
         self._validation = other._validation
 
     @always_inline
-    fn reconfigure(mut self, owned maxEvents: Int32):
+    fn reconfigure(mut self, var maxEvents: Int32):
         self._maxEvents = maxEvents
         self._numEvents = 0
 

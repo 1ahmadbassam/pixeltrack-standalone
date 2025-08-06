@@ -1,4 +1,3 @@
-from memory import UnsafePointer
 from sys import sizeof
 
 from MojoSerial.MojoBridge.DTypes import Typeable, UChar

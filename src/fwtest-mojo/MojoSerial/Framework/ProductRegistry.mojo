@@ -48,7 +48,7 @@ struct ProductRegistry(Movable, Sized, Typeable):
         self._consumedModules = Set[UInt]()
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._typeToIndex = other._typeToIndex^
         self._currentModuleIndex = other._currentModuleIndex
         self._consumedModules = other._consumedModules^

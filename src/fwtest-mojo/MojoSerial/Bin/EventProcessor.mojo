@@ -1,4 +1,3 @@
-from memory import UnsafePointer
 from pathlib import Path
 
 from MojoSerial.Framework.ProductRegistry import ProductRegistry
@@ -7,6 +6,7 @@ from MojoSerial.Framework.ESPluginFactory import ESPluginFactory
 from MojoSerial.MojoBridge.DTypes import Typeable
 from MojoSerial.Bin.Source import Source
 from MojoSerial.Bin.StreamSchedule import StreamSchedule
+
 
 struct EventProcessor(Typeable):
     # no pluginmanager
@@ -27,7 +27,15 @@ struct EventProcessor(Typeable):
         self._warmupEvents = 0
         self._maxEvents = 0
 
-    fn __init__(out self, owned warmupEvents: Int, owned maxEvents: Int, owned path: Path, owned validation: Bool):
+    fn __init__(
+        out self,
+        var warmupEvents: Int,
+        var maxEvents: Int,
+        var path: Path,
+        var validation: Bool,
+        mut esreg: MojoSerial.Framework.ESPluginFactory.Registry,
+        mut edreg: MojoSerial.Framework.PluginFactory.Registry,
+    ):
         try:
             self._registry = ProductRegistry()
             self._source = Source(maxEvents, self._registry, path, validation)
@@ -35,11 +43,16 @@ struct EventProcessor(Typeable):
             self._warmupEvents = warmupEvents
             self._maxEvents = maxEvents
 
-            for name in ESPluginFactory.getAll():
-                var esp = ESPluginFactory.create(name, path)
+            for name in ESPluginFactory.getAll(esreg):
+                var esp = ESPluginFactory.create(name, path, esreg)
                 esp.produce(self._eventSetup)
-            
-            self._schedule = StreamSchedule(UnsafePointer(to=self._registry), UnsafePointer(to=self._source), UnsafePointer(to=self._eventSetup))
+
+            self._schedule = StreamSchedule(
+                UnsafePointer(to=self._registry),
+                UnsafePointer(to=self._source),
+                UnsafePointer(to=self._eventSetup),
+                edreg,
+            )
         except e:
             print("Error occurred in Bin/EventProcessor.mojo,", e)
             return Self()
@@ -48,7 +61,7 @@ struct EventProcessor(Typeable):
     fn warmUp(mut self):
         if self._warmupEvents <= 0:
             return
-        
+
         self._source.reconfigure(self._warmupEvents)
         self.process()
 
