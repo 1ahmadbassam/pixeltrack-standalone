@@ -74,6 +74,7 @@ struct SiPixelDigisSoA(Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self, maxFedWords: SizeType):
+        debug_assert(maxFedWords > 0)
         self.xx_d = List[UInt16](capacity=UInt(maxFedWords))
         self.yy_d = List[UInt16](capacity=UInt(maxFedWords))
         self.adc_d = List[UInt16](capacity=UInt(maxFedWords))

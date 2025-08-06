@@ -74,7 +74,7 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
         var ncols = self.rangeAndCols[moduleInd][1]
 
         # determine what averaged data block we are in (there should be 1 or 2 of these depending on if plaquette is 1 by X or 2 by X
-        var lengthOfColumnData: UInt32 = (range[1] - range[0]) / ncols
+        var lengthOfColumnData: UInt32 = (range[1] - range[0]) // ncols
         # we always only have two values per column averaged block
         var lengthOfAveragedDataInEachColumn = 2
         var numberOfDataBlocksToSkip = (

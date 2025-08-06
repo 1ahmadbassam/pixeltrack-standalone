@@ -25,6 +25,7 @@ struct SiPixelDigiErrorsSoA(Defaultable, Movable, Typeable):
         out self, maxFedWords: SizeType, var errors: PixelFormatterErrors
     ):
         self.formatterErrors_h = errors^
+        debug_assert(maxFedWords > 0)
         self.data_d = List[PixelErrorCompact](capacity=UInt(maxFedWords))
         self.error_d = make_SimpleVector[
             PixelErrorCompact, PixelErrorCompact.dtype()

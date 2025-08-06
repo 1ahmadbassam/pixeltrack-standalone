@@ -134,6 +134,8 @@ struct GPUClustering:
             alias maxNeighbours = 10
             debug_assert((hist.size() // 1) <= maxiter)
             # nearest neighbour
+            debug_assert(maxiter > 0)
+            debug_assert(maxNeighbours > 0)
             var nn = List[List[UInt16]](capacity=Int(maxiter))
             for _ in range(maxiter):
                 nn.append(List[UInt16](capacity=Int(maxNeighbours)))
