@@ -1,16 +1,15 @@
-from memory import bitcast, UnsafePointer
+from memory import bitcast
+from math import Ceilable, CeilDivable, Floorable, Truncable
+from builtin.device_passable import DevicePassable
 from sys import alignof, is_gpu
-from sys.ffi import OpaquePointer
 from bit import pop_count
 from utils.numerics import max_finite as _max_finite
 from utils.numerics import max_or_inf as _max_or_inf
 from utils.numerics import min_finite as _min_finite
 from utils.numerics import min_or_neg_inf as _min_or_neg_inf
-from hashlib._hasher import _HashableWithHasher, _Hasher
-from builtin.simd import _hash_simd
+from hashlib.hasher import Hasher
 
 from MojoSerial.MojoBridge.DTypes import Typeable
-from MojoSerial.MojoBridge.Stable import Iterator
 
 
 @always_inline
@@ -106,16 +105,32 @@ struct _VecIterator[
     @always_inline
     @staticmethod
     fn dtype() -> String:
-        return "_VecIterator[" + String(vec_mutability) + ", " + W.__repr__() + ", " + String(size) + ", Origin["+ String(vec_mutability) + "], " + String(forward) + "]"
+        return (
+            "_VecIterator["
+            + String(vec_mutability)
+            + ", "
+            + W.__repr__()
+            + ", "
+            + String(size)
+            + ", Origin["
+            + String(vec_mutability)
+            + "], "
+            + String(forward)
+            + "]"
+        )
 
 
 @fieldwise_init
 @register_passable("trivial")
 struct Vector[T: DType, size: Int](
     Absable,
+    CeilDivable,
+    Ceilable,
     Copyable,
     Defaultable,
+    DevicePassable,
     ExplicitlyCopyable,
+    Floorable,
     Hashable,
     Movable,
     Powable,
@@ -123,6 +138,8 @@ struct Vector[T: DType, size: Int](
     Roundable,
     Sized,
     Stringable,
+    Truncable,
+    Typeable,
     Writable,
 ):
     alias psize = _pow_2[size]()
@@ -194,7 +211,7 @@ struct Vector[T: DType, size: Int](
 
     @always_inline
     @implicit
-    fn __init__(out self, owned vec: SIMD[T, size], /):
+    fn __init__(out self, var vec: SIMD[T, size], /):
         """Initialize a vector from a SIMD object of the same size (implicit).
         """
         self._data = rebind[Self._DC](vec)
@@ -628,10 +645,7 @@ struct Vector[T: DType, size: Int](
     fn __ceildiv__(self, denominator: Self) -> Self:
         return self._data.__ceildiv__(denominator._data)
 
-    fn __hash__(self) -> UInt:
-        return _hash_simd(self._data) + 37
-
-    fn __hash__[H: _Hasher](self, mut hasher: H):
+    fn __hash__[H: Hasher](self, mut hasher: H):
         hasher._update_with_simd(self._data)
         hasher._update_with_simd(Scalar[DType.uint64](37))
 

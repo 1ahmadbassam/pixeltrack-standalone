@@ -1,5 +1,3 @@
-from memory import UnsafePointer
-
 from MojoSerial.MojoBridge.DTypes import SizeType, Typeable
 
 
@@ -32,7 +30,7 @@ struct FEDRawData(Copyable, Defaultable, Movable, Typeable):
         self._data = existing._data
 
     @always_inline
-    fn __moveinit__(out self, owned existing: Self):
+    fn __moveinit__(out self, var existing: Self):
         self._data = existing._data^
 
     @always_inline

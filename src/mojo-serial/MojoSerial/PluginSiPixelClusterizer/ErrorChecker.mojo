@@ -1,5 +1,3 @@
-from memory import UnsafePointer
-
 from MojoSerial.DataFormats.SiPixelRawDataError import SiPixelRawDataError
 from MojoSerial.DataFormats.PixelErrors import PixelFormatterErrors
 from MojoSerial.DataFormats.FEDHeader import FEDHeader

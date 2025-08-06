@@ -1,5 +1,6 @@
 from MojoSerial.MojoBridge.DTypes import Typeable
 
+
 @fieldwise_init
 struct SiPixelFedIds(Copyable, Defaultable, Movable, Typeable):
     var _fedIds: List[UInt32]

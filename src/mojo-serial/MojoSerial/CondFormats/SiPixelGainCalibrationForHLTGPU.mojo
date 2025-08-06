@@ -1,5 +1,3 @@
-from memory import UnsafePointer
-
 from MojoSerial.CondFormats.SiPixelGainForHLTonGPU import SiPixelGainForHLTonGPU
 from MojoSerial.MojoBridge.DTypes import Char, Typeable
 
@@ -17,11 +15,15 @@ struct SiPixelGainCalibrationForHLTGPU(
 
     @always_inline
     fn __init__(
-        out self, gain: SiPixelGainForHLTonGPU, owned gainData: List[Char]
+        out self, gain: SiPixelGainForHLTonGPU, var gainData: List[Char]
     ):
         self._gainData = gainData^
         self._gainForHLTonHost = gain
-        self._gainForHLTonHost.v_pedestals = self._gainData.unsafe_ptr().bitcast[SiPixelGainForHLTonGPU.DecodingStructure]()
+        self._gainForHLTonHost.v_pedestals = (
+            self._gainData.unsafe_ptr().bitcast[
+                SiPixelGainForHLTonGPU.DecodingStructure
+            ]()
+        )
 
     @always_inline
     fn getCPUProduct(self) -> UnsafePointer[SiPixelGainForHLTonGPU, mut=False]:

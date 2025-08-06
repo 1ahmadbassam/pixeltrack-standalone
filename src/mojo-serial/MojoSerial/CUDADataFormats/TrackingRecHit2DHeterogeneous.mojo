@@ -1,5 +1,4 @@
 from sys import sizeof
-from memory import UnsafePointer
 
 from MojoSerial.CondFormats.PixelCPEforGPU import ParamsOnGPU
 from MojoSerial.CUDACore.CUDACompat import CUDAStreamType, cudaStreamDefault
@@ -115,7 +114,7 @@ struct TrackingRecHit2DHeterogeneous(Defaultable, Movable, Typeable):
         self.m_view.m_detInd = get16(1)
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self.m_store16 = other.m_store16^
         self.m_store32 = other.m_store32^
         self.m_HistStore = other.m_HistStore^

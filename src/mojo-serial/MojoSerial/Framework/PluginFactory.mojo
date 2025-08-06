@@ -1,5 +1,4 @@
 from collections.dict import _DictKeyIter
-from memory import UnsafePointer
 
 from MojoSerial.Framework.EDProducer import EDProducer
 from MojoSerial.Framework.Event import Event
@@ -40,7 +39,7 @@ struct EDProducerWrapperT[T: Typeable & EDProducer](Movable, Typeable):
         self._ptr.free()
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._ptr = other._ptr
 
     @always_inline
@@ -83,7 +82,7 @@ struct EDProducerConcrete(Copyable, Movable, Typeable):
         self._det = other._det
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._producer = other._producer^
         self._create = other._create
         self._produce = other._produce
@@ -121,16 +120,16 @@ struct Registry(Typeable):
         self._pluginRegistry = {}
 
     @always_inline
-    fn __del__(owned self):
+    fn __del__(var self):
         self.delete()
 
     @always_inline
-    fn __getitem__(self, owned name: String) raises -> EDProducerConcrete:
+    fn __getitem__(self, var name: String) raises -> EDProducerConcrete:
         return self._pluginRegistry[name^]
 
     @always_inline
     fn __setitem__(
-        mut self, owned name: String, owned esproducer: EDProducerConcrete
+        mut self, var name: String, var esproducer: EDProducerConcrete
     ) raises:
         self._pluginRegistry[name^] = esproducer^
 
@@ -146,38 +145,36 @@ struct Registry(Typeable):
         return "Registry"
 
 
-var __registry: Registry = Registry()
-
-
 @nonmaterializable(NoneType)
 struct PluginFactory:
     @staticmethod
     @always_inline
-    fn getAll() -> (
+    fn getAll(mut reg: Registry) -> (
         _DictKeyIter[
             Registry._pluginRegistryType.K,
             Registry._pluginRegistryType.V,
-            __origin_of(__registry._pluginRegistry),
+            Registry._pluginRegistryType.H,
+            __origin_of(reg._pluginRegistry),
         ]
     ):
-        return __registry._pluginRegistry.keys()
+        return reg._pluginRegistry.keys()
 
     @staticmethod
     @always_inline
-    fn size() -> Int:
-        return __registry._pluginRegistry.__len__()
+    fn size(mut reg: Registry) -> Int:
+        return reg._pluginRegistry.__len__()
 
     @staticmethod
     @always_inline
     fn create(
-        owned name: String, mut reg: ProductRegistry
-    ) raises -> ref [__registry] EDProducerConcrete:
-        __registry[name].create(reg)
-        return __registry[name^]
+        var name: String, mut preg: ProductRegistry, mut reg: Registry
+    ) raises -> EDProducerConcrete:
+        reg[name].create(preg)
+        return reg[name^]
 
 
 @always_inline
-fn fwkModule[T: Typeable & EDProducer]():
+fn fwkModule[T: Typeable & EDProducer](mut reg: Registry):
     @always_inline
     fn create_templ[
         T: Typeable & EDProducer
@@ -208,7 +205,7 @@ fn fwkModule[T: Typeable & EDProducer]():
         create_templ[T], produce_templ[T], end_templ[T], det_templ[T]
     )
     try:
-        __registry[T.dtype()] = crp^
+        reg[T.dtype()] = crp^
     except e:
         print(
             "Framework/EDPluginFactory.mojo, failed to register plugin ",

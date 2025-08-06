@@ -1,4 +1,4 @@
-from memory import OwnedPointer, UnsafePointer
+from memory import OwnedPointer
 from MojoSerial.CUDACore.CUDACompat import CUDAStreamType
 from MojoSerial.MojoBridge.DTypes import SizeType, Typeable
 

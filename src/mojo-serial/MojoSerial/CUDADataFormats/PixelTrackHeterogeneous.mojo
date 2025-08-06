@@ -1,5 +1,3 @@
-from memory import UnsafePointer
-
 from MojoSerial.CUDACore.HistoContainer import OneToManyAssoc
 from MojoSerial.CUDACore.EigenSoA import ScalarSoA
 from MojoSerial.CUDADataFormats.TrajectoryStateSoA import TrajectoryStateSoA

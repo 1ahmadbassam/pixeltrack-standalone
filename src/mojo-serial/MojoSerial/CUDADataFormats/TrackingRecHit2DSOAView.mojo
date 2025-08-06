@@ -1,9 +1,10 @@
 from sys import sizeof
-from memory import UnsafePointer
 
 from MojoSerial.CondFormats.PixelCPEforGPU import ParamsOnGPU
 from MojoSerial.CUDACore.HistoContainer import HistoContainer
-from MojoSerial.CUDADataFormats.GPUClusteringConstants import GPUClusteringConstants
+from MojoSerial.CUDADataFormats.GPUClusteringConstants import (
+    GPUClusteringConstants,
+)
 from MojoSerial.Geometry.Phase1PixelTopology import (
     Phase1PixelTopology,
     AverageGeometry,

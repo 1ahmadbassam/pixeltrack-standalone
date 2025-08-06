@@ -1,4 +1,4 @@
-from memory import UnsafePointer, memcpy, memset
+from memory import memcpy, memset
 
 from MojoSerial.CondFormats.SiPixelFedCablingMapGPU import (
     SiPixelFedCablingMapGPU,
@@ -19,7 +19,6 @@ from MojoSerial.DataFormats.PixelErrors import (
 )
 from MojoSerial.PluginSiPixelClusterizer.GPUClustering import GPUClustering
 from MojoSerial.PluginSiPixelClusterizer.GPUCalibPixel import GPUCalibPixel
-from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import UChar, Double, Float, Typeable
 
 
@@ -106,10 +105,10 @@ struct Packing(Copyable, Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(
         out self,
-        owned row_w: UInt32,
-        owned column_w: UInt32,
-        owned time_w: UInt32,
-        owned adc_w: UInt32,
+        var row_w: UInt32,
+        var column_w: UInt32,
+        var time_w: UInt32,
+        var adc_w: UInt32,
     ):
         self.row_width = row_w
         self.column_width = column_w
@@ -139,7 +138,7 @@ fn packing() -> Packing:
 
 
 @always_inline
-fn pack(owned row: UInt32, owned col: UInt32, owned adc: UInt32) -> UInt32:
+fn pack(var row: UInt32, var col: UInt32, var adc: UInt32) -> UInt32:
     alias thePacking = packing()
     adc = min(adc, thePacking.max_adc)
 
@@ -157,18 +156,18 @@ fn pixelToChannel(row: Int, col: Int) -> UInt32:
 
 
 struct WordFedAppender(Defaultable, Movable, Typeable):
-    var _word: Array[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)]
-    var _fedId: Array[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)]
+    var _word: InlineArray[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)]
+    var _fedId: InlineArray[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)]
 
     @always_inline
     fn __init__(out self):
-        self._word = Array[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
-        self._fedId = Array[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
+        self._word = InlineArray[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
+        self._fedId = InlineArray[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
 
     fn initializeWordFed(
         self,
-        owned fedId: Int32,
-        owned wordCounterGPU: UInt32,
+        var fedId: Int32,
+        var wordCounterGPU: UInt32,
         src: UnsafePointer[UInt32],
         length: UInt32,
     ):
@@ -208,7 +207,7 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
         self.digiErrors_d.init_pointee_move(SiPixelDigiErrorsSoA())
 
     @always_inline
-    fn __del__(owned self):
+    fn __del__(var self):
         self.digis_d.free()
         self.clusters_d.free()
         self.digiErrors_d.free()
@@ -231,7 +230,7 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
         modToUnp: UnsafePointer[UChar],
         ref gains: SiPixelGainForHLTonGPU,
         ref wordFed: WordFedAppender,
-        owned errors: PixelFormatterErrors,
+        var errors: PixelFormatterErrors,
         wordCounter: UInt32,
         fedCounter: UInt32,
         useQualityInfo: Bool,

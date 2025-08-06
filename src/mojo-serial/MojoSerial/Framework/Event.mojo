@@ -1,5 +1,3 @@
-from memory import UnsafePointer
-
 from MojoSerial.Framework.EDGetToken import EDGetTokenT
 from MojoSerial.Framework.EDPutToken import EDPutTokenT
 from MojoSerial.Framework.ProductRegistry import ProductRegistry
@@ -20,7 +18,7 @@ struct WrapperBase(Copyable, Defaultable, Movable, Typeable):
         self._ptr = other._ptr
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._ptr = other._ptr
 
     @always_inline
@@ -37,12 +35,12 @@ struct Wrapper[T: Typeable & Movable](Movable, Typeable):
     var _ptr: UnsafePointer[T]
 
     @always_inline
-    fn __init__(out self, owned obj: T):
+    fn __init__(out self, var obj: T):
         self._ptr = UnsafePointer[T].alloc(1)
         self._ptr.init_pointee_move(obj^)
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._ptr = other._ptr
 
     @always_inline
@@ -69,8 +67,8 @@ struct Event(Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(
         out self,
-        owned streamId: Int,
-        owned eventId: Int,
+        var streamId: Int,
+        var eventId: Int,
         ref reg: ProductRegistry,
     ):
         self._streamId = streamId
@@ -78,7 +76,7 @@ struct Event(Defaultable, Movable, Typeable):
         self._products = List[WrapperBase](capacity=reg.__len__())
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._streamId = other._streamId
         self._eventId = other._eventId
         self._products = other._products
@@ -100,7 +98,7 @@ struct Event(Defaultable, Movable, Typeable):
 
     fn put[
         T: Typeable & Movable
-    ](mut self, ref token: EDPutTokenT[T], owned prod: T):
+    ](mut self, ref token: EDPutTokenT[T], var prod: T):
         self._products[token.index()] = rebind[WrapperBase](Wrapper[T](prod^))
 
     @staticmethod

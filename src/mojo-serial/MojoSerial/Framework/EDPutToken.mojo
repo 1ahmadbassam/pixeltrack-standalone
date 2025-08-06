@@ -10,7 +10,7 @@ struct EDPutTokenT[T: Typeable](Copyable, Defaultable, Movable, Typeable):
         self.m_value = Self.s_uninitializedValue
 
     @always_inline
-    fn __init__(out self, owned iOther: EDPutToken):
+    fn __init__(out self, var iOther: EDPutToken):
         self.m_value = iOther.m_value
 
     @always_inline
@@ -45,7 +45,7 @@ struct EDPutToken(Copyable, Defaultable, Movable, Typeable):
         self.m_value = Self.s_uninitializedValue
 
     @always_inline
-    fn __init__[T: Typeable, //](out self, owned iOther: EDPutTokenT[T]):
+    fn __init__[T: Typeable, //](out self, var iOther: EDPutTokenT[T]):
         self.m_value = iOther.m_value
 
     @always_inline

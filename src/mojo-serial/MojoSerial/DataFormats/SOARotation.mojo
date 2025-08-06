@@ -1,5 +1,3 @@
-from memory import UnsafePointer
-
 from MojoSerial.MojoBridge.DTypes import Typeable
 
 @fieldwise_init

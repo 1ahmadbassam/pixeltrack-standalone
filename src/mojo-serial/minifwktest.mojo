@@ -8,12 +8,14 @@ from MojoSerial.Framework.ESProducer import ESProducer
 from MojoSerial.MojoBridge.DTypes import Typeable
 
 fn main() raises:
-    MojoSerial.PluginSiPixelClusterizer.init()
+    var _esreg = MojoSerial.Framework.ESPluginFactory.Registry()
+    var _edreg = MojoSerial.Framework.PluginFactory.Registry()
+    MojoSerial.PluginSiPixelClusterizer.init(_esreg, _edreg)
     var evt = EventSetup()
 
-    for plugin in ESPluginFactory.getAll():
-        var esp = ESPluginFactory.create(plugin, "data")
+    for plugin in ESPluginFactory.getAll(_esreg):
+        var esp = ESPluginFactory.create(plugin, "data", _esreg)
         esp.produce(evt)
 
-    for plugin in PluginFactory.getAll():
+    for plugin in PluginFactory.getAll(_edreg):
         print(plugin)

@@ -3,7 +3,6 @@ from utils.numerics import min_finite, max_finite
 
 from MojoSerial.CUDACore.HistoContainer import HistoContainer
 import MojoSerial.CUDACore.HistoContainer as Histo
-from MojoSerial.MojoBridge.Array import Array
 
 fn go[T : DType, NBINS : Int = 128, S : Int = 8 * T.sizeof(), DELTA : Int = 1000]():
     random.seed()
@@ -20,7 +19,7 @@ fn go[T : DType, NBINS : Int = 128, S : Int = 8 * T.sizeof(), DELTA : Int = 1000
         rmax = NBINS * 2 - 1
 
     alias N : Int = 12000
-    var v = Array[Scalar[T], N](uninitialized=True)
+    var v = InlineArray[Scalar[T], N](uninitialized=True)
 
     alias Hist = HistoContainer[T, NBINS, N, S]
     alias Hist4 = HistoContainer[T, NBINS, N, S, DType.uint16, 4]

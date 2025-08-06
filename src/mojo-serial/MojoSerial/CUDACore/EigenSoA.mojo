@@ -1,6 +1,3 @@
-from memory import UnsafePointer
-
-from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import Typeable
 
 
@@ -11,7 +8,7 @@ fn isPowerOf2(v: Int32) -> Bool:
 # TODO: Figure out how to align this struct
 struct ScalarSoA[T: DType, S: Int](Copyable, Defaultable, Movable, Typeable):
     alias Scalar = Scalar[T]
-    var _data: Array[Self.Scalar, S]
+    var _data: InlineArray[Self.Scalar, S]
 
     @always_inline
     fn __init__(out self):
@@ -19,7 +16,7 @@ struct ScalarSoA[T: DType, S: Int](Copyable, Defaultable, Movable, Typeable):
         constrained[
             S * T.sizeof() % 128 == 0, "SoA size not a multiple of 128"
         ]()
-        self._data = Array[Self.Scalar, S](0)
+        self._data = InlineArray[Self.Scalar, S](0)
 
     fn __init__(out self, list: List[Self.Scalar]):
         constrained[isPowerOf2(S), "SoA stride not a power of 2"]()
@@ -31,7 +28,7 @@ struct ScalarSoA[T: DType, S: Int](Copyable, Defaultable, Movable, Typeable):
             self._data[i] = list[i]
 
     @always_inline
-    fn __init__(out self, owned list: Array[Self.Scalar, S]):
+    fn __init__(out self, var list: InlineArray[Self.Scalar, S]):
         constrained[isPowerOf2(S), "SoA stride not a power of 2"]()
         constrained[
             S * T.sizeof() % 128 == 0, "SoA size not a multiple of 128"
@@ -39,7 +36,7 @@ struct ScalarSoA[T: DType, S: Int](Copyable, Defaultable, Movable, Typeable):
         self._data = list^
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._data = other._data^
 
     @always_inline
@@ -70,4 +67,4 @@ struct ScalarSoA[T: DType, S: Int](Copyable, Defaultable, Movable, Typeable):
 #       The current implementation does not expose elements of a vector or a matrix appropriately for an SoA representation
 # struct MatrixSoA(Typeable):
 #     pass
-alias MatrixSoA = Array
+alias MatrixSoA = InlineArray

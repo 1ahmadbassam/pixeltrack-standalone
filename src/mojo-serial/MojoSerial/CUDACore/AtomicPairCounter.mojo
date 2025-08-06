@@ -16,7 +16,7 @@ struct Counters(Copyable, Movable, Typeable):
         return bitcast[DType.uint64, 1](self.c)
 
     @always_inline
-    fn set_ac(mut self, owned ac: UInt64):
+    fn set_ac(mut self, var ac: UInt64):
         self.c = bitcast[DType.uint32, 2](ac)
 
     @always_inline

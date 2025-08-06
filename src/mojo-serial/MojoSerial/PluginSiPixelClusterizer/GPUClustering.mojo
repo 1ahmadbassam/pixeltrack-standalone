@@ -1,5 +1,3 @@
-from memory import UnsafePointer
-
 from MojoSerial.Geometry.Phase1PixelTopology import Phase1PixelTopology
 from MojoSerial.CUDACore.HistoContainer import HistoContainer
 from MojoSerial.CUDACore.CUDACompat import CUDACompat
@@ -7,7 +5,6 @@ from MojoSerial.CUDACore.PrefixScan import blockPrefixScan
 from MojoSerial.CUDADataFormats.GPUClusteringConstants import (
     GPUClusteringConstants,
 )
-from MojoSerial.MojoBridge.Array import Array
 
 
 @nonmaterializable(NoneType)
@@ -255,13 +252,13 @@ struct GPUClustering:
         ],  # modified: cluster id of each pixel
         numElements: UInt32,
     ):
-        var charge = Array[
+        var charge = InlineArray[
             Int32, Int(GPUClusteringConstants.MaxNumClustersPerModules)
         ](uninitialized=True)
-        var ok = Array[
+        var ok = InlineArray[
             UInt8, Int(GPUClusteringConstants.MaxNumClustersPerModules)
         ](uninitialized=True)
-        var newclusId = Array[
+        var newclusId = InlineArray[
             UInt16, Int(GPUClusteringConstants.MaxNumClustersPerModules)
         ](uninitialized=True)
 

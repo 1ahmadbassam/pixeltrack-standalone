@@ -1,5 +1,3 @@
-from memory import UnsafePointer, OwnedPointer
-
 from MojoSerial.MojoBridge.DTypes import SizeType, Typeable
 
 
@@ -68,7 +66,7 @@ struct SiPixelClustersSoA(Defaultable, Movable, Typeable):
         )
         self.nClusters_h = 0
 
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self.view_d = other.view_d^
         self.moduleStart_d = other.moduleStart_d
         self.clusInModule_d = other.clusInModule_d

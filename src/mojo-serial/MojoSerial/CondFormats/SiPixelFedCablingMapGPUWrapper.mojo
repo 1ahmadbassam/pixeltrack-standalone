@@ -1,5 +1,3 @@
-from memory import UnsafePointer
-
 from MojoSerial.CondFormats.SiPixelFedCablingMapGPU import (
     SiPixelFedCablingMapGPU,
 )
@@ -20,15 +18,15 @@ struct SiPixelFedCablingMapGPUWrapper(Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(
         out self,
-        owned cablingMap: SiPixelFedCablingMapGPU,
-        owned modToUnp: List[UChar],
+        var cablingMap: SiPixelFedCablingMapGPU,
+        var modToUnp: List[UChar],
     ):
         self.modToUnpDefault = modToUnp^
         self._hasQuality = False
         self.cablingMapHost = cablingMap^
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self.modToUnpDefault = other.modToUnpDefault^
         self._hasQuality = other._hasQuality
         self.cablingMapHost = other.cablingMapHost^

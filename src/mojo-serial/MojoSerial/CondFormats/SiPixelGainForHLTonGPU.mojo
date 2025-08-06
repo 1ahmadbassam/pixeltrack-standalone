@@ -1,6 +1,3 @@
-from memory import UnsafePointer
-
-from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import Float, Typeable
 
 
@@ -29,7 +26,7 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
     alias Range = Tuple[UInt32, UInt32]
 
     var v_pedestals: UnsafePointer[Self.DecodingStructure]
-    var rangeAndCols: Array[
+    var rangeAndCols: InlineArray[
         Tuple[Self.Range, Int], 2000, run_destructors=True
     ]
     var _minPed: Float
@@ -48,7 +45,7 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(out self):
         self.v_pedestals = UnsafePointer[Self.DecodingStructure]()
-        self.rangeAndCols = Array[
+        self.rangeAndCols = InlineArray[
             Tuple[Self.Range, Int], 2000, run_destructors=True
         ](Tuple[Self.Range, Int](Self.Range(0, 0), 0))
         self._minPed = 0.0
@@ -80,7 +77,9 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
         var lengthOfColumnData: UInt32 = (range[1] - range[0]) / ncols
         # we always only have two values per column averaged block
         var lengthOfAveragedDataInEachColumn = 2
-        var numberOfDataBlocksToSkip = row.cast[DType.uint32]() // self._numberOfRowsAveragedOver
+        var numberOfDataBlocksToSkip = (
+            row.cast[DType.uint32]() // self._numberOfRowsAveragedOver
+        )
         var offset = (
             range[0]
             + col.cast[DType.uint32]() * lengthOfColumnData

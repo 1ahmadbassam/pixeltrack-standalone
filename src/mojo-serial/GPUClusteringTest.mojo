@@ -5,18 +5,17 @@ from MojoSerial.CUDADataFormats.GPUClusteringConstants import (
     GPUClusteringConstants,
 )
 from MojoSerial.PluginSiPixelClusterizer.GPUClustering import GPUClustering
-from MojoSerial.MojoBridge.Array import Array
 
 alias numElements = 256 * 2000
 
 
 fn generate_clusters(
     kn: Int,
-    mut h_id: Array[UInt16, numElements],
-    mut h_x: Array[UInt16, numElements],
-    mut h_y: Array[UInt16, numElements],
-    mut h_adc: Array[UInt16, numElements],
-    mut y: Array[Int, 10],
+    mut h_id: InlineArray[UInt16, numElements],
+    mut h_x: InlineArray[UInt16, numElements],
+    mut h_y: InlineArray[UInt16, numElements],
+    mut h_adc: InlineArray[UInt16, numElements],
+    mut y: InlineArray[Int, 10],
     mut n: Int,
     mut ncl: Int,
 ):
@@ -123,7 +122,7 @@ fn generate_clusters(
         n += 1
 
         # messy
-        var xx = Array[Int, 5](21, 25, 23, 24, 22)
+        var xx = InlineArray[Int, 5](21, 25, 23, 24, 22)
 
         @parameter
         for k in range(5):
@@ -210,23 +209,23 @@ fn generate_clusters(
 
 
 fn main() raises:
-    var h_id = Array[UInt16, numElements](0)
-    var h_x = Array[UInt16, numElements](0)
-    var h_y = Array[UInt16, numElements](0)
-    var h_adc = Array[UInt16, numElements](0)
-    var h_clus = Array[Int32, numElements](0)
+    var h_id = InlineArray[UInt16, numElements](0)
+    var h_x = InlineArray[UInt16, numElements](0)
+    var h_y = InlineArray[UInt16, numElements](0)
+    var h_adc = InlineArray[UInt16, numElements](0)
+    var h_clus = InlineArray[Int32, numElements](0)
 
-    var h_moduleStart = Array[
+    var h_moduleStart = InlineArray[
         UInt32, Int(GPUClusteringConstants.MaxNumModules) + 1
     ](0)
-    var h_clusInModule = Array[
+    var h_clusInModule = InlineArray[
         UInt32, Int(GPUClusteringConstants.MaxNumModules)
     ](0)
-    var h_moduleId = Array[UInt32, Int(GPUClusteringConstants.MaxNumModules)](0)
+    var h_moduleId = InlineArray[UInt32, Int(GPUClusteringConstants.MaxNumModules)](0)
 
     var n: Int
     var ncl: Int
-    var y = Array[Int, 10](5, 7, 9, 1, 3, 0, 4, 8, 2, 6)
+    var y = InlineArray[Int, 10](5, 7, 9, 1, 3, 0, 4, 8, 2, 6)
 
     @parameter
     for kkk in range(5):

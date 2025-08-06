@@ -1,6 +1,5 @@
 from collections.dict import _DictKeyIter
 from pathlib import Path
-from memory import UnsafePointer
 
 from MojoSerial.Framework.ESProducer import ESProducer
 from MojoSerial.Framework.EventSetup import EventSetup
@@ -29,12 +28,12 @@ struct ESProducerWrapperT[T: Typeable & ESProducer](Movable, Typeable):
     var _ptr: UnsafePointer[T]
 
     @always_inline
-    fn __init__(out self, owned path: Path):
+    fn __init__(out self, var path: Path):
         self._ptr = UnsafePointer[T].alloc(1)
         __get_address_as_uninit_lvalue(self._ptr.address) = T.__init__(path)
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._ptr = other._ptr
 
     @always_inline
@@ -53,7 +52,7 @@ struct ESProducerWrapperT[T: Typeable & ESProducer](Movable, Typeable):
 
 
 struct ESProducerConcrete(Copyable, Movable, Typeable):
-    alias _C = fn (owned Path) -> ESProducerWrapper
+    alias _C = fn (var Path) -> ESProducerWrapper
     alias _P = fn (mut ESProducerWrapper, mut EventSetup)
     alias _D = fn (ESProducerWrapper)
     var _producer: ESProducerWrapper
@@ -76,7 +75,7 @@ struct ESProducerConcrete(Copyable, Movable, Typeable):
         self._det = other._det
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self._producer = other._producer^
         self._create = other._create
         self._produce = other._produce
@@ -87,7 +86,7 @@ struct ESProducerConcrete(Copyable, Movable, Typeable):
         self._det(self._producer)
 
     @always_inline
-    fn create(mut self, owned path: Path):
+    fn create(mut self, var path: Path):
         self._producer = self._create(path^)
 
     @always_inline
@@ -109,16 +108,16 @@ struct Registry(Typeable):
         self._pluginRegistry = {}
 
     @always_inline
-    fn __del__(owned self):
+    fn __del__(var self):
         self.delete()
 
     @always_inline
-    fn __getitem__(self, owned name: String) raises -> ESProducerConcrete:
+    fn __getitem__(self, var name: String) raises -> ESProducerConcrete:
         return self._pluginRegistry[name^]
 
     @always_inline
     fn __setitem__(
-        mut self, owned name: String, owned esproducer: ESProducerConcrete
+        mut self, var name: String, var esproducer: ESProducerConcrete
     ) raises:
         self._pluginRegistry[name^] = esproducer^
 
@@ -134,42 +133,40 @@ struct Registry(Typeable):
         return "Registry"
 
 
-var __registry: Registry = Registry()
-
-
 @nonmaterializable(NoneType)
 struct ESPluginFactory:
     @staticmethod
     @always_inline
-    fn getAll() -> (
+    fn getAll(mut reg: Registry) -> (
         _DictKeyIter[
             Registry._pluginRegistryType.K,
             Registry._pluginRegistryType.V,
-            __origin_of(__registry._pluginRegistry),
+            Registry._pluginRegistryType.H,
+            __origin_of(reg._pluginRegistry),
         ]
     ):
-        return __registry._pluginRegistry.keys()
+        return reg._pluginRegistry.keys()
 
     @staticmethod
     @always_inline
-    fn size() -> Int:
-        return __registry._pluginRegistry.__len__()
+    fn size(mut reg: Registry) -> Int:
+        return reg._pluginRegistry.__len__()
 
     @staticmethod
     @always_inline
     fn create(
-        owned name: String, owned path: Path
-    ) raises -> ref [__registry] ESProducerConcrete:
-        __registry[name].create(path^)
-        return __registry[name^]
+        var name: String, var path: Path, mut reg: Registry
+    ) raises -> ESProducerConcrete:
+        reg[name].create(path^)
+        return reg[name^]
 
 
 @always_inline
-fn fwkEventSetupModule[T: Typeable & ESProducer]():
+fn fwkEventSetupModule[T: Typeable & ESProducer](mut reg: Registry):
     @always_inline
     fn create_templ[
         T: Typeable & ESProducer
-    ](owned path: Path) -> ESProducerWrapper:
+    ](var path: Path) -> ESProducerWrapper:
         return rebind[ESProducerWrapper](ESProducerWrapperT[T](path^))
 
     @always_inline
@@ -188,7 +185,7 @@ fn fwkEventSetupModule[T: Typeable & ESProducer]():
         create_templ[T], produce_templ[T], det_templ[T]
     )
     try:
-        __registry[T.dtype()] = crp^
+        reg[T.dtype()] = crp^
     except e:
         print(
             "Framework/ESPluginFactory.mojo, failed to register plugin ",

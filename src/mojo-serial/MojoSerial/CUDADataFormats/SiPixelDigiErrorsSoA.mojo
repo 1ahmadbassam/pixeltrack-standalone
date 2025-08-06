@@ -1,5 +1,3 @@
-from memory import UnsafePointer, OwnedPointer
-
 from MojoSerial.CUDACore.SimpleVector import SimpleVector, make_SimpleVector
 from MojoSerial.DataFormats.PixelErrors import (
     PixelErrorCompact,
@@ -24,7 +22,7 @@ struct SiPixelDigiErrorsSoA(Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(
-        out self, maxFedWords: SizeType, owned errors: PixelFormatterErrors
+        out self, maxFedWords: SizeType, var errors: PixelFormatterErrors
     ):
         self.formatterErrors_h = errors^
         self.data_d = List[PixelErrorCompact](capacity=UInt(maxFedWords))
@@ -35,7 +33,7 @@ struct SiPixelDigiErrorsSoA(Defaultable, Movable, Typeable):
         debug_assert(self.error_d.capacity() == UInt(maxFedWords))
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self.data_d = other.data_d^
         self.error_d = other.error_d^
         self.formatterErrors_h = other.formatterErrors_h^

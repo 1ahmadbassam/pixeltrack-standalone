@@ -1,5 +1,3 @@
-from memory import UnsafePointer
-
 from MojoSerial.CUDACore.CUDACompat import CUDACompat
 from MojoSerial.MojoBridge.DTypes import Typeable
 

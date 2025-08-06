@@ -1,5 +1,4 @@
 from sys import sizeof
-from memory import UnsafePointer
 
 from MojoSerial.CondFormats.PixelCPEforGPU import (
     CommonParams,
@@ -8,15 +7,14 @@ from MojoSerial.CondFormats.PixelCPEforGPU import (
     AverageGeometry,
     ParamsOnGPU,
 )
-from MojoSerial.MojoBridge.Array import Array
 from MojoSerial.MojoBridge.DTypes import UChar, Typeable
 from MojoSerial.CondFormats.PixelGPUDetails import PixelGPUDetails
 
 
 struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
-    alias _U = Array[UInt32, Int(PixelGPUDetails.MAX_SIZE)]
+    alias _U = InlineArray[UInt32, Int(PixelGPUDetails.MAX_SIZE)]
     alias _UD = Self._U(uninitialized=True)
-    alias _C = Array[UChar, Int(PixelGPUDetails.MAX_SIZE)]
+    alias _C = InlineArray[UChar, Int(PixelGPUDetails.MAX_SIZE)]
     alias _CD = Self._C(uninitialized=True)
     var fed: Self._U
     var link: Self._U
@@ -41,13 +39,13 @@ struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(
         out self,
-        owned fed: Self._U,
-        owned link: Self._U,
-        owned roc: Self._U,
-        owned RawId: Self._U,
-        owned rocInDet: Self._U,
-        owned moduleId: Self._U,
-        owned badRocs: Self._C,
+        var fed: Self._U,
+        var link: Self._U,
+        var roc: Self._U,
+        var RawId: Self._U,
+        var rocInDet: Self._U,
+        var moduleId: Self._U,
+        var badRocs: Self._C,
     ):
         self.fed = fed^
         self.link = link^
@@ -59,7 +57,7 @@ struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
         self.size = 0
 
     @always_inline
-    fn __moveinit__(out self, owned other: Self):
+    fn __moveinit__(out self, var other: Self):
         self.fed = other.fed^
         self.link = other.link^
         self.roc = other.roc^
