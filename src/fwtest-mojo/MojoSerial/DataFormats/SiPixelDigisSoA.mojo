@@ -25,10 +25,11 @@ struct SiPixelDigisSoA(Copyable, Defaultable, Movable, Sized, Typeable):
         adc: UnsafePointer[UInt16],
         clus: UnsafePointer[Int32],
     ):
-        self._pdigi = List[UInt32](capacity=UInt(nDigis))
-        self._rawIdArr = List[UInt32](capacity=UInt(nDigis))
-        self._adc = List[UInt16](capacity=UInt(nDigis))
-        self._clus = List[Int32](capacity=UInt(nDigis))
+        debug_assert(nDigis > 0)
+        self._pdigi = List[UInt32](length=UInt(nDigis), fill=0)
+        self._rawIdArr = List[UInt32](length=UInt(nDigis), fill=0)
+        self._adc = List[UInt16](length=UInt(nDigis), fill=0)
+        self._clus = List[Int32](length=UInt(nDigis), fill=0)
         for i in range(UInt(nDigis)):
             self._pdigi[i] = pdigi[i]
             self._rawIdArr[i] = rawIdArr[i]

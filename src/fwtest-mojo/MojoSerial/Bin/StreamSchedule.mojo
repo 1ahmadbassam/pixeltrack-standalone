@@ -38,6 +38,7 @@ struct StreamSchedule(Defaultable, Movable, Typeable):
             self._streamId = streamId
 
             var nModules = PluginFactory.size(edreg)
+            debug_assert(nModules > 0)
 
             var producers = List[EDProducerConcrete](capacity=nModules)
             var adj = List[List[Int]](length=nModules, fill=[])
