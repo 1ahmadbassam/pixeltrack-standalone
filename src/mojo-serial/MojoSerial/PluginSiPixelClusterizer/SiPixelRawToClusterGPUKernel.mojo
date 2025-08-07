@@ -161,8 +161,12 @@ struct WordFedAppender(Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self):
-        self._word = InlineArray[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)](fill=0)
-        self._fedId = InlineArray[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)](fill=0)
+        self._word = InlineArray[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)](
+            fill=0
+        )
+        self._fedId = InlineArray[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)](
+            fill=0
+        )
 
     fn initializeWordFed(
         self,
@@ -390,7 +394,7 @@ fn getRawId(
     link: UInt32,
     roc: UInt32,
 ) -> DetIdGPU:
-    var index: UInt32 = (
+    var index: UInt32 = 0 if link == 0 else (
         fed.cast[DType.uint32]()
         * PixelGPUDetails.MAX_LINK
         * PixelGPUDetails.MAX_ROC
@@ -775,12 +779,11 @@ fn RawToDigi_kernel[
             )
             _ = err[].push_back(PixelErrorCompact(rID, ww, errorType, fedId))
             continue
-
         var rawId = detId.RawId
         var rocIdInDetUnit = detId.rocInDet
         var barrel = isBarrel(rawId)
 
-        var index: UInt32 = (
+        var index: UInt32 = 0 if link == 0 else (
             fedId.cast[DType.uint32]()
             * PixelGPUDetails.MAX_LINK
             * PixelGPUDetails.MAX_ROC
