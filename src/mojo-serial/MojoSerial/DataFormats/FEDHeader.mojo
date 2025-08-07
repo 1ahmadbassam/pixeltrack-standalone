@@ -135,7 +135,7 @@ struct FEDHeader(Copyable, Defaultable, Movable, Typeable):
     @always_inline
     fn check(self) -> Bool:
         return (
-            FED_HCTRLID_EXTRACT(Int(self.theHeader[].sourceid))
+            FED_HCTRLID_EXTRACT(Int(self.theHeader[].eventid))
             == FED_SLINK_START_MARKER
         )
 

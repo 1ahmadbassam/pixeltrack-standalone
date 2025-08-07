@@ -35,9 +35,8 @@ struct SiPixelRawDataError(
         var errorType: Int32,
         var fedId: Int32,
     ):
-        self._errorWord64 = 0
         # Mojo currently does not infer setting constructor fields outside of the constructor
-        self._errorMessage = ""
+        self = Self()
 
         self._errorWord32 = errorWord32
         self._errorType = errorType
@@ -45,16 +44,15 @@ struct SiPixelRawDataError(
 
         self.setMessage()
 
-    # constructor for 32-bit error word
+    # constructor for 64-bit error word and type included (header or trailer word)
     fn __init__(
         out self,
         var errorWord64: UInt64,
         var errorType: Int32,
         var fedId: Int32,
     ):
-        self._errorWord32 = 0
         # Mojo currently does not infer setting constructor fields outside of the constructor
-        self._errorMessage = ""
+        self = Self()
 
         self._errorWord64 = errorWord64
         self._errorType = errorType
@@ -67,7 +65,7 @@ struct SiPixelRawDataError(
         self._errorWord64 = existing._errorWord64
         self._errorType = existing._errorType
         self._fedId = existing._fedId
-        self._errorMessage = existing._errorMessage
+        self._errorMessage = existing._errorMessage^
 
     fn __copyinit__(out self, existing: Self):
         self._errorWord32 = existing._errorWord32
@@ -76,17 +74,17 @@ struct SiPixelRawDataError(
         self._fedId = existing._fedId
         self._errorMessage = existing._errorMessage
 
-    fn setWord32(mut self, errorWord32: UInt32):
+    fn setWord32(mut self, var errorWord32: UInt32):
         self._errorWord32 = errorWord32
 
-    fn setWord64(mut self, errorWord64: UInt64):
+    fn setWord64(mut self, var errorWord64: UInt64):
         self._errorWord64 = errorWord64
 
-    fn setType(mut self, errorType: Int32):
+    fn setType(mut self, var errorType: Int32):
         self._errorType = errorType
         self.setMessage()
 
-    fn setFedId(mut self, fedId: Int32):
+    fn setFedId(mut self, var fedId: Int32):
         self._fedId = fedId
 
     @always_inline
@@ -104,6 +102,10 @@ struct SiPixelRawDataError(
     @always_inline
     fn getFedId(self) -> Int32:
         return self._fedId
+
+    @always_inline
+    fn getMessage(self) -> String:
+        return self._errorMessage
 
     fn setMessage(mut self):
         if self._errorType == 25:

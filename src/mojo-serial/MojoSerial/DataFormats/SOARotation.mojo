@@ -2,16 +2,16 @@ from MojoSerial.MojoBridge.DTypes import Typeable
 
 @fieldwise_init
 @register_passable("trivial")
-struct TKRotation[U:DType](Movable, Copyable, Defaultable, Typeable):
+struct TkRotation[T: DType](Movable, Copyable, Defaultable, Typeable):
     @always_inline
     @staticmethod
     fn dtype() -> String:
-        return "TKRotation"
+        return "TkRotation"
 
 
 @fieldwise_init
 @register_passable("trivial")
-struct SOARotation[T:DType](Movable, Copyable, Defaultable):
+struct SOARotation[T: DType](Movable, Copyable, Defaultable):
     var R11: Scalar[T]
     var R12: Scalar[T]
     var R13: Scalar[T]
@@ -24,6 +24,12 @@ struct SOARotation[T:DType](Movable, Copyable, Defaultable):
 
     @always_inline
     fn __init__(out self):
+        self.R11 = 0; self.R12 = 0; self.R13 = 0
+        self.R21 = 0; self.R22 = 0; self.R23 = 0
+        self.R31 = 0; self.R32 = 0; self.R33 = 0
+
+    @always_inline
+    fn __init__(out self, var x: Scalar[T], /):
         self.R11 = 1; self.R12 = 0; self.R13 = 0
         self.R21 = 0; self.R22 = 1; self.R23 = 0
         self.R31 = 0; self.R32 = 0; self.R33 = 1
@@ -41,19 +47,19 @@ struct SOARotation[T:DType](Movable, Copyable, Defaultable):
                     self.R13, self.R23, self.R33)
 
     @always_inline
-    fn multiply(self, vx: Scalar[T], vy: Scalar[T], vz: Scalar[T], mut ux: Scalar[T], mut uy: Scalar[T], mut uz: Scalar[T]):
+    fn multiply(self, var vx: Scalar[T], var vy: Scalar[T], var vz: Scalar[T], mut ux: Scalar[T], mut uy: Scalar[T], mut uz: Scalar[T]):
         ux = self.R11 * vx + self.R12 * vy + self.R13 * vz
         uy = self.R21 * vx + self.R22 * vy + self.R23 * vz
         uz = self.R31 * vx + self.R32 * vy + self.R33 * vz
 
     @always_inline
-    fn multiplyInverse(self, vx: Scalar[T], vy: Scalar[T], vz: Scalar[T], mut ux: Scalar[T], mut uy: Scalar[T], mut uz: Scalar[T]):
+    fn multiplyInverse(self, var vx: Scalar[T], var vy: Scalar[T], var vz: Scalar[T], mut ux: Scalar[T], mut uy: Scalar[T], mut uz: Scalar[T]):
         ux = self.R11 * vx + self.R21 * vy + self.R31 * vz
         uy = self.R12 * vx + self.R22 * vy + self.R32 * vz
         uz = self.R13 * vx + self.R23 * vy + self.R33 * vz
 
     @always_inline
-    fn multiplyInverse(self, vx: Scalar[T], vy: Scalar[T], mut ux: Scalar[T], mut uy: Scalar[T], mut uz: Scalar[T]):
+    fn multiplyInverse(self, var vx: Scalar[T], var vy: Scalar[T], mut ux: Scalar[T], mut uy: Scalar[T], mut uz: Scalar[T]):
         ux = self.R11 * vx + self.R21 * vy
         uy = self.R12 * vx + self.R22 * vy
         uz = self.R13 * vx + self.R23 * vy
@@ -120,12 +126,12 @@ struct SOAFrame[T: DType](Movable, Copyable, Defaultable, Typeable):
         return self.rot
 
     @always_inline
-    fn toLocal(self, vx: Scalar[T], vy: Scalar[T], vz: Scalar[T],
+    fn toLocal(self, var vx: Scalar[T], var vy: Scalar[T], var vz: Scalar[T],
                mut ux: Scalar[T], mut uy: Scalar[T], mut uz: Scalar[T]):
         self.rot.multiply(vx - self.px, vy - self.py, vz - self.pz, ux, uy, uz)
 
     @always_inline
-    fn toGlobal(self, vx: Scalar[T], vy: Scalar[T], vz: Scalar[T],
+    fn toGlobal(self, var vx: Scalar[T], var vy: Scalar[T], var vz: Scalar[T],
                 mut ux: Scalar[T], mut uy: Scalar[T], mut uz: Scalar[T]):
         self.rot.multiplyInverse(vx, vy, vz, ux, uy, uz)
         ux += self.px
@@ -133,7 +139,7 @@ struct SOAFrame[T: DType](Movable, Copyable, Defaultable, Typeable):
         uz += self.pz
 
     @always_inline
-    fn toGlobal(self, vx: Scalar[T], vy: Scalar[T],
+    fn toGlobal(self, var vx: Scalar[T], var vy: Scalar[T],
                 mut ux: Scalar[T], mut uy: Scalar[T], mut uz: Scalar[T]):
         self.rot.multiplyInverse(vx, vy, ux, uy, uz)
         ux += self.px
@@ -141,7 +147,7 @@ struct SOAFrame[T: DType](Movable, Copyable, Defaultable, Typeable):
         uz += self.pz
 
     @always_inline
-    fn toGlobal(self, cxx: Scalar[T], cxy: Scalar[T], cyy: Scalar[T],
+    fn toGlobal(self, var cxx: Scalar[T], var cxy: Scalar[T], var cyy: Scalar[T],
                 gl: UnsafePointer[Scalar[T]]):
         var r = self.rot
 
