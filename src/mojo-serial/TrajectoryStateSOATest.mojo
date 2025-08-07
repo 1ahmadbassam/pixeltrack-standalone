@@ -6,7 +6,6 @@ from MojoSerial.CUDACore.EigenSoA import MatrixSoA
 from MojoSerial.CUDADataFormats.TrajectoryStateSoA import TrajectoryStateSoA
 
 from math import sqrt
-from memory import UnsafePointer
 
 alias Vector5d = Vector[DType.float64, 5]
 alias Matrix5d = Matrix[DType.float64, 5, 5]
