@@ -5,11 +5,15 @@ from MojoSerial.MojoBridge.DTypes import Typeable
 
 @fieldwise_init
 @register_passable("trivial")
-struct Counters(Copyable, Movable, Typeable):
+struct Counters(Copyable, Defaultable, Movable, Typeable):
     var c: SIMD[DType.uint32, 2]
     # alias n: UInt32 = c[0] # in a "One to Many" association is the number of "One"
     # alias m: UInt32 = c[1] # in a "One to Many" association is the total number of associations
     # alias ac: UInt64 = bitcast[DType.uint64, 1](c)
+
+    @always_inline
+    fn __init__(out self):
+        self.c = SIMD[DType.uint32, 2]()
 
     @always_inline
     fn get_ac(self) -> UInt64:
@@ -42,12 +46,11 @@ struct Counters(Copyable, Movable, Typeable):
 struct AtomicPairCounter(Copyable, Defaultable, Movable, Typeable):
     var counter: Counters
     alias CounterType = UInt64
-    alias _Z = SIMD[DType.uint32, 2](0, 0)
-    alias _incr: UInt64 = 1 << 32
+    alias incr: Self.CounterType = 1 << 32
 
     @always_inline
     fn __init__(out self):
-        self.counter = Counters(Self._Z)
+        self.counter = Counters()
 
     @always_inline
     fn __init__(out self, i: Self.CounterType):
@@ -60,8 +63,10 @@ struct AtomicPairCounter(Copyable, Defaultable, Movable, Typeable):
 
     @always_inline
     fn add(mut self, i: UInt32) -> Counters:
-        self.counter.set_ac(Self._incr + i.cast[DType.uint64]())
-        return self.counter
+        var ret = self.counter
+        var c = Self.incr + i.cast[DType.uint64]()
+        self.counter.set_ac(self.counter.get_ac() + c)
+        return ret
 
     @always_inline
     @staticmethod

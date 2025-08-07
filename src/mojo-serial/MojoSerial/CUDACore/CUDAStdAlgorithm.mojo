@@ -4,63 +4,58 @@ from sys import sizeof
 fn lower_bound[
     T: DType, //
 ](
-    first: UnsafePointer[Scalar[T]],
-    last: UnsafePointer[Scalar[T]],
-    ref value: Scalar[T],
+    var first: UnsafePointer[Scalar[T]],
+    var last: UnsafePointer[Scalar[T]],
+    var value: Scalar[T],
 ) -> UnsafePointer[Scalar[T]]:
-    var _first = first
-    var count = (Int(last) - Int(_first)) // sizeof[Scalar[T]]()
+    var count = (Int(last) - Int(first)) // sizeof[Scalar[T]]()
 
     while count > 0:
-        var it = _first
+        var it = first
         var step = count // 2
         it += step
 
         if it[] < value:
             it += 1
-            _first = it
+            first = it
             count -= step + 1
         else:
             count = step
 
-    return _first
+    return first
 
 
 fn upper_bound[
     T: DType, //
 ](
-    first: UnsafePointer[Scalar[T]],
-    last: UnsafePointer[Scalar[T]],
-    ref value: Scalar[T],
+    var first: UnsafePointer[Scalar[T]],
+    var last: UnsafePointer[Scalar[T]],
+    var value: Scalar[T],
 ) -> UnsafePointer[Scalar[T]]:
-    var _first = first
-    var count = (Int(last) - Int(_first)) // sizeof[Scalar[T]]()
+    var count = (Int(last) - Int(first)) // sizeof[Scalar[T]]()
 
     while count > 0:
-        var it = _first
+        var it = first
         var step = count // 2
         it += step
 
-        if it[] <= value:
+        if value >= it[]:
             it += 1
-            _first = it
+            first = it
             count -= step + 1
         else:
             count = step
 
-    return _first
+    return first
 
 
 fn binary_find[
     T: DType, //
 ](
-    first: UnsafePointer[Scalar[T]],
-    last: UnsafePointer[Scalar[T]],
-    ref value: Scalar[T],
+    var first: UnsafePointer[Scalar[T]],
+    var last: UnsafePointer[Scalar[T]],
+    var value: Scalar[T],
 ) -> UnsafePointer[Scalar[T]]:
-    var _first = first
-    _first = lower_bound(_first, last, value)
+    first = lower_bound(first, last, value)
 
-    if (_first != last) and (value >= _first[]):
-        return _first
-    return last
+    return first if (first != last) and (value >= first[]) else last
