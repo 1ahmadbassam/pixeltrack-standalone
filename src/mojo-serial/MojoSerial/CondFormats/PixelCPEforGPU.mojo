@@ -40,7 +40,7 @@ struct DetParams(Copyable, Defaultable, Movable, Typeable):
     var isPosZ: Bool
     var layer: UInt16
     var index: UInt16
-    var rawId: UInt16
+    var rawId: UInt32
 
     var shiftX: Float
     var shiftY: Float
@@ -509,7 +509,7 @@ fn errorFromDB(
         == Phase1PixelTopology.lastRowInModule.cast[DType.uint32]()
     )
     var isEdgeY = (cp.minCol[ic] == 0) or (
-        UInt32(cp.maxCol[ic])
+        cp.maxCol[ic]
         == Phase1PixelTopology.lastColInModule.cast[DType.uint32]()
     )
     # is one and big?
