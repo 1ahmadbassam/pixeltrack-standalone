@@ -1,4 +1,6 @@
-from MojoSerial.MojoBridge.DTypes import SizeType, Typeable
+from collections.list import _ListIter
+
+from MojoSerial.MojoBridge.DTypes import SizeType, Typeable, UChar
 
 
 struct FEDRawData(Copyable, Defaultable, Movable, Typeable):
@@ -9,7 +11,8 @@ struct FEDRawData(Copyable, Defaultable, Movable, Typeable):
     The FED data should include the standard FED header and trailer.
     """
 
-    alias Data = List[UInt8]
+    alias Data = List[UChar]
+    alias Iterator = _ListIter[Self.Data.T, Self.Data.hint_trivial_type]
     var _data: Self.Data
 
     @always_inline
@@ -17,13 +20,15 @@ struct FEDRawData(Copyable, Defaultable, Movable, Typeable):
         self._data = []
 
     @always_inline
-    fn __init__(out self, newsize: Int):
+    fn __init__(out self, newsize: SizeType):
         debug_assert(
             newsize % 8 == 0,
-            "Size " + String(newsize) + " is not a multiple of 8 bytes.",
+            "FEDRawData::resize: "
+            + String(newsize)
+            + " is not a multiple of 8 bytes.",
         )
 
-        self._data = Self.Data(length=newsize, fill=0)
+        self._data = Self.Data(length=UInt(newsize), fill=0)
 
     @always_inline
     fn __copyinit__(out self, existing: Self):
@@ -49,7 +54,9 @@ struct FEDRawData(Copyable, Defaultable, Movable, Typeable):
     fn resize(mut self, newsize: SizeType):
         debug_assert(
             newsize % 8 == 0,
-            "Size " + String(newsize) + " is not a multiple of 8 bytes.",
+            "FEDRawData::resize: "
+            + String(newsize)
+            + " is not a multiple of 8 bytes.",
         )
 
         if self.size() == newsize:

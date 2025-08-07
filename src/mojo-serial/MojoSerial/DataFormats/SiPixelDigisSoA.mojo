@@ -19,22 +19,21 @@ struct SiPixelDigisSoA(Copyable, Defaultable, Movable, Sized, Typeable):
     # unsafe constructor for constructing the SoA object from C-style arrays
     fn __init__(
         out self,
-        nDigis: SizeType,
+        var nDigis: SizeType,
         pdigi: UnsafePointer[UInt32],
         rawIdArr: UnsafePointer[UInt32],
         adc: UnsafePointer[UInt16],
         clus: UnsafePointer[Int32],
     ):
-        debug_assert(nDigis > 0)
-        self._pdigi = List[UInt32](length=UInt(nDigis), fill=0)
-        self._rawIdArr = List[UInt32](length=UInt(nDigis), fill=0)
-        self._adc = List[UInt16](length=UInt(nDigis), fill=0)
-        self._clus = List[Int32](length=UInt(nDigis), fill=0)
+        self._pdigi = List[UInt32](unsafe_uninit_length=UInt(nDigis))
+        self._rawIdArr = List[UInt32](unsafe_uninit_length=UInt(nDigis))
+        self._adc = List[UInt16](unsafe_uninit_length=UInt(nDigis))
+        self._clus = List[Int32](unsafe_uninit_length=UInt(nDigis))
         for i in range(UInt(nDigis)):
-            self._pdigi[i] = pdigi[i]
-            self._rawIdArr[i] = rawIdArr[i]
-            self._adc[i] = adc[i]
-            self._clus[i] = clus[i]
+            (self._pdigi.unsafe_ptr() + i).init_pointee_copy(pdigi[i])
+            (self._rawIdArr.unsafe_ptr() + i).init_pointee_copy(rawIdArr[i])
+            (self._adc.unsafe_ptr() + i).init_pointee_copy(adc[i])
+            (self._clus.unsafe_ptr() + i).init_pointee_copy(clus[i])
         debug_assert(self._pdigi.__len__() == UInt(nDigis))
 
     @always_inline
@@ -42,19 +41,19 @@ struct SiPixelDigisSoA(Copyable, Defaultable, Movable, Sized, Typeable):
         return self._pdigi.__len__()
 
     @always_inline
-    fn pdigi(self, i: SizeType) -> UInt32:
+    fn pdigi(self, var i: SizeType) -> UInt32:
         return self._pdigi[i]
 
     @always_inline
-    fn rawIdArr(self, i: SizeType) -> UInt32:
+    fn rawIdArr(self, var i: SizeType) -> UInt32:
         return self._rawIdArr[i]
 
     @always_inline
-    fn adc(self, i: SizeType) -> UInt16:
+    fn adc(self, var i: SizeType) -> UInt16:
         return self._adc[i]
 
     @always_inline
-    fn clus(self, i: SizeType) -> Int32:
+    fn clus(self, var i: SizeType) -> Int32:
         return self._clus[i]
 
     @always_inline

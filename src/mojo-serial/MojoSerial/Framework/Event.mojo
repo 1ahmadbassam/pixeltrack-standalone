@@ -73,7 +73,9 @@ struct Event(Defaultable, Movable, Typeable):
     ):
         self._streamId = streamId
         self._eventId = eventId
-        self._products = List[WrapperBase](length=reg.__len__(), fill=WrapperBase())
+        self._products = List[WrapperBase](
+            length=reg.__len__(), fill=WrapperBase()
+        )
 
     @always_inline
     fn __moveinit__(out self, var other: Self):

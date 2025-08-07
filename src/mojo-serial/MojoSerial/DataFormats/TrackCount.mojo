@@ -11,7 +11,7 @@ struct TrackCount(Copyable, Defaultable, Movable, Typeable):
         self._tracks = 0
 
     @always_inline
-    fn n_tracks(self) -> UInt32:
+    fn nTracks(self) -> UInt32:
         return self._tracks
 
     @always_inline

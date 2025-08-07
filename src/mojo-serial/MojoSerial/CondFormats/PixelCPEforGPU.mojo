@@ -1,4 +1,6 @@
-from MojoSerial.CUDADataFormats.GPUClusteringConstants import GPUClusteringConstants
+from MojoSerial.CUDADataFormats.GPUClusteringConstants import (
+    GPUClusteringConstants,
+)
 from MojoSerial.DataFormats.SOARotation import SOARotation, SOAFrame
 from MojoSerial.Geometry.Phase1PixelTopology import (
     Phase1PixelTopology,
@@ -219,32 +221,35 @@ fn computeAnglesFromDet(
     cotalpha = gvx * gvz
     cotbeta = gvy * gvz
 
+
 fn correction(
     sizeM1: Int,
-    Q_f: Int,                       # Charge in the first pixel
-    Q_l: Int,                       # Charge in the last pixel
-    upper_edge_first_pix: UInt16,   # As the name says
-    lower_edge_last_pix: UInt16,    # As the name says
-    lorentz_shift: Float,           # L-shift at half thickness
-    theThickness: Float,            # detector thickness
-    cot_angle: Float,               # cot of alpha_ or beta_
-    pitch: Float,                   # thePitchX or thePitchY
-    first_is_big: Bool,             # true if the first is big
-    last_is_big: Bool,              # true if the last is big
+    Q_f: Int,  # Charge in the first pixel
+    Q_l: Int,  # Charge in the last pixel
+    upper_edge_first_pix: UInt16,  # As the name says
+    lower_edge_last_pix: UInt16,  # As the name says
+    lorentz_shift: Float,  # L-shift at half thickness
+    theThickness: Float,  # detector thickness
+    cot_angle: Float,  # cot of alpha_ or beta_
+    pitch: Float,  # thePitchX or thePitchY
+    first_is_big: Bool,  # true if the first is big
+    last_is_big: Bool,  # true if the last is big
 ) -> Float:
-    if 0 == sizeM1:                             # size 1
+    if 0 == sizeM1:  # size 1
         return 0.0
 
     var W_eff: Float = 0.0
     var simple: Bool = True
-    if 1 == sizeM1:                             # size 2
+    if 1 == sizeM1:  # size 2
         # Width of the clusters minus the edge (first and last) pixels
         # In the note, they are denoted x_F and x_L (and y_F and y_L)
         var W_inner = pitch * Float(lower_edge_last_pix - upper_edge_first_pix)
 
         # Predicted charge width from geometry
-        var W_pred = theThickness * cot_angle   # geometric correction (in cm)
-                        - lorentz_shift         # (in cm) &&& check fpix!
+        var W_pred = (
+            theThickness * cot_angle  # geometric correction (in cm)
+            - lorentz_shift
+        )  # (in cm) &&& check fpix!
 
         W_eff = abs(W_pred) - W_inner
 
@@ -252,8 +257,9 @@ fn correction(
         # based on the track, do *not* use W_pred-W_inner.  Instead, replace
         # it with an *average* effective charge width, which is the average
         # length of the edge pixels.
-        simple = 
-            (W_eff < 0.0) | (W_eff > pitch)     # this produces "large" regressions for very small numeric differences...
+        simple = (W_eff < 0.0) | (
+            W_eff > pitch
+        )  # this produces "large" regressions for very small numeric differences...
 
     if simple:
         # Total length of the two edge pixels (first+last)
@@ -262,7 +268,9 @@ fn correction(
             sum_of_edge += 1.0
         if last_is_big:
             sum_of_edge += 1.0
-        W_eff = pitch * sum_of_edge * 0.5       # ave. length of edge pixels (first+last) (cm)
+        W_eff = (
+            pitch * sum_of_edge * 0.5
+        )  # ave. length of edge pixels (first+last) (cm)
 
     # Finally, compute the position in this projection
     var Qdiff = Float(Q_l - Q_f)
@@ -273,6 +281,7 @@ fn correction(
         Qsum = 1.0
 
     return 0.5 * (Qdiff / Qsum) * W_eff
+
 
 fn position(
     comParams: CommonParams,

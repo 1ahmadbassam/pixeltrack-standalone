@@ -149,14 +149,14 @@ struct Registry(Typeable):
 struct PluginFactory:
     @staticmethod
     @always_inline
-    fn getAll(mut reg: Registry) -> (
-        _DictKeyIter[
-            Registry._pluginRegistryType.K,
-            Registry._pluginRegistryType.V,
-            Registry._pluginRegistryType.H,
-            __origin_of(reg._pluginRegistry),
-        ]
-    ):
+    fn getAll(
+        mut reg: Registry,
+    ) -> _DictKeyIter[
+        Registry._pluginRegistryType.K,
+        Registry._pluginRegistryType.V,
+        Registry._pluginRegistryType.H,
+        __origin_of(reg._pluginRegistry),
+    ]:
         return reg._pluginRegistry.keys()
 
     @staticmethod

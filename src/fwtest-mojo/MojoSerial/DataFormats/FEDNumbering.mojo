@@ -114,12 +114,12 @@ struct FEDNumbering:
 
     @staticmethod
     @always_inline
-    fn inRange(i: Int) -> Bool:
+    fn inRange(var i: Int) -> Bool:
         return FEDNumbering._in[i]
 
     @staticmethod
     @always_inline
-    fn inRangeNoGT(i: Int) -> Bool:
+    fn inRangeNoGT(var i: Int) -> Bool:
         if (
             i >= FEDNumbering.MINTriggerGTPFEDID
             and i <= FEDNumbering.MAXTriggerGTPFEDID
@@ -132,7 +132,9 @@ struct FEDNumbering:
 
 
 fn initIn() -> List[Bool]:
-    var _in: List[Bool] = [False] * (FEDNumbering.MAXFEDID + 1)
+    var _in: List[Bool] = List[Bool](
+        length=FEDNumbering.MAXFEDID + 1, fill=False
+    )
 
     @parameter
     for i in range(
@@ -285,4 +287,4 @@ fn initIn() -> List[Bool]:
     ):
         _in[i] = True
 
-    return _in
+    return _in^

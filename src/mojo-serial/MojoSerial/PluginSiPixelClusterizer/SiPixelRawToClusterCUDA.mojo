@@ -79,10 +79,17 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
 
     fn produce(mut self, mut iEvent: Event, iSetup: EventSetup):
         try:
-            if iSetup.get[SiPixelFedCablingMapGPUWrapper]().hasQuality() != self._useQuality:
+            if (
+                iSetup.get[SiPixelFedCablingMapGPUWrapper]().hasQuality()
+                != self._useQuality
+            ):
                 raise "UseQuality of the module (" + self._useQuality.__str__() + ") differs the one from SiPixelFedCablingMapGPUWrapper. Please fix your configuration."
-            var gpuMap = iSetup.get[SiPixelFedCablingMapGPUWrapper]().getCPUProduct()
-            var gpuModulesToUnpack = iSetup.get[SiPixelFedCablingMapGPUWrapper]().getModToUnpAll()
+            var gpuMap = iSetup.get[
+                SiPixelFedCablingMapGPUWrapper
+            ]().getCPUProduct()
+            var gpuModulesToUnpack = iSetup.get[
+                SiPixelFedCablingMapGPUWrapper
+            ]().getModToUnpAll()
             var hgains = iSetup.get[SiPixelGainCalibrationForHLTGPU]()
             var gpuGains = hgains.getCPUProduct()
             var _fedIds = iSetup.get[SiPixelFedIds]().fedIds()
