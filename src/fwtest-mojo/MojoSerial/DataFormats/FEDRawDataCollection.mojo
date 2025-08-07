@@ -8,7 +8,7 @@ struct FEDRawDataCollection(Copyable, Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self):
-        self._data = List[FEDRawData](capacity=FEDNumbering.lastFEDId() + 1)
+        self._data = List[FEDRawData](length=FEDNumbering.lastFEDId() + 1, fill=FEDRawData())
 
     @always_inline
     fn __moveinit__(out self, var other: Self):
