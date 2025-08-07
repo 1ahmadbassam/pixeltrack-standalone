@@ -183,13 +183,13 @@ struct AverageGeometry(Movable, Defaultable, Typeable):
     var endCapZ: List[Float]
 
     fn __init__(out self):
-        self.ladderZ = List[Float](capacity=Int(Self.numberOfLaddersInBarrel))
-        self.ladderX = List[Float](capacity=Int(Self.numberOfLaddersInBarrel))
-        self.ladderY = List[Float](capacity=Int(Self.numberOfLaddersInBarrel))
-        self.ladderR = List[Float](capacity=Int(Self.numberOfLaddersInBarrel))
-        self.ladderMinZ = List[Float](capacity=Int(Self.numberOfLaddersInBarrel))
-        self.ladderMaxZ = List[Float](capacity=Int(Self.numberOfLaddersInBarrel))
-        self.endCapZ = List[Float](capacity=2)
+        self.ladderZ = List[Float](length=Int(Self.numberOfLaddersInBarrel), fill=0)
+        self.ladderX = List[Float](length=Int(Self.numberOfLaddersInBarrel), fill=0)
+        self.ladderY = List[Float](length=Int(Self.numberOfLaddersInBarrel), fill=0)
+        self.ladderR = List[Float](length=Int(Self.numberOfLaddersInBarrel), fill=0)
+        self.ladderMinZ = List[Float](length=Int(Self.numberOfLaddersInBarrel), fill=0)
+        self.ladderMaxZ = List[Float](length=Int(Self.numberOfLaddersInBarrel), fill=0)
+        self.endCapZ = List[Float](length=2, fill=0)
 
     @always_inline
     @staticmethod

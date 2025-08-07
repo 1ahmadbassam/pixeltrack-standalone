@@ -75,11 +75,11 @@ struct SiPixelDigisSoA(Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(out self, maxFedWords: SizeType):
         debug_assert(maxFedWords > 0)
-        self.xx_d = List[UInt16](capacity=UInt(maxFedWords))
-        self.yy_d = List[UInt16](capacity=UInt(maxFedWords))
-        self.adc_d = List[UInt16](capacity=UInt(maxFedWords))
-        self.moduleInd_d = List[UInt16](capacity=UInt(maxFedWords))
-        self.clus_d = List[Int32](capacity=UInt(maxFedWords))
+        self.xx_d = List[UInt16](length=UInt(maxFedWords), fill=0)
+        self.yy_d = List[UInt16](length=UInt(maxFedWords), fill=0)
+        self.adc_d = List[UInt16](length=UInt(maxFedWords), fill=0)
+        self.moduleInd_d = List[UInt16](length=UInt(maxFedWords), fill=0)
+        self.clus_d = List[Int32](length=UInt(maxFedWords), fill=0)
         self.view_d = DeviceConstView(
             self.xx_d.unsafe_ptr(),
             self.yy_d.unsafe_ptr(),
@@ -88,8 +88,8 @@ struct SiPixelDigisSoA(Defaultable, Movable, Typeable):
             self.clus_d.unsafe_ptr(),
         )
 
-        self.pdigi_d = List[UInt32](capacity=UInt(maxFedWords))
-        self.rawIdArr_d = List[UInt32](capacity=UInt(maxFedWords))
+        self.pdigi_d = List[UInt32](length=UInt(maxFedWords), fill=0)
+        self.rawIdArr_d = List[UInt32](length=UInt(maxFedWords), fill=0)
 
         self.nModules_h = 0
         self.nDigis_h = 0
