@@ -143,7 +143,9 @@ struct HistoContainer[
     fn __init__(out self):
         self.off = InlineArray[UInt32, Int(Self.totbins())](fill=0)
         self.psws = 0
-        self.bins = InlineArray[Scalar[Self.IndexType], Int(Self.capacity())](fill=0)
+        self.bins = InlineArray[Scalar[Self.IndexType], Int(Self.capacity())](
+            fill=0
+        )
 
     @staticmethod
     fn ilog2(v_in: UInt32) -> UInt32:

@@ -10,6 +10,7 @@ from math import sqrt
 alias Vector5d = Vector[DType.float64, 5]
 alias Matrix5d = Matrix[DType.float64, 5, 5]
 
+
 fn loadCov(e: Vector5d) -> Matrix5d:
     var cov: Matrix5d = Matrix5d()
     for i in range(5):
@@ -17,14 +18,15 @@ fn loadCov(e: Vector5d) -> Matrix5d:
     for i in range(5):
         for j in range(i):
             var v: Float64 = 0.3 * sqrt(cov[i, i] * cov[j, j])
-            cov[i, j] = -0.4 * v if ( i + j ) % 2 else 0.1 * v
+            cov[i, j] = -0.4 * v if (i + j) % 2 else 0.1 * v
             cov[j, i] = cov[i, j]
     return cov
 
+
 alias TS = TrajectoryStateSoA[128]
 
-fn testTSSoA(pts: UnsafePointer[TS], n: Int64):
 
+fn testTSSoA(pts: UnsafePointer[TS], n: Int64):
     debug_assert(n <= 128)
 
     var par0: Vector5d = Vector5d(0.2, 0.1, 3.5, 0.8, 0.1)
@@ -44,11 +46,9 @@ fn testTSSoA(pts: UnsafePointer[TS], n: Int64):
             for k in range(j, 5):
                 debug_assert(cov0[k, j] == cov0[j, k])
                 debug_assert(cov1[k, j] == cov1[j, k])
-                debug_assert(abs(delM[k, j]) < 1.e-5)
+                debug_assert(abs(delM[k, j]) < 1.0e-5)
+
 
 fn main():
     var ts: TS = TS()
-    testTSSoA(UnsafePointer(to = ts), 128)
-
-
-
+    testTSSoA(UnsafePointer(to=ts), 128)

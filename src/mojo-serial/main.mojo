@@ -18,7 +18,9 @@ fn main() raises:
     var _edreg = MojoSerial.Framework.PluginFactory.Registry()
     MojoSerial.PluginSiPixelClusterizer.init(_esreg, _edreg)
 
-    var processor = EventProcessor(warmupEvents, maxEvents, path, validation, _esreg, _edreg)
+    var processor = EventProcessor(
+        warmupEvents, maxEvents, path, validation, _esreg, _edreg
+    )
     print("Processing ", processor.maxEvents(), " events", sep="", end="")
     if warmupEvents > 0:
         print(", after ", warmupEvents, " events of warm up", sep="", end="")

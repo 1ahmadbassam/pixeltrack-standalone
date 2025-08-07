@@ -23,9 +23,9 @@ struct GPUCalibPixel:
         adc: UnsafePointer[UInt16, mut=True],
         ref ped: SiPixelGainForHLTonGPU,
         numElements: Int,
-        moduleStart: UnsafePointer[UInt32, mut=True],       # just to zero first
-        nClustersInModule: UnsafePointer[UInt32, mut=True], # just to zero them
-        clusModuleStart: UnsafePointer[UInt32, mut=True],   # just to zero first
+        moduleStart: UnsafePointer[UInt32, mut=True],  # just to zero first
+        nClustersInModule: UnsafePointer[UInt32, mut=True],  # just to zero them
+        clusModuleStart: UnsafePointer[UInt32, mut=True],  # just to zero first
     ):
         clusModuleStart[0] = 0
         moduleStart[0] = 0
