@@ -16,7 +16,7 @@ struct ScalarSoA[T: DType, S: Int](Copyable, Defaultable, Movable, Typeable):
         constrained[
             S * T.sizeof() % 128 == 0, "SoA size not a multiple of 128"
         ]()
-        self._data = InlineArray[Self.Scalar, S](0)
+        self._data = InlineArray[Self.Scalar, S](fill=0)
 
     fn __init__(out self, list: List[Self.Scalar]):
         constrained[isPowerOf2(S), "SoA stride not a power of 2"]()

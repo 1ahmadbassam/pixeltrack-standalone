@@ -71,8 +71,8 @@ struct DetParams(Copyable, Defaultable, Movable, Typeable):
         self.y0 = 0.0
         self.z0 = 0.0
 
-        self.sx = InlineArray[Float, 3](0)
-        self.sy = InlineArray[Float, 3](0)
+        self.sx = InlineArray[Float, 3](fill=0)
+        self.sy = InlineArray[Float, 3](fill=0)
 
         self.frame = Frame()
 
@@ -93,10 +93,10 @@ struct LayerGeometry(Defaultable, Movable, Typeable):
     fn __init__(out self):
         self.layerStart = InlineArray[
             UInt32, Int(Phase1PixelTopology.numberOfLayers + 1)
-        ](0)
+        ](fill=0)
         self.layer = InlineArray[
             UInt8, Int(Phase1PixelTopology.layerIndexSize)
-        ](0)
+        ](fill=0)
 
     @always_inline
     @staticmethod
@@ -172,26 +172,26 @@ struct ClusParamsT[N: UInt32](Copyable, Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self):
-        self.minRow = InlineArray[UInt32, Int(N)](0)
-        self.maxRow = InlineArray[UInt32, Int(N)](0)
-        self.minCol = InlineArray[UInt32, Int(N)](0)
-        self.maxCol = InlineArray[UInt32, Int(N)](0)
+        self.minRow = InlineArray[UInt32, Int(N)](fill=0)
+        self.maxRow = InlineArray[UInt32, Int(N)](fill=0)
+        self.minCol = InlineArray[UInt32, Int(N)](fill=0)
+        self.maxCol = InlineArray[UInt32, Int(N)](fill=0)
 
-        self.Q_f_X = InlineArray[Int32, Int(N)](0)
-        self.Q_f_Y = InlineArray[Int32, Int(N)](0)
+        self.Q_f_X = InlineArray[Int32, Int(N)](fill=0)
+        self.Q_f_Y = InlineArray[Int32, Int(N)](fill=0)
 
-        self.Q_l_X = InlineArray[Int32, Int(N)](0)
-        self.Q_l_Y = InlineArray[Int32, Int(N)](0)
+        self.Q_l_X = InlineArray[Int32, Int(N)](fill=0)
+        self.Q_l_Y = InlineArray[Int32, Int(N)](fill=0)
 
-        self.charge = InlineArray[Int32, Int(N)](0)
+        self.charge = InlineArray[Int32, Int(N)](fill=0)
         self.xpos = InlineArray[Float, Int(N)](0.0)
         self.ypos = InlineArray[Float, Int(N)](0.0)
 
         self.xerr = InlineArray[Float, Int(N)](0.0)
         self.yerr = InlineArray[Float, Int(N)](0.0)
 
-        self.xsize = InlineArray[Int16, Int(N)](0)
-        self.ysize = InlineArray[Int16, Int(N)](0)
+        self.xsize = InlineArray[Int16, Int(N)](fill=0)
+        self.ysize = InlineArray[Int16, Int(N)](fill=0)
 
     @always_inline
     @staticmethod

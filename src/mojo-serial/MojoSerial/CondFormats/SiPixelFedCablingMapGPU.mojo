@@ -27,13 +27,13 @@ struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self):
-        self.fed = Self._U(0)
-        self.link = Self._U(0)
-        self.roc = Self._U(0)
-        self.RawId = Self._U(0)
-        self.rocInDet = Self._U(0)
-        self.moduleId = Self._U(0)
-        self.badRocs = Self._C(0)
+        self.fed = Self._U(fill=0)
+        self.link = Self._U(fill=0)
+        self.roc = Self._U(fill=0)
+        self.RawId = Self._U(fill=0)
+        self.rocInDet = Self._U(fill=0)
+        self.moduleId = Self._U(fill=0)
+        self.badRocs = Self._C(fill=0)
         self.size = 0
 
     @always_inline

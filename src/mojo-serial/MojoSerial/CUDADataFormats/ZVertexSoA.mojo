@@ -17,13 +17,13 @@ struct ZVertexSoA(Copyable, Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self):
-        self.idv = InlineArray[Int16, Int(Self.MAXTRACKS)](0)
+        self.idv = InlineArray[Int16, Int(Self.MAXTRACKS)](fill=0)
         self.zv = InlineArray[Float, Int(Self.MAXTRACKS)](0.0)
         self.wv = InlineArray[Float, Int(Self.MAXTRACKS)](0.0)
         self.chi2 = InlineArray[Float, Int(Self.MAXTRACKS)](0.0)
         self.ptv2 = InlineArray[Float, Int(Self.MAXTRACKS)](0.0)
-        self.ndof = InlineArray[Int32, Int(Self.MAXTRACKS)](0)
-        self.sortInd = InlineArray[UInt16, Int(Self.MAXTRACKS)](0)
+        self.ndof = InlineArray[Int32, Int(Self.MAXTRACKS)](fill=0)
+        self.sortInd = InlineArray[UInt16, Int(Self.MAXTRACKS)](fill=0)
         self.nvFinal = 0
 
     @always_inline

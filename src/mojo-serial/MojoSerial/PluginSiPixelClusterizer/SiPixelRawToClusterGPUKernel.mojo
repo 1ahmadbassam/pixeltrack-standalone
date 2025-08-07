@@ -161,8 +161,8 @@ struct WordFedAppender(Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self):
-        self._word = InlineArray[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
-        self._fedId = InlineArray[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)](0)
+        self._word = InlineArray[UInt32, Int(PixelGPUDetails.MAX_FED_WORDS)](fill=0)
+        self._fedId = InlineArray[UChar, Int(PixelGPUDetails.MAX_FED_WORDS)](fill=0)
 
     fn initializeWordFed(
         self,

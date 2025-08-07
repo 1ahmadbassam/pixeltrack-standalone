@@ -209,21 +209,21 @@ fn generate_clusters(
 
 
 fn main() raises:
-    var h_id = InlineArray[UInt16, numElements](0)
-    var h_x = InlineArray[UInt16, numElements](0)
-    var h_y = InlineArray[UInt16, numElements](0)
-    var h_adc = InlineArray[UInt16, numElements](0)
-    var h_clus = InlineArray[Int32, numElements](0)
+    var h_id = InlineArray[UInt16, numElements](fill=0)
+    var h_x = InlineArray[UInt16, numElements](fill=0)
+    var h_y = InlineArray[UInt16, numElements](fill=0)
+    var h_adc = InlineArray[UInt16, numElements](fill=0)
+    var h_clus = InlineArray[Int32, numElements](fill=0)
 
     var h_moduleStart = InlineArray[
         UInt32, Int(GPUClusteringConstants.MaxNumModules) + 1
-    ](0)
+    ](fill=0)
     var h_clusInModule = InlineArray[
         UInt32, Int(GPUClusteringConstants.MaxNumModules)
-    ](0)
+    ](fill=0)
     var h_moduleId = InlineArray[
         UInt32, Int(GPUClusteringConstants.MaxNumModules)
-    ](0)
+    ](fill=0)
 
     var n: Int
     var ncl: Int
