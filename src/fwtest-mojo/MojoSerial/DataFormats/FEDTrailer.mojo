@@ -132,7 +132,7 @@ struct FEDTrailer(Copyable, Defaultable, Movable, Typeable):
 
     @always_inline
     fn fragmentLength(self) -> UInt32:
-        return FED_CRCS_EXTRACT(Int(self.theTrailer[].eventsize))
+        return FED_EVSZ_EXTRACT(Int(self.theTrailer[].eventsize))
 
     @always_inline
     fn crc(self) -> UInt16:
@@ -173,13 +173,19 @@ struct FEDTrailer(Copyable, Defaultable, Movable, Typeable):
         return self.theTrailer[].conscheck
 
     @staticmethod
-    fn set(trailer: UnsafePointer[UInt8, mut=True], length: UInt32, crc: UInt16, evtStatus: UInt8, ttsBits: UInt8, moreTrailers: Bool = False):
+    fn set(trailer: UnsafePointer[UChar, mut=True], var length: UInt32, var crc: UInt16, var evtStatus: UInt8, var ttsBits: UInt8, var moreTrailers: Bool = False):
         var t = trailer.bitcast[FedtType]()
 
-        t[].eventsize = (FED_SLINK_END_MARKER << FED_TCTRLID_SHIFT) | ((length << FED_EVSZ_SHIFT) & FED_EVSZ_MASK)
+        t[].eventsize = (
+            (FED_SLINK_END_MARKER << FED_TCTRLID_SHIFT)
+            | ((length << FED_EVSZ_SHIFT) & FED_EVSZ_MASK)
+        )
 
-        t[].conscheck = ((crc.cast[DType.uint32]() << FED_CRCS_SHIFT) & FED_CRCS_MASK) | ((evtStatus.cast[DType.uint32]() << FED_STAT_SHIFT) & FED_STAT_MASK) | 
-                        ((ttsBits.cast[DType.uint32]() << FED_TTSI_SHIFT) & FED_TTSI_MASK)
+        t[].conscheck = (
+            ((Int(crc) << FED_CRCS_SHIFT) & FED_CRCS_MASK) 
+            | ((Int(evtStatus) << FED_STAT_SHIFT) & FED_STAT_MASK) 
+            | ((Int(ttsBits) << FED_TTSI_SHIFT) & FED_TTSI_MASK)
+        )
 
         if (moreTrailers):
             t[].conscheck |= (FED_MORE_TRAILERS_WIDTH << FED_MORE_TRAILERS_SHIFT)
@@ -187,4 +193,4 @@ struct FEDTrailer(Copyable, Defaultable, Movable, Typeable):
     @always_inline
     @staticmethod
     fn dtype() -> String:
-        return "FEDHeader"
+        return "FEDTrailer"

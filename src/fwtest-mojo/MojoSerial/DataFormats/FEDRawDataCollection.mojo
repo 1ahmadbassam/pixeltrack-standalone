@@ -8,7 +8,9 @@ struct FEDRawDataCollection(Copyable, Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self):
-        self._data = List[FEDRawData](length=FEDNumbering.lastFEDId() + 1, fill=FEDRawData())
+        self._data = List[FEDRawData](
+            length=FEDNumbering.lastFEDId() + 1, fill=FEDRawData()
+        )
 
     @always_inline
     fn __moveinit__(out self, var other: Self):
@@ -24,7 +26,7 @@ struct FEDRawDataCollection(Copyable, Defaultable, Movable, Typeable):
 
     @always_inline
     fn swap(mut self, mut other: Self):
-        self._data, other._data = other._data, self._data
+        swap(self._data, other._data)
 
     @always_inline
     @staticmethod
@@ -32,6 +34,4 @@ struct FEDRawDataCollection(Copyable, Defaultable, Movable, Typeable):
         return "FEDRawDataCollection"
 
 
-@always_inline
-fn swap(mut a: FEDRawDataCollection, mut b: FEDRawDataCollection):
-    a.swap(b)
+# swap is a library function
