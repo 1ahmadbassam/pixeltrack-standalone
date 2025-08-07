@@ -88,6 +88,7 @@ struct GPUClustering:
                 DType.uint16,
             ]
             var hist = Hist()
+            ##print("GPUClustering::findClus Hist created")
 
             for j in range(Hist.totbins()):
                 hist.off[j] = 0
@@ -136,14 +137,16 @@ struct GPUClustering:
             # nearest neighbour
             debug_assert(maxiter > 0)
             debug_assert(maxNeighbours > 0)
-            var nn = List[List[UInt16]](capacity=Int(maxiter))
-            for _ in range(maxiter):
-                nn.append(List[UInt16](capacity=Int(maxNeighbours)))
+            var nn = List[List[UInt16]](
+                length=Int(maxiter),
+                fill=List[UInt16](length=Int(maxNeighbours), fill=0),
+            )
             var nnn = List[UInt8](length=Int(maxiter), fill=0)  # number of nn
 
             # fill NN
             var j: UInt32 = 0
             var k: UInt32 = 0
+            ##print("GPUClustering::findClus nn loop start")
             while j < hist.size():
                 debug_assert(k < maxiter)
                 var p = hist.begin() + j
@@ -169,6 +172,7 @@ struct GPUClustering:
                     p += 1
                 j += 1
                 k += 1
+            ##print("GPUClustering::findClus nn loop complete")
 
             # for each pixel, look at all the pixels until the end of the module;
             # when two valid pixels within +/- 1 in x or y are found, set their id to the minimum;
