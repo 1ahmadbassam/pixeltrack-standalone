@@ -2,8 +2,7 @@ from MojoSerial.MojoBridge.DTypes import Float, Double, Typeable
 from MojoSerial.MojoBridge.Vector import Vector
 from MojoSerial.MojoBridge.Matrix import Matrix
 
-from MojoSerial.CUDACore.EigenSoA import MatrixSoA
-
+# TODO-CHK
 
 @fieldwise_init
 struct TrajectoryStateSoA[S: Int32](Copyable, Defaultable, Movable, Typeable):
@@ -13,12 +12,12 @@ struct TrajectoryStateSoA[S: Int32](Copyable, Defaultable, Movable, Typeable):
     alias Vector5d = Vector[DType.float64, 5]
     alias Matrix5d = Matrix[DType.float64, 5, 5]
 
-    var state: MatrixSoA[Self.Vector5f, Int(S)]
-    var covariance: MatrixSoA[Self.Vector15f, Int(S)]
+    var state: InlineArray[Self.Vector5f, Int(S)]
+    var covariance: InlineArray[Self.Vector15f, Int(S)]
 
     fn __init__(out self):
-        self.state = MatrixSoA[Self.Vector5f, Int(S)](Self.Vector5f())
-        self.covariance = MatrixSoA[Self.Vector15f, Int(S)](Self.Vector15f())
+        self.state = InlineArray[Self.Vector5f, Int(S)](Self.Vector5f())
+        self.covariance = InlineArray[Self.Vector15f, Int(S)](Self.Vector15f())
 
     @staticmethod
     @always_inline
