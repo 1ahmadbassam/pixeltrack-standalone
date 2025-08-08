@@ -2,7 +2,7 @@ from sys import sizeof
 from memory import memset
 
 from MojoSerial.CUDACore.AtomicPairCounter import AtomicPairCounter
-import MojoSerial.CUDACore.CUDAStdAlgorithm as CUDAStdAlgorithm
+from MojoSerial.CUDACore.CUDAStdAlgorithm import CUDAStdAlgorithm
 from MojoSerial.CUDACore.PrefixScan import blockPrefixScan
 from MojoSerial.MojoBridge.DTypes import Typeable, signed_to_unsigned
 
@@ -12,18 +12,18 @@ fn countFromVector[
 ](
     mut h: HistoContainer[T, *_],
     nh: UInt32,
-    v: UnsafePointer[Scalar[T], mut=False],
-    offsets: UnsafePointer[UInt32, mut=True],
+    v: UnsafePointer[Scalar[T]],
+    offsets: UnsafePointer[UInt32],
 ):
     for i in range(offsets[nh]):
         var off = CUDAStdAlgorithm.upper_bound(offsets, offsets + nh + 1, i)
 
         debug_assert(off[] > 0)
-        var ih = Int(off) - Int(offsets) - 1
+        var ih: Int32 = Int(off) - Int(offsets) - 1
 
         debug_assert(ih >= 0)
         debug_assert(ih < Int(nh))
-        h.count(v[i], ih)
+        h.count(v[i], ih.cast[DType.uint32]())
 
 
 fn fillFromVector[
@@ -32,24 +32,26 @@ fn fillFromVector[
     mut h: HistoContainer[T, *_],
     nh: UInt32,
     v: UnsafePointer[Scalar[T]],
-    mut offsets: UnsafePointer[UInt32],
+    offsets: UnsafePointer[UInt32],
 ):
     for i in range(offsets[nh]):
         var off = CUDAStdAlgorithm.upper_bound(offsets, offsets + nh + 1, i)
 
         debug_assert(off[] > 0)
-        var ih = Int(off) - Int(offsets) - 1
+        var ih: Int32 = Int(off) - Int(offsets) - 1
 
         debug_assert(ih >= 0)
         debug_assert(ih < Int(nh))
-        h.fill(v[i], Scalar[h.IndexType](i), ih)
+        h.fill(v[i], Scalar[h.IndexType](i), ih.cast[DType.uint32]())
 
 
 @always_inline
 fn launchZero(mut h: HistoContainer):
     var poff = h.off.unsafe_ptr()
     var size = Int(h.totbins())
+    debug_assert(size >= Int(h.totbins()))
     memset(poff, 0, size)  # memset sets by bytes in C++, but by elements here
+    h.psws = 0  # included in C++ memset
 
 
 @always_inline
@@ -64,7 +66,7 @@ fn fillManyFromVector[
     mut h: HistoContainer[T, *_],
     nh: UInt32,
     v: UnsafePointer[Scalar[T]],
-    mut offsets: UnsafePointer[UInt32],
+    offsets: UnsafePointer[UInt32],
     totSize: UInt32,
 ):
     launchZero(h)
@@ -84,19 +86,18 @@ fn forEachInBins[
 ](
     ref hist: HistoContainer[V, *_],
     value: Scalar[V],
-    n: Int,
-    func: fn (mut Int, Scalar[hist.IndexType]),
-    mut tot: Int,
+    n: Int32,
+    func: fn (Scalar[hist.IndexType]),
 ):
     """Iterate over N bins left and right of the one containing "v"."""
-    var bs = Int(hist.bin(value))
-    var be = min(Int(hist.nbins()) - 1, bs + n)
+    var bs = hist.bin(value).cast[DType.int32]()
+    var be = min(hist.nbins().cast[DType.int32]() - 1, bs + n)
     bs = max(0, bs - n)
     debug_assert(be >= bs)
 
-    var pj = hist.begin(bs)
-    while pj < hist.end(be):
-        func(tot, pj[])
+    var pj = hist.begin(Int(bs))
+    while pj < hist.end(Int(be)):
+        func(pj[])
         pj += 1
 
 
@@ -109,12 +110,12 @@ fn forEachInWindow[
     func: fn (Scalar[hist.IndexType]),
 ):
     """Iterate over bins containing all values in window wmin, wmax."""
-    var bs = Int(hist.bin(wmin))
-    var be = Int(hist.bin(wmax))
+    var bs = hist.bin(wmin)
+    var be = hist.bin(wmax)
     debug_assert(be >= bs)
 
-    var pj = hist.begin(bs)
-    while pj < hist.end(be):
+    var pj = hist.begin(bs.cast[DType.uint32]())
+    while pj < hist.end(be.cast[DType.uint32]()):
         func(pj[])
         pj += 1
 
@@ -127,8 +128,8 @@ struct HistoContainer[
     I: DType = DType.uint32,  # type stored in the container (usually an index in a vector of the input values)
     NHISTS: UInt32 = 1,  # number of histos stored
 ](Defaultable, Movable, Sized, Typeable):
-    alias CountersOnly = HistoContainer[T, NBINS, 0, S, I, NHISTS]
     alias Counter = UInt32
+    alias CountersOnly = HistoContainer[T, NBINS, 0, S, I, NHISTS]
     alias IndexType = I
 
     alias D = Scalar[T]
@@ -139,26 +140,16 @@ struct HistoContainer[
     var psws: Int32
     var bins: InlineArray[Scalar[Self.IndexType], Int(Self.capacity())]
 
-    @always_inline
-    fn __init__(out self):
-        self.off = InlineArray[UInt32, Int(Self.totbins())](fill=0)
-        self.psws = 0
-        self.bins = InlineArray[Scalar[Self.IndexType], Int(Self.capacity())](
-            fill=0
-        )
-
     @staticmethod
-    fn ilog2(v_in: UInt32) -> UInt32:
+    fn ilog2(var v: UInt32) -> UInt32:
         alias b = InlineArray[UInt32, 5](0x2, 0xC, 0xF0, 0xFF00, 0xFFFF0000)
         alias s = InlineArray[UInt32, 5](1, 2, 4, 8, 16)
-
-        var v = v_in
 
         var r: UInt32 = 0
         for i in range(4, -1, -1):
             if v & b[i]:
-                v = v >> s[i]
-                r = r | s[i]
+                v >>= s[i]
+                r |= s[i]
         return r
 
     @staticmethod
@@ -196,23 +187,32 @@ struct HistoContainer[
     fn histOff(nh: UInt32) -> UInt32:
         return NBINS * nh
 
+    @staticmethod
+    @always_inline
+    fn bin(t: Self.D) -> Self.UD:
+        alias shift: UInt32 = Self.sizeT() - Self.nbits()
+        alias mask: UInt32 = (1 << Self.nbits()) - 1
+        return ((UInt32.from_bits(t.to_bits()) >> shift) & mask).cast[Self.UT]()
+
+    @always_inline
+    fn __init__(out self):
+        self.off = InlineArray[UInt32, Int(Self.totbins())](fill=0)
+        self.psws = 0
+        self.bins = InlineArray[Scalar[Self.IndexType], Int(Self.capacity())](
+            fill=0
+        )
+
     @always_inline
     fn __len__(self) -> Int:
         return Int(self.size())
 
-    @staticmethod
-    fn bin(t: Self.D) -> Self.UD:
-        var shift = Self.sizeT() - Self.nbits()
-        var mask = (1 << Self.nbits()) - 1
-        return ((t >> shift.cast[T]()) & mask.cast[T]()).cast[Self.UT]()
-
     @always_inline
     fn zero(mut self):
-        for i in range(len(self.off)):
-            self.off[i] = 0
+        memset(self.off.unsafe_ptr(), 0, Int(Self.totbins()))
 
     @always_inline
     fn add(mut self, ref co: Self.CountersOnly):
+        @parameter
         for i in range(Self.totbins()):
             self.off[i] += co.off[i]
 
@@ -223,7 +223,7 @@ struct HistoContainer[
 
     @always_inline
     fn fillDirect(mut self, b: Self.D, j: Scalar[Self.IndexType]):
-        debug_assert(UInt32(b) < Self.nbins())
+        debug_assert(b.cast[DType.uint32]() < Self.nbins())
         var w = self.off[b]
         self.off[b] -= 1
         debug_assert(w > 0)
@@ -247,16 +247,16 @@ struct HistoContainer[
         return Int32(c[1])
 
     @always_inline
-    fn bulkFinalize(mut self, apc: AtomicPairCounter):
+    fn bulkFinalize(mut self, ref apc: AtomicPairCounter):
         self.off[apc.get()[1]] = apc.get()[0]
 
     @always_inline
-    fn bulkFinalizeFill(mut self, apc: AtomicPairCounter):
+    fn bulkFinalizeFill(mut self, ref apc: AtomicPairCounter):
         var m = apc.get()[1]
         var n = apc.get()[0]
 
         if m >= Self.nbins():  # overflow
-            self.off[Self.nbins()] = self.off[Self.nbins() - 1]
+            self.off[Self.nbins()] = UInt32(self.off[Self.nbins() - 1])
             return
 
         for i in range(m, Self.totbins()):
@@ -299,7 +299,7 @@ struct HistoContainer[
     @always_inline
     fn finalize(self):
         debug_assert(self.off[Self.totbins() - 1] == 0)
-        blockPrefixScan(self.off.unsafe_ptr(), Int(Self.totbins()))
+        blockPrefixScan(self.off.unsafe_ptr(), Self.totbins())
         debug_assert(
             self.off[Self.totbins() - 1] == self.off[Self.totbins() - 2]
         )
@@ -346,4 +346,10 @@ struct HistoContainer[
         )
 
 
-alias OneToManyAssoc = HistoContainer[DType.uint32, _, _, I=_]
+alias OneToManyAssoc[
+    I: DType,  # type stored in the container (usually an index in a vector of the input values)
+    MAXONES: UInt32,  # max number of "ones"
+    MAXMANYS: UInt32,  # max number of "manys"
+] = HistoContainer[
+    DType.uint32, MAXONES, MAXMANYS, DType.uint32.sizeof() * 8, I, 1
+]

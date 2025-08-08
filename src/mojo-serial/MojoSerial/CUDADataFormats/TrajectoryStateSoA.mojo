@@ -4,6 +4,7 @@ from MojoSerial.MojoBridge.Matrix import Matrix
 
 # TODO-CHK
 
+
 @fieldwise_init
 struct TrajectoryStateSoA[S: Int32](Copyable, Defaultable, Movable, Typeable):
     alias Vector5f = Vector[DType.float32, 5]
