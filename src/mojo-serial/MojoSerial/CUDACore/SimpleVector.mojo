@@ -116,7 +116,7 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
 
 fn make_SimpleVector[
     T: Movable & Copyable, DT: StaticString
-](var capacity: Int, var data: UnsafePointer[T]) -> SimpleVector[T, DT]:
+](var capacity: Int32, var data: UnsafePointer[T]) -> SimpleVector[T, DT]:
     var ret = SimpleVector[T, DT]()
     ret.construct(capacity, data)
     return ret
@@ -124,7 +124,9 @@ fn make_SimpleVector[
 
 fn make_SimpleVector[
     T: Movable & Copyable & Typeable, //
-](var capacity: Int, var data: UnsafePointer[T]) -> SimpleVector[T, T.dtype()]:
+](var capacity: Int32, var data: UnsafePointer[T]) -> SimpleVector[
+    T, T.dtype()
+]:
     var ret = SimpleVector[T, T.dtype()]()
     ret.construct(capacity, data)
     return ret
@@ -134,7 +136,7 @@ fn make_SimpleVector[
     T: Movable & Copyable, DT: StaticString, //
 ](
     mut mem: UnsafePointer[SimpleVector[T, DT]],
-    var capacity: Int,
+    var capacity: Int32,
     var data: UnsafePointer[T],
 ) -> ref [mem[]] SimpleVector[T, DT]:
     # construct a new object where mem points, assuming it is initialized

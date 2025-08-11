@@ -2,7 +2,6 @@ from sys import sizeof
 
 from MojoSerial.CondFormats.PixelCPEforGPU import ParamsOnGPU
 from MojoSerial.CUDACore.CUDACompat import CUDAStreamType, cudaStreamDefault
-from MojoSerial.CUDADataFormats.HeterogeneousSoA import Traits, CPUTraits
 from MojoSerial.CUDADataFormats.TrackingRecHit2DSOAView import (
     Hist,
     TrackingRecHit2DSOAView,

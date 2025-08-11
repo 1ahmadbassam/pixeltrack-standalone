@@ -18,7 +18,7 @@ trait Traits:
     "Heterogenous unique pointers should explicitly rely on Mojo standard"
     " pointers. Please remove any usages of this class."
 )
-struct CPUTraits[T: AnyType](Traits):
+struct CPUTraits[T: AnyType](Traits, Typeable):
     alias UniquePointer = UnsafePointer[T]
 
     @staticmethod
@@ -42,3 +42,8 @@ struct CPUTraits[T: AnyType](Traits):
         size: SizeType, x: CUDAStreamType
     ) -> Self.UniquePointer:
         return Self.UniquePointer.alloc(UInt(size))
+
+    @staticmethod
+    @always_inline
+    fn dtype() -> String:
+        return "CPUTraits"
