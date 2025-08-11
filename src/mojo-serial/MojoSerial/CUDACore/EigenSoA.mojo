@@ -89,7 +89,8 @@ struct MatrixSoA[T: DType, R: Int, C: Int, S: Int](
 ):
     alias Scalar = Scalar[T]
     alias _D = InlineArray[Self.Scalar, S * R * C]
-    alias Map = Layout(IntTuple(R, C), IntTuple(R * S, S))
+    # stride in C++ is coln, row
+    alias Map = Layout(IntTuple(R, C), IntTuple(S, R * S))
     var _data: Self._D
 
     @always_inline
@@ -149,7 +150,61 @@ struct MatrixSoA[T: DType, R: Int, C: Int, S: Int](
             self._data.unsafe_ptr() + i
         )
 
-    # TODO: __setitem__
+    @always_inline
+    fn __setitem__(mut self, idx: Int32, val: LayoutTensor):
+        var dest_slice = self[idx]
+
+        var rows = val.layout.shape[0].value()
+        var colns = val.layout.shape[1].value()
+        for i in range(rows):
+            for j in range(colns):
+                dest_slice[i, j] = rebind[Scalar[T]](val[i, j].cast[T]())
+
+    @always_inline
+    fn __setitem__(
+        mut self,
+        idx: Int32,
+        first: LayoutTensor,
+        second: LayoutTensor,
+    ):
+        """Eigen::Map::operator<<."""
+        var dest_slice = self[idx]
+
+        var dest_rows = dest_slice.layout.shape[0].value()
+        var dest_cols = dest_slice.layout.shape[1].value()
+        var first_rows = first.layout.shape[0].value()
+        var first_cols = first.layout.shape[1].value()
+        var second_rows = second.layout.shape[0].value()
+        var second_cols = second.layout.shape[1].value()
+
+        var i_first = 0
+        var j_first = 0
+        var i_second = 0
+        var j_second = 0
+
+        for j_dest in range(dest_cols):
+            for i_dest in range(dest_rows):
+                if j_first < first_cols:
+                    dest_slice[i_dest, j_dest] = rebind[Scalar[T]](
+                        first[i_first, j_first].cast[T]()
+                    )
+
+                    i_first += 1
+                    if i_first == first_rows:
+                        i_first = 0
+                        j_first += 1
+
+                elif j_second < second_cols:
+                    dest_slice[i_dest, j_dest] = rebind[Scalar[T]](
+                        second[i_second, j_second].cast[T]()
+                    )
+
+                    i_second += 1
+                    if i_second == second_rows:
+                        i_second = 0
+                        j_second += 1
+                else:
+                    return
 
     @always_inline
     @staticmethod
