@@ -22,7 +22,7 @@ struct Phase1PixelTopology:
 
     alias numberOfModules: UInt32 = 1856
     alias numberOfLayers: UInt32 = 10
-    alias layerStart = List[UInt32](
+    alias layerStart = InlineArray[UInt32, Int(Self.numberOfLayers) + 1](
         0,
         96,
         320,
@@ -36,7 +36,7 @@ struct Phase1PixelTopology:
         Self.numberOfModules,
     )
 
-    alias layerName = List[StaticString](
+    alias layerName = InlineArray[StaticString, Int(Self.numberOfLayers)](
         "BL1",
         "BL2",
         "BL3",
@@ -53,9 +53,20 @@ struct Phase1PixelTopology:
     alias numberOfLaddersInBarrel: UInt32 = Self.numberOfModulesInBarrel / 8
 
     @staticmethod
+    fn _map_to_array[
+        I: DType, R: DType, N: Int, func: fn[Scalar[I]] () -> Scalar[R]
+    ]() -> InlineArray[Scalar[R], N]:
+        var arr = InlineArray[Scalar[R], N](fill=0)
+
+        @parameter
+        for i in range(N):
+            arr[i] = func[i]()
+        return arr
+
+    @staticmethod
     fn findMaxModuleStride() -> UInt32:
-        var go: Bool = True
-        var n: Int = 2
+        var go = True
+        var n = 2
         while go:
 
             @parameter
@@ -88,31 +99,25 @@ struct Phase1PixelTopology:
                 return i
         return 11
 
-    @staticmethod
-    fn _map_to_array[
-        I: DType, R: Copyable & Movable, N: Int, func: fn[Scalar[I]] () -> R
-    ]() -> List[R]:
-        var arr: List[R] = []
-
-        @parameter
-        for i in range(N):
-            arr.append(func[i]())
-        return arr
-
     alias layerIndexSize: UInt32 = Self.numberOfModules / Self.maxModuleStride
 
-    alias layer: List[UInt8] = Self._map_to_array[
-        DType.uint32, UInt8, Int(Self.layerIndexSize), Self.findLayerFromCompact
+    alias layer: InlineArray[
+        UInt8, Int(Self.layerIndexSize)
+    ] = Self._map_to_array[
+        DType.uint32,
+        DType.uint8,
+        Int(Self.layerIndexSize),
+        Self.findLayerFromCompact,
     ]()
 
     @staticmethod
     fn validateLayerIndex() -> Bool:
-        var res: Bool = True
+        var res = True
         for i in range(Self.numberOfModules):
-            var j: UInt32 = i / Self.maxModuleStride
-            res = res and Self.layer[j] < 10
-            res = res and i >= Self.layerStart[Self.layer[j]]
-            res = res and i < Self.layerStart[Self.layer[j] + 1]
+            var j = i / Self.maxModuleStride
+            res &= Self.layer[j] < 10
+            res &= i >= Self.layerStart[Self.layer[j]]
+            res &= i < Self.layerStart[Self.layer[j] + 1]
         return res
 
     alias __d = debug_assert(
@@ -121,15 +126,15 @@ struct Phase1PixelTopology:
 
     @always_inline
     @staticmethod
-    fn divu52(n: UInt16) -> UInt16:
+    fn divu52(var n: UInt16) -> UInt16:
         """
         This is for the ROC n<512 (upgrade 1024).
         """
-        var _n: UInt16 = n >> 2
-        var q: UInt16 = (_n >> 1) + (_n >> 4)
+        n = n >> 2
+        var q = (n >> 1) + (n >> 4)
         q = q + (q >> 4) + (q >> 5)
         q = q >> 3
-        var r: UInt16 = _n ^ -q * 13
+        var r = n - q * 13
         return q + ((r + 3) >> 4)
 
     @staticmethod
@@ -160,7 +165,7 @@ struct Phase1PixelTopology:
     @staticmethod
     @always_inline
     fn isBigPixY(py: UInt16) -> Bool:
-        var ly: UInt16 = Self.toRocY(py)
+        var ly = Self.toRocY(py)
         return ly == 0 or ly == Self.lastColInRoc
 
     @staticmethod
@@ -176,9 +181,9 @@ struct Phase1PixelTopology:
     @staticmethod
     @always_inline
     fn localY(py: UInt16) -> UInt16:
-        var roc: UInt16 = Self.divu52(py)
-        var shift: UInt16 = 2 * roc
-        var yInRoc: UInt16 = py - 52 * roc
+        var roc = Self.divu52(py)
+        var shift = 2 * roc
+        var yInRoc = py - 52 * roc
         if yInRoc > 0:
             shift += 1
         return py + shift
@@ -187,34 +192,34 @@ struct Phase1PixelTopology:
 @fieldwise_init
 struct AverageGeometry(Defaultable, Movable, Typeable):
     alias numberOfLaddersInBarrel = Phase1PixelTopology.numberOfLaddersInBarrel
-    var ladderZ: List[Float]
-    var ladderX: List[Float]
-    var ladderY: List[Float]
-    var ladderR: List[Float]
-    var ladderMinZ: List[Float]
-    var ladderMaxZ: List[Float]
-    var endCapZ: List[Float]
+    var ladderZ: InlineArray[Float, Int(Self.numberOfLaddersInBarrel)]
+    var ladderX: InlineArray[Float, Int(Self.numberOfLaddersInBarrel)]
+    var ladderY: InlineArray[Float, Int(Self.numberOfLaddersInBarrel)]
+    var ladderR: InlineArray[Float, Int(Self.numberOfLaddersInBarrel)]
+    var ladderMinZ: InlineArray[Float, Int(Self.numberOfLaddersInBarrel)]
+    var ladderMaxZ: InlineArray[Float, Int(Self.numberOfLaddersInBarrel)]
+    var endCapZ: InlineArray[Float, 2]
 
     fn __init__(out self):
-        self.ladderZ = List[Float](
-            length=Int(Self.numberOfLaddersInBarrel), fill=0
+        self.ladderZ = InlineArray[Float, Int(Self.numberOfLaddersInBarrel)](
+            fill=0
         )
-        self.ladderX = List[Float](
-            length=Int(Self.numberOfLaddersInBarrel), fill=0
+        self.ladderX = InlineArray[Float, Int(Self.numberOfLaddersInBarrel)](
+            fill=0
         )
-        self.ladderY = List[Float](
-            length=Int(Self.numberOfLaddersInBarrel), fill=0
+        self.ladderY = InlineArray[Float, Int(Self.numberOfLaddersInBarrel)](
+            fill=0
         )
-        self.ladderR = List[Float](
-            length=Int(Self.numberOfLaddersInBarrel), fill=0
+        self.ladderR = InlineArray[Float, Int(Self.numberOfLaddersInBarrel)](
+            fill=0
         )
-        self.ladderMinZ = List[Float](
-            length=Int(Self.numberOfLaddersInBarrel), fill=0
+        self.ladderMinZ = InlineArray[Float, Int(Self.numberOfLaddersInBarrel)](
+            fill=0
         )
-        self.ladderMaxZ = List[Float](
-            length=Int(Self.numberOfLaddersInBarrel), fill=0
+        self.ladderMaxZ = InlineArray[Float, Int(Self.numberOfLaddersInBarrel)](
+            fill=0
         )
-        self.endCapZ = List[Float](length=2, fill=0)
+        self.endCapZ = InlineArray[Float, 2](fill=0)
 
     @always_inline
     @staticmethod
