@@ -24,8 +24,8 @@ struct PixelCPEFast(Defaultable, Movable, Typeable):
 
     @always_inline
     fn __init__(out self):
-        self.m_commonParamsGPU = CommonParams()
         self.m_detParamsGPU = []
+        self.m_commonParamsGPU = CommonParams()
         self.m_layerGeometry = LayerGeometry()
         self.m_averageGeometry = AverageGeometry()
 

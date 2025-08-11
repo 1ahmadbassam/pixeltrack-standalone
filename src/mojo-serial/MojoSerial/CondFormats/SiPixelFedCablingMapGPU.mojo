@@ -11,6 +11,7 @@ from MojoSerial.MojoBridge.DTypes import UChar, Typeable
 from MojoSerial.CondFormats.PixelGPUDetails import PixelGPUDetails
 
 
+# WARNING: THIS STRUCT IS 128-ALIGNED
 struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
     alias _U = InlineArray[UInt32, Int(PixelGPUDetails.MAX_SIZE)]
     alias _UD = Self._U(uninitialized=True)
