@@ -50,13 +50,17 @@ struct TrackingRecHit2DSOAView(Defaultable, Movable, Typeable):
     var m_detInd: UnsafePointer[UInt16]
 
     # supporting objects
-    var m_averageGeometry: UnsafePointer[AverageGeometry]  # owned
-    var m_cpeParams: ParamsOnGPU  # forwarded from setup
+    var m_averageGeometry: UnsafePointer[
+        AverageGeometry
+    ]  # owned (corrected for beam spot: not sure where to host it otherwise)
+    var m_cpeParams: UnsafePointer[
+        ParamsOnGPU
+    ]  # forwarded from setup, NOT owned
     var m_hitsModuleStart: UnsafePointer[UInt32]  # forwarded from clusters
 
     var m_hitsLayerStart: UnsafePointer[UInt32]
     var m_hist: UnsafePointer[Hist]
-    var m_nHits: UnsafePointer[UInt32]
+    var m_nHits: UInt32
 
     fn __init__(out self):
         self.m_xl = UnsafePointer[Float]()
@@ -76,16 +80,16 @@ struct TrackingRecHit2DSOAView(Defaultable, Movable, Typeable):
         self.m_detInd = UnsafePointer[UInt16]()
 
         self.m_averageGeometry = UnsafePointer[AverageGeometry]()
-        self.m_cpeParams = ParamsOnGPU()
+        self.m_cpeParams = UnsafePointer[ParamsOnGPU]()
         self.m_hitsModuleStart = UnsafePointer[UInt32]()
 
         self.m_hitsLayerStart = UnsafePointer[UInt32]()
         self.m_hist = UnsafePointer[Hist]()
-        self.m_nHits = UnsafePointer[UInt32]()
+        self.m_nHits = 0
 
     @always_inline
     fn nHits(self) -> UInt32:
-        return self.m_nHits[]
+        return self.m_nHits
 
     @always_inline
     fn xLocal(ref self, i: Int) -> ref [self.m_xl] Float:
@@ -140,8 +144,8 @@ struct TrackingRecHit2DSOAView(Defaultable, Movable, Typeable):
         return self.m_detInd[i]
 
     @always_inline
-    fn cpeParams(self) -> ParamsOnGPU:
-        return self.m_cpeParams
+    fn cpeParams(self) -> ref [self.m_cpeParams] ParamsOnGPU:
+        return self.m_cpeParams[]
 
     @always_inline
     fn hitsModuleStart(self, i: Int) -> UInt32:

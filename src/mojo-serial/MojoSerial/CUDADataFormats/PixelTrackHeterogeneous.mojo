@@ -20,7 +20,9 @@ struct TrackSoAT[S: Int32](Defaultable, Movable, Typeable):
     alias Quality = UInt8
     alias HIndexType = DType.uint16
     alias HitContainer = OneToManyAssoc[
-        S.cast[DType.uint32](), 5 * S.cast[DType.uint32](), Self.HIndexType
+        Self.HIndexType,
+        S.cast[DType.uint32](),
+        5 * S.cast[DType.uint32](),
     ]
 
     var m_quality: ScalarSoA[DType.uint8, Int(S)]
