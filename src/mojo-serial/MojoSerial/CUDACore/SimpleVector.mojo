@@ -6,8 +6,8 @@ from MojoSerial.MojoBridge.DTypes import Typeable
 struct SimpleVector[T: Movable & Copyable, DT: StaticString](
     Copyable, Defaultable, Movable, Sized, Typeable
 ):
-    var m_size: Int
-    var m_capacity: Int
+    var m_size: Int32
+    var m_capacity: Int32
     var m_data: UnsafePointer[T]
 
     @always_inline
@@ -17,13 +17,14 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
         self.m_data = UnsafePointer[T]()
 
     @always_inline
-    fn construct(mut self, capacity: Int, data: UnsafePointer[T]):
+    fn construct(mut self, var capacity: Int32, var data: UnsafePointer[T]):
+        # ownership of m_data stays within the caller
         self.m_size = 0
         self.m_capacity = capacity
         self.m_data = data
 
     @always_inline
-    fn push_back_unsafe(mut self, element: T) -> Int:
+    fn push_back_unsafe(mut self, ref element: T) -> Int32:
         var previousSize = self.m_size
         self.m_size += 1
 
@@ -40,18 +41,10 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
             return self.m_data[self.m_size - 1]
         return self.m_data[]  # undefined behavior
 
-    fn push_back(mut self, element: T) -> Int:
-        var previousSize = self.m_size
-        self.m_size += 1
+    fn push_back(mut self, ref element: T) -> Int32:
+        return self.push_back_unsafe(element)
 
-        if previousSize < self.m_capacity:
-            self.m_data[previousSize] = element
-            return previousSize
-        else:
-            self.m_size -= 1
-            return -1
-
-    fn extend(mut self, size: Int = 1) -> Int:
+    fn extend(mut self, size: Int32 = 1) -> Int32:
         var previousSize = self.m_size
         self.m_size += size
 
@@ -61,7 +54,7 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
             self.m_size -= 1
             return -1
 
-    fn shrink(mut self, size: Int = 1) -> Int:
+    fn shrink(mut self, size: Int32 = 1) -> Int32:
         var previousSize = self.m_size
         self.m_size -= size
 
@@ -77,14 +70,14 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
 
     @always_inline
     fn full(self) -> Bool:
-        return self.m_capacity <= self.m_size
+        return self.m_size >= self.m_capacity
 
     @always_inline
-    fn __getitem__(ref self, i: Int) -> ref [self.m_data] T:
+    fn __getitem__(ref self, i: Int32) -> ref [self.m_data] T:
         return self.m_data[i]
 
     @always_inline
-    fn __setitem__(mut self, i: Int, val: T):
+    fn __setitem__(mut self, i: Int32, val: T):
         self.m_data[i] = val
 
     @always_inline
@@ -92,7 +85,11 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
         self.m_size = 0
 
     @always_inline
-    fn capacity(self) -> Int:
+    fn size(self) -> Int32:
+        return self.m_size
+
+    @always_inline
+    fn capacity(self) -> Int32:
         return self.m_capacity
 
     @always_inline
@@ -100,7 +97,7 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
         return self.m_data
 
     @always_inline
-    fn resize(mut self, size: Int):
+    fn resize(mut self, size: Int32):
         self.m_size = size
 
     @always_inline
@@ -109,7 +106,7 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
 
     @always_inline
     fn __len__(self) -> Int:
-        return self.m_size
+        return Int(self.m_size)
 
     @always_inline
     @staticmethod
@@ -119,8 +116,16 @@ struct SimpleVector[T: Movable & Copyable, DT: StaticString](
 
 fn make_SimpleVector[
     T: Movable & Copyable, DT: StaticString
-](capacity: Int, data: UnsafePointer[T]) -> SimpleVector[T, DT]:
+](var capacity: Int, var data: UnsafePointer[T]) -> SimpleVector[T, DT]:
     var ret = SimpleVector[T, DT]()
+    ret.construct(capacity, data)
+    return ret
+
+
+fn make_SimpleVector[
+    T: Movable & Copyable & Typeable, //
+](var capacity: Int, var data: UnsafePointer[T]) -> SimpleVector[T, T.dtype()]:
+    var ret = SimpleVector[T, T.dtype()]()
     ret.construct(capacity, data)
     return ret
 
@@ -129,8 +134,8 @@ fn make_SimpleVector[
     T: Movable & Copyable, DT: StaticString, //
 ](
     mut mem: UnsafePointer[SimpleVector[T, DT]],
-    capacity: Int,
-    data: UnsafePointer[T],
+    var capacity: Int,
+    var data: UnsafePointer[T],
 ) -> ref [mem[]] SimpleVector[T, DT]:
     # construct a new object where mem points, assuming it is initialized
     mem.init_pointee_move(SimpleVector[T, DT]())
