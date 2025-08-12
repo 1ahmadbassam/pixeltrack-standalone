@@ -157,6 +157,10 @@ struct Source(Defaultable, Movable, Typeable):
     fn produce(
         mut self, streamId: Int32, ref reg: ProductRegistry
     ) -> UnsafePointer[Event]:
+        """
+        Returns a HEAP-ALLOCATED event. Deallocate memory after using.
+        Note: When Mojo supports this, it would be optimal to revamp this function with an Optional[OwnedPointer[Event]] return value.
+        """
         var res = UnsafePointer[Event]()
         if self._numEvents >= self._maxEvents:
             return res

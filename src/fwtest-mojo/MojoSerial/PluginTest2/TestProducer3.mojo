@@ -19,7 +19,7 @@ struct TestProducer3(Defaultable, EDProducer, Typeable):
             print("Error occurred in PluginTest2/TestProducer3.mojo, ", e)
             return Self()
 
-    fn produce(mut self, mut event: Event, eventSetup: EventSetup):
+    fn produce(mut self, mut event: Event, ref eventSetup: EventSetup):
         var value = event.get[TypeableUInt](self._getToken).val
         print(
             "TestProducer3 Event ",
