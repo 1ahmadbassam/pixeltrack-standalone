@@ -192,7 +192,7 @@ struct HistoContainer[
     fn bin(t: Self.D) -> Self.UD:
         alias shift: UInt32 = Self.sizeT() - Self.nbits()
         alias mask: UInt32 = (1 << Self.nbits()) - 1
-        return ((UInt32.from_bits(t.to_bits()) >> shift) & mask).cast[Self.UT]()
+        return ((t.cast[DType.uint32]() >> shift) & mask).cast[Self.UT]()
 
     @always_inline
     fn __init__(out self):
