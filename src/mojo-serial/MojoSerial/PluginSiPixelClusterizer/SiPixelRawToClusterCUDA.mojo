@@ -77,7 +77,7 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
             print("Handled exception in SiPixelRawToClusterCUDA, ", e)
             return Self.__init__()
 
-    fn produce(mut self, mut iEvent: Event, iSetup: EventSetup):
+    fn produce(mut self, mut iEvent: Event, ref iSetup: EventSetup):
         try:
             if (
                 iSetup.get[SiPixelFedCablingMapGPUWrapper]().hasQuality()
