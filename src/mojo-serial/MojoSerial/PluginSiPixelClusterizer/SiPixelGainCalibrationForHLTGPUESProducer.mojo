@@ -6,7 +6,7 @@ from MojoSerial.CondFormats.SiPixelGainCalibrationForHLTGPU import (
 )
 from MojoSerial.Framework.ESProducer import ESProducer
 from MojoSerial.Framework.EventSetup import EventSetup
-from MojoSerial.MojoBridge.DTypes import Char, Typeable
+from MojoSerial.MojoBridge.DTypes import Char, Typeable, UChar
 from MojoSerial.MojoBridge.File import read_simd, read_obj
 
 
@@ -25,12 +25,12 @@ struct SiPixelGainCalibrationForHLTGPUESProducer(
             with open(self._data / "gain.bin", "r") as file:
                 var gain = read_obj[SiPixelGainForHLTonGPU](file)
                 var nbytes = read_simd[DType.uint32](file)
-                var gainData = file.read_bytes(Int(nbytes))
+                var gainData: List[UChar] = file.read_bytes(Int(nbytes))
                 eventSetup.put[SiPixelGainCalibrationForHLTGPU](
                     SiPixelGainCalibrationForHLTGPU(
                         gain^,
                         rebind[List[Char]](gainData^)
-                        # rebind works because UInt8 and Int8 are bit-compatible
+                        # rebind works because UChar and Char are bit-compatible
                     )
                 )
         except e:
