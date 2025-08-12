@@ -1,3 +1,5 @@
+from memory import memset
+
 from MojoSerial.CondFormats.SiPixelGainForHLTonGPU import SiPixelGainForHLTonGPU
 from MojoSerial.CUDADataFormats.GPUClusteringConstants import (
     GPUClusteringConstants,
@@ -8,6 +10,7 @@ from MojoSerial.MojoBridge.DTypes import Float
 @nonmaterializable(NoneType)
 struct GPUCalibPixel:
     alias InvId: UInt16 = 9999  # must be > MaxNumModules
+
     # valid for run2
     alias VCaltoElectronGain: Float = 47  # L2-4: 47 +- 4.7
     alias VCaltoElectronGain_L1: Float = 50  # L1:   49.6 +- 2.6
@@ -21,7 +24,7 @@ struct GPUCalibPixel:
         x: UnsafePointer[UInt16],
         y: UnsafePointer[UInt16],
         adc: UnsafePointer[UInt16, mut=True],
-        ref ped: SiPixelGainForHLTonGPU,
+        ped: UnsafePointer[SiPixelGainForHLTonGPU],
         numElements: Int,
         moduleStart: UnsafePointer[UInt32, mut=True],  # just to zero first
         nClustersInModule: UnsafePointer[UInt32, mut=True],  # just to zero them
@@ -29,8 +32,7 @@ struct GPUCalibPixel:
     ):
         clusModuleStart[0] = 0
         moduleStart[0] = 0
-        for i in range(GPUClusteringConstants.MaxNumModules):
-            nClustersInModule[i] = 0
+        memset(nClustersInModule, 0, Int(GPUClusteringConstants.MaxNumModules))
         for i in range(numElements):
             if Self.InvId == id[i]:
                 continue
@@ -47,15 +49,15 @@ struct GPUCalibPixel:
 
             var row = x[i].cast[DType.int32]()
             var col = y[i].cast[DType.int32]()
-            var ret = ped.getPedAndGain(
+            var ret = ped[].getPedAndGain(
                 id[i].cast[DType.uint32](),
                 col,
                 row,
                 isDeadColumn,
                 isNoisyColumn,
             )
-            var pedestal = ret[0]
-            var gain = ret[1]
+            ref pedestal = ret[0]
+            ref gain = ret[1]
             if isDeadColumn or isNoisyColumn:
                 id[i] = Self.InvId
                 adc[i] = 0

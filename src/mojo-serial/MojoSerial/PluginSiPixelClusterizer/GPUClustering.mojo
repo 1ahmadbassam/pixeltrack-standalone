@@ -88,7 +88,6 @@ struct GPUClustering:
                 DType.uint16,
             ]
             var hist = Hist()
-            ##print("GPUClustering::findClus Hist created")
 
             for j in range(Hist.totbins()):
                 hist.off[j] = 0
@@ -97,6 +96,8 @@ struct GPUClustering:
                 (msize == numElements)
                 or ((msize < numElements) and (id[msize] != thisModuleId))
             )
+
+            # limit to maxPixInModule
 
             if (
                 msize - firstPixel.cast[DType.int32]()
@@ -128,15 +129,13 @@ struct GPUClustering:
             for i in range(first, msize):
                 if id[i] == GPUClusteringConstants.InvId:  # skip invalid pixels
                     continue
-                hist.fill(y[i], (i - firstPixel).cast[DType.uint16]())
+                hist.fill(y[i], i - Int(firstPixel))
 
             var maxiter = hist.size()
             # allocate space for duplicate pixels: a pixel can appear more than once with different charge in the same event
             alias maxNeighbours = 10
-            debug_assert((hist.size() // 1) <= maxiter)
+            debug_assert((Int(hist.size()) // 1) <= Int(maxiter))
             # nearest neighbour
-            debug_assert(maxiter > 0)
-            debug_assert(maxNeighbours > 0)
             var nn = List[List[UInt16]](
                 length=Int(maxiter),
                 fill=List[UInt16](length=Int(maxNeighbours), fill=0),
@@ -146,7 +145,6 @@ struct GPUClustering:
             # fill NN
             var j: UInt32 = 0
             var k: UInt32 = 0
-            ##print("GPUClustering::findClus nn loop start")
             while j < hist.size():
                 debug_assert(k < maxiter)
                 var p = hist.begin() + j
@@ -172,7 +170,6 @@ struct GPUClustering:
                     p += 1
                 j += 1
                 k += 1
-            ##print("GPUClustering::findClus nn loop complete")
 
             # for each pixel, look at all the pixels until the end of the module;
             # when two valid pixels within +/- 1 in x or y are found, set their id to the minimum;
@@ -248,7 +245,7 @@ struct GPUClustering:
     @staticmethod
     fn clusterChargeCut(
         id: UnsafePointer[
-            UInt16
+            UInt16, mut=True
         ],  # module id of each pixel (modified if bad cluster)
         adc: UnsafePointer[UInt16],  # charge of each pixel
         moduleStart: UnsafePointer[
@@ -313,6 +310,7 @@ struct GPUClustering:
                     DType.uint32
                 ]()
             ):
+                # remove excess
                 for i in range(first, numElements):
                     if id[i] == GPUClusteringConstants.InvId:
                         continue  # not valid
