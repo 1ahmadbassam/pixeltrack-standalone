@@ -7,7 +7,7 @@ from MojoSerial.MojoBridge.DTypes import Typeable
 
 @fieldwise_init
 @register_passable("trivial")
-struct Indices(Copyable, Movable, Representable, Typeable):
+struct Indices(Copyable, Movable, Typeable):
     var _moduleIndex: UInt
     var _productIndex: UInt
 
@@ -20,16 +20,6 @@ struct Indices(Copyable, Movable, Representable, Typeable):
         return self._productIndex
 
     @always_inline
-    fn __repr__(self) -> String:
-        return (
-            "Indices("
-            + String(self._moduleIndex)
-            + ", "
-            + String(self._productIndex)
-            + ")"
-        )
-
-    @always_inline
     @staticmethod
     fn dtype() -> String:
         return "Indices"
@@ -37,21 +27,21 @@ struct Indices(Copyable, Movable, Representable, Typeable):
 
 struct ProductRegistry(Movable, Sized, Typeable):
     alias kSourceIndex: Int = 0
-    var _typeToIndex: Dict[String, Indices]
     var _currentModuleIndex: Int32
     var _consumedModules: Set[UInt]
+    var _typeToIndex: Dict[String, Indices]
 
     @always_inline
     fn __init__(out self):
-        self._typeToIndex = Dict[String, Indices]()
         self._currentModuleIndex = Self.kSourceIndex
         self._consumedModules = Set[UInt]()
+        self._typeToIndex = Dict[String, Indices]()
 
     @always_inline
     fn __moveinit__(out self, var other: Self):
-        self._typeToIndex = other._typeToIndex^
         self._currentModuleIndex = other._currentModuleIndex
         self._consumedModules = other._consumedModules^
+        self._typeToIndex = other._typeToIndex^
 
     fn produces[T: Typeable](mut self) raises -> EDPutTokenT[T]:
         if T.dtype() in self._typeToIndex:

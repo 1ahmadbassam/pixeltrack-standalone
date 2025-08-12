@@ -3,7 +3,7 @@ from MojoSerial.Framework.EDPutToken import EDPutTokenT
 from MojoSerial.Framework.ProductRegistry import ProductRegistry
 from MojoSerial.MojoBridge.DTypes import Typeable
 
-alias StreamID = Int
+alias StreamID = Int32
 
 
 struct WrapperBase(Copyable, Defaultable, Movable, Typeable):
@@ -31,6 +31,10 @@ struct WrapperBase(Copyable, Defaultable, Movable, Typeable):
         return "WrapperBase"
 
 
+fn det_blank(mut wrapper: WrapperBase):
+    pass
+
+
 struct Wrapper[T: Typeable & Movable](Movable, Typeable):
     var _ptr: UnsafePointer[T]
 
@@ -38,6 +42,11 @@ struct Wrapper[T: Typeable & Movable](Movable, Typeable):
     fn __init__(out self, var obj: T):
         self._ptr = UnsafePointer[T].alloc(1)
         self._ptr.init_pointee_move(obj^)
+
+    @always_inline
+    fn delete(self):
+        self._ptr.destroy_pointee()
+        self._ptr.free()
 
     @always_inline
     fn __moveinit__(out self, var other: Self):
@@ -55,20 +64,22 @@ struct Wrapper[T: Typeable & Movable](Movable, Typeable):
 
 struct Event(Defaultable, Movable, Typeable):
     var _streamId: StreamID
-    var _eventId: Int
+    var _eventId: Int32
     var _products: List[WrapperBase]
+    var _dets: List[fn (mut WrapperBase)]
 
     @always_inline
     fn __init__(out self):
         self._streamId = 0
         self._eventId = 0
         self._products = []
+        self._dets = []
 
     @always_inline
     fn __init__(
         out self,
-        var streamId: Int,
-        var eventId: Int,
+        var streamId: Int32,
+        var eventId: Int32,
         ref reg: ProductRegistry,
     ):
         self._streamId = streamId
@@ -76,19 +87,27 @@ struct Event(Defaultable, Movable, Typeable):
         self._products = List[WrapperBase](
             length=reg.__len__(), fill=WrapperBase()
         )
+        self._dets = List[fn (mut WrapperBase)](
+            length=reg.__len__(), fill=det_blank
+        )
+
+    fn __del__(var self):
+        for i in range(self._products.__len__()):
+            self._dets[i](self._products[i])
 
     @always_inline
     fn __moveinit__(out self, var other: Self):
         self._streamId = other._streamId
         self._eventId = other._eventId
-        self._products = other._products
+        self._products = other._products^
+        self._dets = other._dets^
 
     @always_inline
     fn streamID(self) -> StreamID:
         return self._streamId
 
     @always_inline
-    fn eventID(self) -> Int:
+    fn eventID(self) -> Int32:
         return self._eventId
 
     fn get[
@@ -101,7 +120,12 @@ struct Event(Defaultable, Movable, Typeable):
     fn put[
         T: Typeable & Movable
     ](mut self, ref token: EDPutTokenT[T], var prod: T):
+        @always_inline
+        fn det[T: Typeable & Movable](mut wrapper: WrapperBase):
+            rebind[Wrapper[T]](wrapper).delete()
+
         self._products[token.index()] = rebind[WrapperBase](Wrapper[T](prod^))
+        self._dets[token.index()] = det[T]
 
     @staticmethod
     @always_inline
