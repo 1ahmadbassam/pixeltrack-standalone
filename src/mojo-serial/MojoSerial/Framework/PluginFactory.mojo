@@ -56,7 +56,7 @@ struct EDProducerConcrete(Copyable, Movable, Typeable):
     alias _C = fn (mut ProductRegistry) raises -> EDProducerWrapper
     alias _P = fn (mut EDProducerWrapper, mut Event, EventSetup)
     alias _E = fn (mut EDProducerWrapper)
-    alias _D = fn (EDProducerWrapper)
+    alias _D = fn (mut EDProducerWrapper)
     var _producer: EDProducerWrapper
     var _create: Self._C
     var _produce: Self._P
@@ -102,7 +102,7 @@ struct EDProducerConcrete(Copyable, Movable, Typeable):
         self._end(self._producer)
 
     @always_inline
-    fn delete(self):
+    fn delete(mut self):
         self._det(self._producer)
 
     @staticmethod
@@ -134,7 +134,7 @@ struct Registry(Typeable):
         self._pluginRegistry[name^] = esproducer^
 
     @always_inline
-    fn delete(self):
+    fn delete(mut self):
         for i in range(self._pluginRegistry._entries.__len__()):
             if self._pluginRegistry._entries[i]:
                 self._pluginRegistry._entries[i].unsafe_value().value.delete()
@@ -198,7 +198,7 @@ fn fwkModule[T: Typeable & EDProducer](mut reg: Registry):
         rebind[EDProducerWrapperT[T]](edproducer).producer()[].endJob()
 
     @always_inline
-    fn det_templ[T: Typeable & EDProducer](edproducer: EDProducerWrapper):
+    fn det_templ[T: Typeable & EDProducer](mut edproducer: EDProducerWrapper):
         rebind[EDProducerWrapperT[T]](edproducer).delete()
 
     var crp = EDProducerConcrete(
