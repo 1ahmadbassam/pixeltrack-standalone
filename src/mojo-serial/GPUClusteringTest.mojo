@@ -241,20 +241,17 @@ fn main() raises:
         var nModules: UInt32 = 0
 
         h_moduleStart[0] = nModules
-        ##print("GPUClustering::countModules start")
         GPUClustering.countModules(
             h_id.unsafe_ptr(),
             h_moduleStart.unsafe_ptr(),
             h_clus.unsafe_ptr(),
             n,
         )
-        ##print("GPUClustering::countModules complete")
         memset(
             h_clusInModule.unsafe_ptr(),
             0,
             Int(GPUClusteringConstants.MaxNumModules),
         )
-        ##print("GPUClustering::findClus start")
         GPUClustering.findClus(
             h_id.unsafe_ptr(),
             h_x.unsafe_ptr(),
@@ -265,7 +262,6 @@ fn main() raises:
             h_clus.unsafe_ptr(),
             n,
         )
-        ##print("GPUClustering::findClus complete")
         nModules = h_moduleStart[0]
         var nclus = h_clusInModule.unsafe_ptr()
 

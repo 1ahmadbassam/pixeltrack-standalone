@@ -19,6 +19,7 @@ struct ErrorChecker(Copyable, Defaultable, Movable, Typeable):
     alias PXID_bits = 8
     alias ADC_bits = 8
     alias OMIT_ERR_bits = 1
+
     alias CRC_shift = 2
     alias ADC_shift = 0
     alias PXID_shift = Self.ADC_shift + Self.ADC_bits
@@ -26,12 +27,14 @@ struct ErrorChecker(Copyable, Defaultable, Movable, Typeable):
     alias ROC_shift = Self.DCOL_shift + Self.DCOL_bits
     alias LINK_shift = Self.ROC_shift + Self.ROC_bits
     alias OMIT_ERR_shift = 20
-    alias dummyDetId = 0xFFFFFFFF
-    alias CRC_mask = ~(~Self.Word64(0) << Self.CRC_bits)
-    alias ERROR_mask = ~(~Self.Word32(0) << Self.ROC_bits)
-    alias LINK_mask = ~(~Self.Word32(0) << Self.LINK_bits)
-    alias ROC_mask = ~(~Self.Word32(0) << Self.ROC_bits)
-    alias OMIT_ERR_mask = ~(~Self.Word32(0) << Self.OMIT_ERR_bits)
+
+    alias dummyDetId: UInt32 = 0xFFFFFFFF
+
+    alias CRC_mask: Self.Word64 = ~(~Self.Word64(0) << Self.CRC_bits)
+    alias ERROR_mask: Self.Word32 = ~(~Self.Word32(0) << Self.ROC_bits)
+    alias LINK_mask: Self.Word32 = ~(~Self.Word32(0) << Self.LINK_bits)
+    alias ROC_mask: Self.Word32 = ~(~Self.Word32(0) << Self.ROC_bits)
+    alias OMIT_ERR_mask: Self.Word32 = ~(~Self.Word32(0) << Self.OMIT_ERR_bits)
 
     # a flag to include errors in the output
     # if set, errors will be added to the errors dict
@@ -44,27 +47,29 @@ struct ErrorChecker(Copyable, Defaultable, Movable, Typeable):
     fn checkCRC(
         self,
         mut errorsInEvent: Bool,
-        fedId: Int32,
+        var fedId: Int32,
         trailer: UnsafePointer[Self.Word64],
         mut errors: Self.Errors,
     ) -> Bool:
-        var CRC_BIT = trailer[] >> Self.CRC_shift & Self.CRC_mask
+        var CRC_BIT: Int32 = (
+            (trailer[] >> Self.CRC_shift) & Self.CRC_mask
+        ).cast[DType.int32]()
         if CRC_BIT == 0:
             return True
         errorsInEvent = True
         if self.includeErrors:
-            var errorType = 39
+            alias errorType = 39
             var error = SiPixelRawDataError(trailer[], errorType, fedId)
             try:
-                errors[Self.dummyDetId].append(error)
+                errors[UInt(Self.dummyDetId)].append(error)
             except e:
-                print("Handled an exception in ErrorChecker, ", e)
+                print("Handled an exception in ErrorChecker,", e)
         return False
 
     fn checkHeader(
         self,
         mut errorsInEvent: Bool,
-        fedId: Int32,
+        var fedId: Int32,
         header: UnsafePointer[Self.Word64],
         mut errors: Self.Errors,
     ) -> Bool:
@@ -89,9 +94,9 @@ struct ErrorChecker(Copyable, Defaultable, Movable, Typeable):
                 alias errorType = 32
                 var error = SiPixelRawDataError(header[], errorType, fedId)
                 try:
-                    errors[Self.dummyDetId].append(error)
+                    errors[UInt(Self.dummyDetId)].append(error)
                 except e:
-                    print("Handled an exception in ErrorChecker, ", e)
+                    print("Handled an exception in ErrorChecker,", e)
         return fedHeader.moreHeaders()
 
     fn checkTrailer(
@@ -108,9 +113,9 @@ struct ErrorChecker(Copyable, Defaultable, Movable, Typeable):
                 alias errorType = 33
                 var error = SiPixelRawDataError(trailer[], errorType, fedId)
                 try:
-                    errors[Self.dummyDetId].append(error)
+                    errors[UInt(Self.dummyDetId)].append(error)
                 except e:
-                    print("Handled an exception in ErrorChecker, ", e)
+                    print("Handled an exception in ErrorChecker,", e)
             errorsInEvent = True
             print(
                 "fedTrailer.check failed, Fed: ",
@@ -131,9 +136,9 @@ struct ErrorChecker(Copyable, Defaultable, Movable, Typeable):
                 alias errorType = 34
                 var error = SiPixelRawDataError(trailer[], errorType, fedId)
                 try:
-                    errors[Self.dummyDetId].append(error)
+                    errors[UInt(Self.dummyDetId)].append(error)
                 except e:
-                    print("Handled an exception in ErrorChecker, ", e)
+                    print("Handled an exception in ErrorChecker,", e)
         return fedTrailer.moreTrailers()
 
     @always_inline
