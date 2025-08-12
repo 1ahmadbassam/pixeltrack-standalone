@@ -26,9 +26,7 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
     alias Range = Tuple[UInt32, UInt32]
 
     var v_pedestals: UnsafePointer[Self.DecodingStructure]
-    var rangeAndCols: InlineArray[
-        Tuple[Self.Range, Int], 2000, run_destructors=True
-    ]
+    var rangeAndCols: InlineArray[Tuple[Self.Range, Int32], 2000]
     var _minPed: Float
     var _maxPed: Float
     var _minGain: Float
@@ -45,9 +43,9 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
     @always_inline
     fn __init__(out self):
         self.v_pedestals = UnsafePointer[Self.DecodingStructure]()
-        self.rangeAndCols = InlineArray[
-            Tuple[Self.Range, Int], 2000, run_destructors=True
-        ](Tuple[Self.Range, Int](Self.Range(0, 0), 0))
+        self.rangeAndCols = InlineArray[Tuple[Self.Range, Int32], 2000](
+            fill=Tuple[Self.Range, Int32](Self.Range(0, 0), 0)
+        )
         self._minPed = 0.0
         self._maxPed = 0.0
         self._minGain = 0.0
@@ -74,9 +72,12 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
         var ncols = self.rangeAndCols[moduleInd][1]
 
         # determine what averaged data block we are in (there should be 1 or 2 of these depending on if plaquette is 1 by X or 2 by X
-        var lengthOfColumnData: UInt32 = (range[1] - range[0]) // ncols
+        var lengthOfColumnData: UInt32 = (
+            (range[1].cast[DType.int32]() - range[0].cast[DType.int32]())
+            // ncols
+        ).cast[DType.uint32]()
         # we always only have two values per column averaged block
-        var lengthOfAveragedDataInEachColumn = 2
+        var lengthOfAveragedDataInEachColumn: UInt32 = 2
         var numberOfDataBlocksToSkip = (
             row.cast[DType.uint32]() // self._numberOfRowsAveragedOver
         )
@@ -101,11 +102,11 @@ struct SiPixelGainForHLTonGPU(Copyable, Defaultable, Movable, Typeable):
 
     @always_inline
     fn decodeGain(self, gain: UInt32) -> Float:
-        return Float(gain) * self.gainPrecision + self._minGain
+        return gain.cast[DType.float32]() * self.gainPrecision + self._minGain
 
     @always_inline
     fn decodePed(self, ped: UInt32) -> Float:
-        return Float(ped) * self.pedPrecision + self._minPed
+        return ped.cast[DType.float32]() * self.pedPrecision + self._minPed
 
     @always_inline
     @staticmethod

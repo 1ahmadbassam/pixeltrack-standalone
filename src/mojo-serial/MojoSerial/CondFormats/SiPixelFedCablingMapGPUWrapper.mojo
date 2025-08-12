@@ -4,6 +4,7 @@ from MojoSerial.CondFormats.SiPixelFedCablingMapGPU import (
 from MojoSerial.MojoBridge.DTypes import UChar, Typeable
 
 
+# WARNING: THIS STRUCT IS 128-ALIGNED (SiPixelFedCablingMapGPU)
 struct SiPixelFedCablingMapGPUWrapper(Defaultable, Movable, Typeable):
     var modToUnpDefault: List[UChar]
     var _hasQuality: Bool

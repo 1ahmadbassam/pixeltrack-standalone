@@ -3,6 +3,8 @@ from MojoSerial.MojoBridge.DTypes import Typeable
 
 @fieldwise_init
 struct SiPixelFedIds(Copyable, Defaultable, Movable, Typeable):
+    """Stripped-down version of SiPixelFedCablingMap."""
+
     var _fedIds: List[UInt32]
 
     fn __init__(out self):

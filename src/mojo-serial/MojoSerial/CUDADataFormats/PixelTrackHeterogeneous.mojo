@@ -16,7 +16,7 @@ struct TrackQuality:
     alias highPurity: UInt8 = 5
 
 
-# WARNING: THIS STRUCT IS 128-ALIGNED
+# WARNING: THIS STRUCT IS 128-ALIGNED (ScalarSoA)
 @fieldwise_init
 struct TrackSoAT[S: Int32](Defaultable, Movable, Typeable):
     @staticmethod

@@ -51,10 +51,7 @@ struct PixelCPEFast(Defaultable, Movable, Typeable):
                 "Error during loading data in PixelCPEFast:",
                 e,
             )
-            self.m_commonParamsGPU = CommonParams()
-            self.m_detParamsGPU = []
-            self.m_layerGeometry = LayerGeometry()
-            self.m_averageGeometry = AverageGeometry()
+            return Self()
 
         self._cpuData = ParamsOnGPU(
             UnsafePointer(to=self.m_commonParamsGPU),
@@ -64,7 +61,7 @@ struct PixelCPEFast(Defaultable, Movable, Typeable):
         )
 
     @always_inline
-    fn getCPUProduct(self) -> ParamsOnGPU:
+    fn getCPUProduct(self) -> ref [self._cpuData] ParamsOnGPU:
         return self._cpuData
 
     @always_inline

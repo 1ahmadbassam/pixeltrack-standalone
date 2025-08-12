@@ -90,7 +90,7 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
             var gpuModulesToUnpack = iSetup.get[
                 SiPixelFedCablingMapGPUWrapper
             ]().getModToUnpAll()
-            var hgains = iSetup.get[SiPixelGainCalibrationForHLTGPU]()
+            ref hgains = iSetup.get[SiPixelGainCalibrationForHLTGPU]()
             var gpuGains = hgains.getCPUProduct()
             var _fedIds = iSetup.get[SiPixelFedIds]().fedIds()
             var buffers = iEvent.get[FEDRawDataCollection](self._rawGetToken)

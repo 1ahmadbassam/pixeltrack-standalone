@@ -85,7 +85,7 @@ struct DetParams(Copyable, Defaultable, Movable, Typeable):
 
 
 @fieldwise_init
-struct LayerGeometry(Defaultable, Movable, Typeable):
+struct LayerGeometry(Copyable, Defaultable, Movable, Typeable):
     var layerStart: InlineArray[
         UInt32, Int(Phase1PixelTopology.numberOfLayers + 1)
     ]
@@ -125,8 +125,7 @@ struct ParamsOnGPU(Copyable, Defaultable, Movable, Typeable):
         return self.m_commonParams[]
 
     @always_inline
-    fn detParams[i: Int](self) -> DetParams:
-        # constexpr => i is bound at compile time
+    fn detParams(self, i: Int32) -> ref [self.m_detParams] DetParams:
         return self.m_detParams[i]
 
     @always_inline
@@ -157,12 +156,12 @@ struct ClusParamsT[N: UInt32](Copyable, Defaultable, Movable, Typeable):
     var maxCol: InlineArray[UInt32, Int(N)]
 
     var Q_f_X: InlineArray[Int32, Int(N)]
-    var Q_f_Y: InlineArray[Int32, Int(N)]
-
     var Q_l_X: InlineArray[Int32, Int(N)]
+    var Q_f_Y: InlineArray[Int32, Int(N)]
     var Q_l_Y: InlineArray[Int32, Int(N)]
 
     var charge: InlineArray[Int32, Int(N)]
+
     var xpos: InlineArray[Float, Int(N)]
     var ypos: InlineArray[Float, Int(N)]
 
@@ -180,9 +179,8 @@ struct ClusParamsT[N: UInt32](Copyable, Defaultable, Movable, Typeable):
         self.maxCol = InlineArray[UInt32, Int(N)](fill=0)
 
         self.Q_f_X = InlineArray[Int32, Int(N)](fill=0)
-        self.Q_f_Y = InlineArray[Int32, Int(N)](fill=0)
-
         self.Q_l_X = InlineArray[Int32, Int(N)](fill=0)
+        self.Q_f_Y = InlineArray[Int32, Int(N)](fill=0)
         self.Q_l_Y = InlineArray[Int32, Int(N)](fill=0)
 
         self.charge = InlineArray[Int32, Int(N)](fill=0)
@@ -201,12 +199,14 @@ struct ClusParamsT[N: UInt32](Copyable, Defaultable, Movable, Typeable):
         return "ClusParamsT[" + String(N) + "]"
 
 
-alias MaxHitsInIter: UInt32 = GPUClusteringConstants.maxHitsInIter()
-alias ClusParams = ClusParamsT[MaxHitsInIter]
+alias MaxHitsInIter: Int32 = GPUClusteringConstants.maxHitsInIter().cast[
+    DType.int32
+]()
+alias ClusParams = ClusParamsT[MaxHitsInIter.cast[DType.uint32]()]
 
 
 fn computeAnglesFromDet(
-    detParams: DetParams,
+    ref detParams: DetParams,
     x: Float,
     y: Float,
     mut cotalpha: Float,
@@ -223,9 +223,9 @@ fn computeAnglesFromDet(
 
 
 fn correction(
-    sizeM1: Int,
-    Q_f: Int,  # Charge in the first pixel
-    Q_l: Int,  # Charge in the last pixel
+    sizeM1: Int32,
+    Q_f: Int32,  # Charge in the first pixel
+    Q_l: Int32,  # Charge in the last pixel
     upper_edge_first_pix: UInt16,  # As the name says
     lower_edge_last_pix: UInt16,  # As the name says
     lorentz_shift: Float,  # L-shift at half thickness
@@ -235,14 +235,15 @@ fn correction(
     first_is_big: Bool,  # true if the first is big
     last_is_big: Bool,  # true if the last is big
 ) -> Float:
-    if 0 == sizeM1:  # size 1
+    if sizeM1 == 0:  # size 1
         return 0.0
 
     var W_eff: Float = 0.0
     var simple: Bool = True
-    if 1 == sizeM1:  # size 2
+    if sizeM1 == 1:  # size 2
         # Width of the clusters minus the edge (first and last) pixels
         # In the note, they are denoted x_F and x_L (and y_F and y_L)
+        debug_assert(lower_edge_last_pix > upper_edge_first_pix)
         var W_inner = pitch * Float(lower_edge_last_pix - upper_edge_first_pix)
 
         # Predicted charge width from geometry
@@ -269,12 +270,12 @@ fn correction(
         if last_is_big:
             sum_of_edge += 1.0
         W_eff = (
-            pitch * sum_of_edge * 0.5
+            pitch * 0.5 * sum_of_edge
         )  # ave. length of edge pixels (first+last) (cm)
 
     # Finally, compute the position in this projection
-    var Qdiff = Float(Q_l - Q_f)
-    var Qsum = Float(Q_f + Q_l)
+    var Qdiff = (Q_l - Q_f).cast[DType.float32]()
+    var Qsum = (Q_f + Q_l).cast[DType.float32]()
 
     # Temporary fix for clusters with both first and last pixel with charge = 0
     if Qsum == 0.0:
@@ -284,8 +285,8 @@ fn correction(
 
 
 fn position(
-    comParams: CommonParams,
-    detParams: DetParams,
+    ref comParams: CommonParams,
+    ref detParams: DetParams,
     mut cp: ClusParams,
     ic: UInt32,
 ):
@@ -310,13 +311,13 @@ fn position(
     debug_assert(xsize >= 0)  # 0 if bixpix...
     debug_assert(ysize >= 0)
 
-    if Phase1PixelTopology.isBigPixX(UInt16(cp.minRow[ic])):
+    if Phase1PixelTopology.isBigPixX(cp.minRow[ic].cast[DType.uint16]()):
         xsize += 1
-    if Phase1PixelTopology.isBigPixX(UInt16(cp.maxRow[ic])):
+    if Phase1PixelTopology.isBigPixX(cp.maxRow[ic].cast[DType.uint16]()):
         xsize += 1
-    if Phase1PixelTopology.isBigPixY(UInt16(cp.minCol[ic])):
+    if Phase1PixelTopology.isBigPixY(cp.minCol[ic].cast[DType.uint16]()):
         ysize += 1
-    if Phase1PixelTopology.isBigPixY(UInt16(cp.maxCol[ic])):
+    if Phase1PixelTopology.isBigPixY(cp.maxCol[ic].cast[DType.uint16]()):
         ysize += 1
 
     var unbalanceX = Int(
@@ -364,9 +365,9 @@ fn position(
     )
 
     var xcorr = correction(
-        Int(cp.maxRow[ic] - cp.minRow[ic]),
-        Int(cp.Q_f_X[ic]),
-        Int(cp.Q_l_X[ic]),
+        (cp.maxRow[ic] - cp.minRow[ic]).cast[DType.int32](),
+        cp.Q_f_X[ic],
+        cp.Q_l_X[ic],
         llxl,
         urxl,
         detParams.chargeWidthX,  # lorentz shift in cm
@@ -378,9 +379,9 @@ fn position(
     )
 
     var ycorr = correction(
-        Int(cp.maxCol[ic] - cp.minCol[ic]),
-        Int(cp.Q_f_Y[ic]),
-        Int(cp.Q_l_Y[ic]),
+        (cp.maxCol[ic] - cp.minCol[ic]).cast[DType.int32](),
+        cp.Q_f_Y[ic],
+        cp.Q_l_Y[ic],
         llyl,
         uryl,
         detParams.chargeWidthY,  # lorentz shift in cm
@@ -396,16 +397,16 @@ fn position(
 
 
 fn errorFromSize(
-    comParams: CommonParams,
-    detParams: DetParams,
+    ref comParams: CommonParams,
+    ref detParams: DetParams,
     mut cp: ClusParams,
-    ic: UInt32,
+    var ic: UInt32,
 ):
     cp.xerr[ic] = 0.0050
     cp.yerr[ic] = 0.0085
 
     alias xerr_barrel_l1 = InlineArray[Float, 3](0.00115, 0.00120, 0.00088)
-    alias xerr_barrel_l1_def = 0.00200  # 0.01030
+    alias xerr_barrel_l1_def: Float = 0.00200  # 0.01030
     alias yerr_barrel_l1 = InlineArray[Float, 9](
         0.00375,
         0.00230,
@@ -417,9 +418,9 @@ fn errorFromSize(
         0.00210,
         0.00240,
     )
-    alias yerr_barrel_l1_def = 0.00210
+    alias yerr_barrel_l1_def: Float = 0.00210
     alias xerr_barrel_ln = InlineArray[Float, 3](0.00115, 0.00120, 0.00088)
-    alias xerr_barrel_ln_def = 0.00200  # 0.01030
+    alias xerr_barrel_ln_def: Float = 0.00200  # 0.01030
     alias yerr_barrel_ln = InlineArray[Float, 9](
         0.00375,
         0.00230,
@@ -431,11 +432,11 @@ fn errorFromSize(
         0.00210,
         0.00240,
     )
-    alias yerr_barrel_ln_def = 0.00210
+    alias yerr_barrel_ln_def: Float = 0.00210
     alias xerr_endcap = InlineArray[Float, 2](0.0020, 0.0020)
-    alias xerr_endcap_def = 0.0020
+    alias xerr_endcap_def: Float = 0.0020
     alias yerr_endcap = InlineArray[Float, 1](0.00210)
-    alias yerr_endcap_def = 0.00210
+    alias yerr_endcap_def: Float = 0.00210
 
     var sx = cp.maxRow[ic] - cp.minRow[ic]
     var sy = cp.maxCol[ic] - cp.minCol[ic]
@@ -491,8 +492,8 @@ fn errorFromSize(
 
 
 fn errorFromDB(
-    comParams: CommonParams,
-    detParams: DetParams,
+    ref comParams: CommonParams,
+    ref detParams: DetParams,
     mut cp: ClusParams,
     ic: UInt32,
 ):

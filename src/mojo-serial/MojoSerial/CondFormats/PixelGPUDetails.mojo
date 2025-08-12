@@ -67,4 +67,5 @@ struct PixelGPUDetails:
     alias MAX_ROC: UInt32 = 8
     alias MAX_SIZE = Self.MAX_FED * Self.MAX_LINK * Self.MAX_ROC
     alias MAX_SIZE_BYTE_BOOL = Self.MAX_SIZE * sizeof[UChar]()
+    # number of words for all the FEDs
     alias MAX_FED_WORDS = Self.MAX_FED * Self.MAX_WORD
