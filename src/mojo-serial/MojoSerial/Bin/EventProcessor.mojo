@@ -8,7 +8,7 @@ from MojoSerial.Bin.Source import Source
 from MojoSerial.Bin.StreamSchedule import StreamSchedule
 
 
-struct EventProcessor(Typeable):
+struct EventProcessor(Defaultable, Typeable):
     # no pluginmanager
     var _registry: ProductRegistry
     var _source: Source

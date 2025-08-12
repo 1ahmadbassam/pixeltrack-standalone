@@ -51,6 +51,8 @@ struct StreamSchedule(Defaultable, Movable, Typeable):
                     PluginFactory.create(name, self._registry[], edreg)
                 )
                 var dep_indices = self._registry[].consumedModules()
+                # remove dependency on FEDRawDataCollection from resolver logic
+                # it is the parent of all producers (guaranteed by Source)
                 if 0 in dep_indices:
                     dep_indices.remove(0)
                 in_degree[i] = dep_indices.__len__()
