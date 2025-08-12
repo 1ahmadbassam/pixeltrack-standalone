@@ -3,7 +3,7 @@ from collections.list import _ListIter
 from MojoSerial.MojoBridge.DTypes import SizeType, Typeable, UChar
 
 
-struct FEDRawData(Copyable, Defaultable, Movable, Typeable):
+struct FEDRawData(Copyable, Defaultable, Movable, Sized, Typeable):
     """
     Class representing the raw data for one FED.
     The raw data is owned as a binary buffer. It is required that the
@@ -48,6 +48,10 @@ struct FEDRawData(Copyable, Defaultable, Movable, Typeable):
 
     @always_inline
     fn size(self) -> SizeType:
+        return self._data.__len__()
+
+    @always_inline
+    fn __len__(self) -> Int:
         return self._data.__len__()
 
     @always_inline

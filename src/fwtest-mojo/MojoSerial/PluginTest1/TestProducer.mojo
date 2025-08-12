@@ -27,7 +27,7 @@ struct TestProducer(Defaultable, EDProducer, Typeable):
             print("Error occurred in PluginTest1/TestProducer.mojo, ", e)
             return Self()
 
-    fn produce(mut self, mut event: Event, eventSetup: EventSetup):
+    fn produce(mut self, mut event: Event, ref eventSetup: EventSetup):
         try:
             var value = (
                 event.get[FEDRawDataCollection](self._rawGetToken)
@@ -48,7 +48,7 @@ struct TestProducer(Defaultable, EDProducer, Typeable):
             sleep(0.01)
             event.put[TypeableUInt](
                 self._putToken,
-                TypeableUInt(event.eventID() + 10 * event.streamID() + 100),
+                TypeableUInt(UInt(event.eventID() + 10 * event.streamID() + 100)),
             )
         except e:
             print("Error occurred in PluginTest1/TestProducer.mojo, ", e)

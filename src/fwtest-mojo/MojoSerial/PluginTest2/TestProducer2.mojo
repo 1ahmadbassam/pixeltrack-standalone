@@ -22,7 +22,7 @@ struct TestProducer2(Defaultable, EDProducer, Typeable):
             print("Error occurred in PluginTest2/TestProducer2.mojo, ", e)
             return Self()
 
-    fn produce(mut self, mut event: Event, eventSetup: EventSetup):
+    fn produce(mut self, mut event: Event, ref eventSetup: EventSetup):
         var value = event.get[TypeableUInt](self._getToken).val
         debug_assert(
             value == UInt(event.eventID() + 10 * event.streamID() + 100)

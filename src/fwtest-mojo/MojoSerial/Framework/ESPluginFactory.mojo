@@ -54,7 +54,7 @@ struct ESProducerWrapperT[T: Typeable & ESProducer](Movable, Typeable):
 struct ESProducerConcrete(Copyable, Movable, Typeable):
     alias _C = fn (var Path) -> ESProducerWrapper
     alias _P = fn (mut ESProducerWrapper, mut EventSetup)
-    alias _D = fn (ESProducerWrapper)
+    alias _D = fn (mut ESProducerWrapper)
     var _producer: ESProducerWrapper
     var _create: Self._C
     var _produce: Self._P
@@ -82,7 +82,7 @@ struct ESProducerConcrete(Copyable, Movable, Typeable):
         self._det = other._det
 
     @always_inline
-    fn delete(self):
+    fn delete(mut self):
         self._det(self._producer)
 
     @always_inline
@@ -122,7 +122,7 @@ struct Registry(Typeable):
         self._pluginRegistry[name^] = esproducer^
 
     @always_inline
-    fn delete(self):
+    fn delete(mut self):
         for i in range(self._pluginRegistry._entries.__len__()):
             if self._pluginRegistry._entries[i]:
                 self._pluginRegistry._entries[i].unsafe_value().value.delete()
@@ -178,7 +178,7 @@ fn fwkEventSetupModule[T: Typeable & ESProducer](mut reg: Registry):
         )
 
     @always_inline
-    fn det_templ[T: Typeable & ESProducer](esproducer: ESProducerWrapper):
+    fn det_templ[T: Typeable & ESProducer](mut esproducer: ESProducerWrapper):
         rebind[ESProducerWrapperT[T]](esproducer).delete()
 
     var crp = ESProducerConcrete(
