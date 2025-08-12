@@ -114,12 +114,12 @@ struct FEDNumbering:
 
     @staticmethod
     @always_inline
-    fn inRange(i: Int) -> Bool:
+    fn inRange(var i: Int) -> Bool:
         return FEDNumbering._in[i]
 
     @staticmethod
     @always_inline
-    fn inRangeNoGT(i: Int) -> Bool:
+    fn inRangeNoGT(var i: Int) -> Bool:
         if (
             i >= FEDNumbering.MINTriggerGTPFEDID
             and i <= FEDNumbering.MAXTriggerGTPFEDID
