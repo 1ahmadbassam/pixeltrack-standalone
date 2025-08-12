@@ -289,7 +289,7 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
                 self.digis_d[].c_xx(),
                 self.digis_d[].c_yy(),
                 self.digis_d[].adc(),
-                gains,
+                UnsafePointer(to=gains),
                 Int(wordCounter),
                 self.clusters_d[].moduleStart(),
                 self.clusters_d[].clusInModule(),
