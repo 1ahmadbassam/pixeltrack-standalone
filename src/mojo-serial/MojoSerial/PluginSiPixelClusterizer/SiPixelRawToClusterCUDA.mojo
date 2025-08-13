@@ -1,3 +1,5 @@
+from memory import OwnedPointer
+
 from MojoSerial.CondFormats.SiPixelFedCablingMapGPUWrapper import (
     SiPixelFedCablingMapGPUWrapper,
 )
@@ -32,7 +34,7 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
     var _clusterPutToken: EDPutTokenT[SiPixelClustersSoA]
 
     var _gpuAlgo: SiPixelRawToClusterGPUKernel
-    var _wordFedAppender: WordFedAppender
+    var _wordFedAppender: OwnedPointer[WordFedAppender]
     var _errors: PixelFormatterErrors
 
     var _isRun2: Bool
@@ -47,7 +49,7 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
         self._clusterPutToken = EDPutTokenT[SiPixelClustersSoA]()
 
         self._gpuAlgo = SiPixelRawToClusterGPUKernel()
-        self._wordFedAppender = WordFedAppender()
+        self._wordFedAppender = OwnedPointer(WordFedAppender())
         self._errors = PixelFormatterErrors()
 
         self._isRun2 = False
@@ -62,7 +64,7 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
             self._clusterPutToken = reg.produces[SiPixelClustersSoA]()
 
             self._gpuAlgo = SiPixelRawToClusterGPUKernel()
-            self._wordFedAppender = WordFedAppender()
+            self._wordFedAppender = OwnedPointer(WordFedAppender())
             self._errors = PixelFormatterErrors()
 
             self._isRun2 = True
@@ -75,44 +77,43 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
                 self._digiErrorPutToken = EDPutTokenT[SiPixelDigiErrorsSoA]()
         except e:
             print("Handled exception in SiPixelRawToClusterCUDA, ", e)
-            return Self.__init__()
+            return Self()
 
     fn produce(mut self, mut iEvent: Event, ref iSetup: EventSetup):
         try:
-            if (
-                iSetup.get[SiPixelFedCablingMapGPUWrapper]().hasQuality()
-                != self._useQuality
-            ):
+            ref hgpuMap = iSetup.get[SiPixelFedCablingMapGPUWrapper]()
+            if hgpuMap.hasQuality() != self._useQuality:
                 raise "UseQuality of the module (" + self._useQuality.__str__() + ") differs the one from SiPixelFedCablingMapGPUWrapper. Please fix your configuration."
-            var gpuMap = iSetup.get[
-                SiPixelFedCablingMapGPUWrapper
-            ]().getCPUProduct()
-            var gpuModulesToUnpack = iSetup.get[
-                SiPixelFedCablingMapGPUWrapper
-            ]().getModToUnpAll()
+            var gpuMap = hgpuMap.getCPUProduct()
+            var gpuModulesToUnpack = hgpuMap.getModToUnpAll()
+
             ref hgains = iSetup.get[SiPixelGainCalibrationForHLTGPU]()
+
             var gpuGains = hgains.getCPUProduct()
-            var _fedIds = iSetup.get[SiPixelFedIds]().fedIds()
-            var buffers = iEvent.get[FEDRawDataCollection](self._rawGetToken)
+
+            ref _fedIds = iSetup.get[SiPixelFedIds]().fedIds()
+
+            ref buffers = iEvent.get[FEDRawDataCollection](self._rawGetToken)
 
             self._errors.clear()
+
             var wordCounterGPU: UInt32 = 0
             var fedCounter: UInt32 = 0
             var errorsInEvent = False
-            var errorcheck = ErrorChecker()
+
             # In CPU algorithm this loop is part of PixelDataFormatter::interpretRawData()
+            var errorcheck = ErrorChecker()
             for fedId in _fedIds:
                 if fedId == 40:
                     continue  # skip pilot blade data
 
-                # for GPU
                 # first 150 index stores the fedId and next 150 will store the
                 # start index of word in that fed
                 debug_assert(fedId >= 1200)
                 fedCounter += 1
 
                 # get event data for this fed
-                var rawData: FEDRawData = buffers.FEDData(Int(fedId))
+                ref rawData = buffers.FEDData(Int(fedId))
 
                 # GPU specific
                 var nWords: Int32 = (
@@ -145,8 +146,8 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
                     )
 
                 # check trailers
-                trailer += 1
                 var moreTrailers = True
+                trailer += 1
                 while moreTrailers:
                     trailer -= 1
                     moreTrailers = errorcheck.checkTrailer(
@@ -160,24 +161,25 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
                 var bw = (header + 1).bitcast[UInt32]()
                 var ew = trailer.bitcast[UInt32]()
                 debug_assert((Int(ew) - Int(bw)) % 2 == 0)
-                self._wordFedAppender.initializeWordFed(
+                self._wordFedAppender[].initializeWordFed(
                     fedId.cast[DType.int32](),
                     wordCounterGPU,
                     bw,
-                    Int(ew) - Int(bw),
+                    (Int(ew) - Int(bw)) // DType.uint32.sizeof(),
                 )
                 wordCounterGPU += Int(ew) - Int(bw)
             self._gpuAlgo.makeClusters(
                 self._isRun2,
-                gpuMap[],
+                gpuMap,
                 gpuModulesToUnpack,
-                gpuGains[],
-                self._wordFedAppender,
+                gpuGains,
+                self._wordFedAppender[],
                 self._errors^,
                 wordCounterGPU,
                 fedCounter,
                 self._useQuality,
                 self._includeErrors,
+                False,  # debug
             )
             iEvent.put[SiPixelDigisSoA](
                 self._digiPutToken, self._gpuAlgo.getResultsDigis()
@@ -189,6 +191,7 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
                 iEvent.put[SiPixelDigiErrorsSoA](
                     self._digiErrorPutToken, self._gpuAlgo.getErrors()
                 )
+            # must reinstenciate moved field before end of function
             self._errors = PixelFormatterErrors()
         except e:
             print("Error during produce in SiPixelRawToClusterCUDA, ", e)
