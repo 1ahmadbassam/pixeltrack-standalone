@@ -12,6 +12,7 @@ from MojoSerial.CondFormats.PixelGPUDetails import PixelGPUDetails
 
 
 # WARNING: THIS STRUCT IS 128-ALIGNED
+# note: for MAX_SIZE = 57600U, it is already aligned (lol)
 struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
     alias _U = InlineArray[UInt32, Int(PixelGPUDetails.MAX_SIZE)]
     alias _UD = Self._U(uninitialized=True)
