@@ -12,7 +12,6 @@ from MojoSerial.CondFormats.PixelGPUDetails import PixelGPUDetails
 
 
 # WARNING: THIS STRUCT IS 128-ALIGNED
-# note: for MAX_SIZE = 57600U, it is already aligned (lol)
 struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
     alias _U = InlineArray[UInt32, Int(PixelGPUDetails.MAX_SIZE)]
     alias _UD = Self._U(uninitialized=True)
@@ -26,6 +25,7 @@ struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
     var moduleId: Self._U
     var badRocs: Self._C
     var size: UInt32
+    var __padding: InlineArray[UInt8, 124]
 
     @always_inline
     fn __init__(out self):
@@ -37,6 +37,8 @@ struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
         self.moduleId = Self._U(fill=0)
         self.badRocs = Self._C(fill=0)
         self.size = 0
+
+        self.__padding = InlineArray[UInt8, 124](fill=0)
 
     @always_inline
     fn __init__(
@@ -58,6 +60,8 @@ struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
         self.badRocs = badRocs^
         self.size = 0
 
+        self.__padding = InlineArray[UInt8, 124](fill=0)
+
     @always_inline
     fn __moveinit__(out self, var other: Self):
         self.fed = other.fed^
@@ -68,6 +72,8 @@ struct SiPixelFedCablingMapGPU(Defaultable, Movable, Typeable):
         self.moduleId = other.moduleId^
         self.badRocs = other.badRocs^
         self.size = other.size
+
+        self.__padding = InlineArray[UInt8, 124](fill=0)
 
     @always_inline
     @staticmethod
