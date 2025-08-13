@@ -160,14 +160,16 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
 
                 var bw = (header + 1).bitcast[UInt32]()
                 var ew = trailer.bitcast[UInt32]()
-                debug_assert((Int(ew) - Int(bw)) % 2 == 0)
+                var le = (Int(ew) - Int(bw)) // DType.uint32.sizeof()
+                debug_assert(le % 2 == 0)
                 self._wordFedAppender[].initializeWordFed(
                     fedId.cast[DType.int32](),
                     wordCounterGPU,
                     bw,
-                    (Int(ew) - Int(bw)) // DType.uint32.sizeof(),
+                    le,
                 )
-                wordCounterGPU += Int(ew) - Int(bw)
+                wordCounterGPU += le
+
             self._gpuAlgo.makeClusters(
                 self._isRun2,
                 gpuMap,
