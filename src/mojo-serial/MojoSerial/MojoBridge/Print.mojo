@@ -24,12 +24,21 @@ fn pprint[T: StringStandardType](L: List[T]):
 fn pprint[T: StringStandardType, size: Int, //](L: InlineArray[T, size]):
     print("[", end="")
 
-    @parameter
     if size > 0:
         print(L[0].__str__(), end="")
 
-        @parameter
         for i in range(1, size):
+            print(", " + L[i].__str__(), end="")
+    print("]")
+
+
+fn pprint[T: StringStandardType, //](L: InlineArray[T, _], var ran: Int):
+    print("[", end="")
+
+    if ran > 0:
+        print(L[0].__str__(), end="")
+
+        for i in range(1, ran):
             print(", " + L[i].__str__(), end="")
     print("]")
 
