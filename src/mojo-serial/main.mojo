@@ -88,12 +88,12 @@ fn main() raises:
         warmupEvents, maxEvents, runForMinutes, path, False, _esreg, _edreg
     )
     if runForMinutes < 0:
-        print("Processing", processor.maxEvents(), "events,", end="")
+        print("Processing", processor.maxEvents(), "events", end="")
     else:
-        print("Processing for about", runForMinutes, "minutes,", end="")
+        print("Processing for about", runForMinutes, "minutes", end="")
     if warmupEvents > 0:
         print(" after", warmupEvents, "events of warm up", end="")
-    print(" with 1 concurrent events and 1 threads.")
+    print(", with 1 concurrent events and 1 threads.")
 
     processor.warmUp()
     var cpu_start = PosixClockGettime[CLOCK_PROCESS_CPUTIME_ID].now()
