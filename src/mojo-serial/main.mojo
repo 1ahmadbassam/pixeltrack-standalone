@@ -1,3 +1,5 @@
+from sys import argv
+from sys.terminate import exit
 from time import perf_counter_ns
 from pathlib import Path
 
@@ -9,24 +11,82 @@ from MojoSerial.Bin.PosixClockGettime import (
 from MojoSerial.MojoBridge.DTypes import Double
 
 
+fn print_help(ref name: String):
+    print(
+        "Usage: ",
+        name,
+        " [--warmupEvents WE] [--maxEvents ME] [--runForMinutes RM]",
+        " [--data PATH] [--validation] [--histogram] [--empty]",
+        sep="",
+    )
+    print(
+        r"""(
+Options:
+  --warmupEvents                Number of events to process before starting the benchmark (default 0).
+  --maxEvents                   Number of events to process (default -1 for all events in the input file).
+  --runForMinutes               Continue processing the set of 1000 events until this many minutes have passed
+                                (default -1 for disabled; conflicts with --maxEvents).
+  --data                        Path to the 'data' directory (default 'data' in the directory of the executable).
+  --empty                       Ignore all producers (for testing only).
+)"""
+    )
+
+
 fn main() raises:
-    var warmupEvents = 100
-    var maxEvents = 0
-    var runForMinutes = 10
-    var path = Path("data")
-    var validation = False
+    var args = argv()
+    var warmupEvents = 0
+    var maxEvents = -1
+    var runForMinutes = -1
+    var path = Path("")
+    var empty = False
+
+    var i = 1
+    while i < args.__len__():
+        if args[i] == "-h" or args[i] == "--help":
+            print_help(args[0])
+            exit(0)
+        elif args[i] == "--warmupEvents":
+            i += 1
+            warmupEvents = Int(args[i])
+        elif args[i] == "--maxEvents":
+            i += 1
+            maxEvents = Int(args[i])
+        elif args[i] == "--runForMinutes":
+            i += 1
+            runForMinutes = Int(args[i])
+        elif args[i] == "--data":
+            i += 1
+            path = Path(args[i])
+        elif args[i] == "--empty":
+            empty = True
+        else:
+            print("Invalid parameter", args[i])
+            print()
+            exit(1)
+        i += 1
+
+    if maxEvents >= 0 and runForMinutes >= 0:
+        print(
+            "Got both --maxEvents and --runForMinutes, please give only one of"
+            " them"
+        )
+        exit(1)
+
+    if not path:
+        path = Path("data")
 
     if not path.exists():
         print("Data directory '", path, "' does not exist", sep="")
-        return
+        exit(1)
 
     ## Init plugins manually
     var _esreg = MojoSerial.Framework.ESPluginFactory.Registry()
     var _edreg = MojoSerial.Framework.PluginFactory.Registry()
-    MojoSerial.PluginSiPixelClusterizer.init(_esreg, _edreg)
+    if not empty:
+        MojoSerial.PluginSiPixelClusterizer.init(_esreg, _edreg)
 
     var processor = EventProcessor(
-        warmupEvents, maxEvents, runForMinutes, path, validation, _esreg, _edreg
+        warmupEvents, maxEvents, runForMinutes, path, False, _esreg, _edreg
     )
     if runForMinutes < 0:
         print("Processing", processor.maxEvents(), "events,", end="")
@@ -43,6 +103,10 @@ fn main() raises:
     var cpu_stop = PosixClockGettime[CLOCK_PROCESS_CPUTIME_ID].now()
     var stop = perf_counter_ns()
     processor.endJob()
+
+    # Lifetime registry extension
+    _ = _esreg^
+    _ = _edreg^
 
     # Work done, report timing
     var diff = stop - start
@@ -64,7 +128,3 @@ fn main() raises:
         "%",
         sep="",
     )
-
-    # Lifetime registry extension
-    _ = _esreg^
-    _ = _edreg^
