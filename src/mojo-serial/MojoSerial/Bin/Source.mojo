@@ -1,3 +1,4 @@
+from time import perf_counter_ns
 from pathlib import Path
 
 from MojoSerial.DataFormats.FEDRawDataCollection import FEDRawDataCollection
@@ -22,7 +23,13 @@ fn readRaw(mut file: FileHandle, nfeds: UInt32) raises -> FEDRawDataCollection:
 
 struct Source(Defaultable, Movable, Typeable):
     var _maxEvents: Int32
-    # skip time for now
+
+    var _runForMinutes: Int32
+    var _startTime: UInt
+    # don't need a mutex
+    var _numEventsTimeLastCheck: Int32
+    var _shouldStop: Bool
+
     var _numEvents: Int32
     var _rawToken: EDPutTokenT[FEDRawDataCollection]
     var _digiClusterToken: EDPutTokenT[DigiClusterCount]
@@ -38,6 +45,11 @@ struct Source(Defaultable, Movable, Typeable):
     fn __init__(out self):
         self._maxEvents = 0
 
+        self._runForMinutes = 0
+        self._startTime = 0
+        self._numEventsTimeLastCheck = 0
+        self._shouldStop = 0
+
         self._numEvents = 0
         self._rawToken = EDPutTokenT[FEDRawDataCollection]()
         self._digiClusterToken = EDPutTokenT[DigiClusterCount]()
@@ -52,13 +64,18 @@ struct Source(Defaultable, Movable, Typeable):
     fn __init__(
         out self,
         var maxEvents: Int32,
+        var runForMinutes: Int32,
         mut reg: ProductRegistry,
         var path: Path,
         var validation: Bool,
     ):
         try:
             self._maxEvents = maxEvents
-            # no timing
+
+            self._runForMinutes = runForMinutes
+            self._startTime = 0
+            self._numEventsTimeLastCheck = 0
+            self._shouldStop = 0
 
             self._numEvents = 0
             self._rawToken = reg.produces[FEDRawDataCollection]()
@@ -117,7 +134,7 @@ struct Source(Defaultable, Movable, Typeable):
                 debug_assert(self._raw.__len__() == self._tracks.__len__())
                 debug_assert(self._raw.__len__() == self._vertices.__len__())
 
-            if self._maxEvents < 0:
+            if self._runForMinutes < 0 and self._maxEvents < 0:
                 self._maxEvents = self._raw.__len__()
         except e:
             print("Error occurred in Bin/Source.mojo,", e)
@@ -126,6 +143,12 @@ struct Source(Defaultable, Movable, Typeable):
     @always_inline
     fn __moveinit__(out self, var other: Self):
         self._maxEvents = other._maxEvents
+
+        self._runForMinutes = other._runForMinutes
+        self._startTime = other._startTime
+        self._numEventsTimeLastCheck = other._numEventsTimeLastCheck
+        self._shouldStop = other._shouldStop
+
         self._numEvents = other._numEvents
         self._rawToken = other._rawToken
         self._digiClusterToken = other._digiClusterToken
@@ -138,13 +161,17 @@ struct Source(Defaultable, Movable, Typeable):
         self._validation = other._validation
 
     @always_inline
-    fn reconfigure(mut self, var maxEvents: Int32):
+    fn reconfigure(mut self, var maxEvents: Int32, var runForMinutes: Int32):
         self._maxEvents = maxEvents
+        self._runForMinutes = runForMinutes
+        self._numEventsTimeLastCheck = 0
+        self._shouldStop = False
         self._numEvents = 0
 
     @always_inline
     fn startProcessing(mut self):
-        pass
+        if self._runForMinutes >= 0:
+            self._startTime = perf_counter_ns()
 
     @always_inline
     fn maxEvents(self) -> Int32:
@@ -162,9 +189,34 @@ struct Source(Defaultable, Movable, Typeable):
         Note: When Mojo supports this, it would be optimal to revamp this function with an Optional[OwnedPointer[Event]] return value.
         """
         var res = UnsafePointer[Event]()
-        if self._numEvents >= self._maxEvents:
+        if self._shouldStop:
             return res
+        var old = self._numEvents
         self._numEvents += 1
+        var iev = old + 1
+        if self._runForMinutes < 0:
+            if old >= self._maxEvents:
+                self._shouldStop = True
+                self._numEvents -= 1
+                return res
+        else:
+            if (
+                self._numEvents - self._numEventsTimeLastCheck
+                > self._raw.__len__()
+            ):
+                # this is in nanoseconds
+                var processingTime: UInt = perf_counter_ns() - self._startTime
+                if (processingTime // (6 * 10**10)) >= UInt(
+                    self._runForMinutes
+                ):
+                    self._shouldStop = True
+                self._numEventsTimeLastCheck = (
+                    self._numEvents // self._raw.__len__()
+                ) * self._raw.__len__()
+            if self._shouldStop:
+                self._numEvents -= 1
+                return res
+
         var ev = Event(Int(streamId), Int(self._numEvents), reg)
         var index = (self._numEvents - 1) % self._raw.__len__()
 
