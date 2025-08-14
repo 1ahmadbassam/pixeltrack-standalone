@@ -13,11 +13,10 @@ from MojoSerial.MojoBridge.DTypes import Double
 
 fn print_help(ref name: String):
     print(
-        "Usage: ",
+        "Usage:",
         name,
-        " [--warmupEvents WE] [--maxEvents ME] [--runForMinutes RM]",
-        " [--data PATH] [--validation] [--histogram] [--empty]",
-        sep="",
+        "[--warmupEvents WE] [--maxEvents ME] [--runForMinutes RM]",
+        "[--data PATH] [--validation] [--histogram] [--empty]",
     )
     print(
         r"""(
