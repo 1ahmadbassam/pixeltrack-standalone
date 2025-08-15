@@ -39,10 +39,12 @@ struct Timer(Copyable, Defaultable, Movable, Stringable):
 
     @always_inline
     fn __str__(self) -> String:
-        return "Timer(" + self._start.__str__() + ", " + self._time.__str__() + ")"
+        return (
+            "Timer(" + self._start.__str__() + ", " + self._time.__str__() + ")"
+        )
 
 
-struct TimerManager(Movable, Defaultable, Sized):
+struct TimerManager(Defaultable, Movable, Sized):
     var _storage: Dict[String, Timer]
     # a stack
     var _cur: List[String]
