@@ -93,6 +93,10 @@ struct EventProcessor(Defaultable, Typeable):
         return self._source.processedEvents()
 
     @always_inline
+    fn setup(ref self) -> ref [self._eventSetup] EventSetup:
+        return self._eventSetup
+
+    @always_inline
     @staticmethod
     fn dtype() -> String:
         return "EventProcessor"

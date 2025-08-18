@@ -96,16 +96,13 @@ fn main() raises:
     print(", with 1 concurrent events and 1 threads.")
 
     processor.warmUp()
+    processor.setup().timer().clear()
     var cpu_start = PosixClockGettime[CLOCK_PROCESS_CPUTIME_ID].now()
     var start = perf_counter_ns()
     processor.runToCompletion()
     var cpu_stop = PosixClockGettime[CLOCK_PROCESS_CPUTIME_ID].now()
     var stop = perf_counter_ns()
     processor.endJob()
-
-    # Lifetime registry extension
-    _ = _esreg^
-    _ = _edreg^
 
     # Work done, report timing
     var diff = stop - start
@@ -127,3 +124,10 @@ fn main() raises:
         "%",
         sep="",
     )
+
+    # timer
+    processor.setup().timer().finalize()
+
+    # Lifetime registry extension
+    _ = _esreg^
+    _ = _edreg^

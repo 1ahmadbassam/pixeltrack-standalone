@@ -17,6 +17,7 @@ from MojoSerial.DataFormats.PixelErrors import (
     PixelErrorCompact,
     PixelFormatterErrors,
 )
+from MojoSerial.MojoBridge.Timer import TimerManager
 from MojoSerial.PluginSiPixelClusterizer.GPUClustering import GPUClustering
 from MojoSerial.PluginSiPixelClusterizer.GPUCalibPixel import GPUCalibPixel
 from MojoSerial.MojoBridge.DTypes import UChar, Double, Float, Typeable
@@ -239,6 +240,7 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
         var useQualityInfo: Bool,
         var includeErrors: Bool,
         var debug: Bool,
+        ref tm: TimerManager = TimerManager()
     ):
         if debug:
             print(
@@ -260,6 +262,7 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
         if wordCounter:  # protect in case of empty event....
             debug_assert(wordCounter % 2 == 0)
             # Launch rawToDigi kernel
+            tm.start("RawToDigi_kernel")
             RawToDigi_kernel(
                 cablingMap,
                 modToUnp,
@@ -277,11 +280,13 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
                 includeErrors,
                 debug,
             )
+            tm.stop()
         # End of Raw2Digi and passing data for clustering
 
         # clusterizer
         @parameter
         if True:
+            tm.start("GPUCalibPixel.calibDigis")
             GPUCalibPixel.calibDigis(
                 isRun2,
                 self.digis_d.moduleInd(),
@@ -294,19 +299,23 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
                 self.clusters_d.clusInModule(),
                 self.clusters_d.clusModuleStart(),
             )
+            tm.stop()
 
+            tm.start("GPUCalibPixel.countModules")
             GPUClustering.countModules(
                 self.digis_d.c_moduleInd(),
                 self.clusters_d.moduleStart(),
                 self.digis_d.clus(),
                 wordCounter.cast[DType.int32](),
             )
+            tm.stop()
 
             # read the number of modules into a data member, used by getProduct())
             self.digis_d.setNModulesDigis(
                 self.clusters_d.moduleStart()[0], wordCounter
             )
 
+            tm.start("GPUClustering.findClus")
             GPUClustering.findClus(
                 self.digis_d.c_moduleInd(),
                 self.digis_d.c_xx(),
@@ -317,8 +326,10 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
                 self.digis_d.clus(),
                 wordCounter.cast[DType.int32](),
             )
+            tm.stop()
 
             # apply charge cut
+            tm.start("GPUClustering.clusterChargeCut")
             GPUClustering.clusterChargeCut(
                 self.digis_d.moduleInd(),
                 self.digis_d.c_adc(),
@@ -328,6 +339,7 @@ struct SiPixelRawToClusterGPUKernel(Defaultable, Typeable):
                 self.digis_d.clus(),
                 wordCounter,
             )
+            tm.stop()
 
             # count the module start indices already here (instead of
             # rechits) so that the number of clusters/hits can be made

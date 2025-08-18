@@ -170,6 +170,7 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
                 )
                 wordCounterGPU += le
 
+            iSetup.timer().start("SiPixelRawToClusterGPUKernel.makeClusters")
             self._gpuAlgo.makeClusters(
                 self._isRun2,
                 gpuMap,
@@ -182,7 +183,9 @@ struct SiPixelRawToClusterCUDA(Defaultable, EDProducer, Typeable):
                 self._useQuality,
                 self._includeErrors,
                 False,  # debug
+                iSetup.timer()
             )
+            iSetup.timer().stop()
             iEvent.put[SiPixelDigisSoA](
                 self._digiPutToken, self._gpuAlgo.getResultsDigis()
             )

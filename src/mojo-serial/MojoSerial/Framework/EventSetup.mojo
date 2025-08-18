@@ -1,4 +1,5 @@
 from MojoSerial.MojoBridge.DTypes import Typeable
+from MojoSerial.MojoBridge.Timer import TimerManager
 
 
 struct ESWrapperBase(Copyable, Defaultable, Movable, Typeable):
@@ -52,16 +53,19 @@ struct ESWrapper[T: Typeable & Movable](Movable, Typeable):
 struct EventSetup(Defaultable, Movable, Typeable):
     var _typeToProduct: Dict[String, ESWrapperBase]
     var _dets: Dict[String, fn (mut ESWrapperBase)]
+    var _timer: TimerManager
 
     @always_inline
     fn __init__(out self):
         self._typeToProduct = Dict[String, ESWrapperBase]()
         self._dets = Dict[String, fn (mut ESWrapperBase)]()
+        self._timer = TimerManager()
 
     @always_inline
     fn __moveinit__(out self, var other: Self):
         self._typeToProduct = other._typeToProduct^
         self._dets = other._dets^
+        self._timer = other._timer^
 
     fn __del__(var self):
         for k in self._typeToProduct.keys():
@@ -94,6 +98,10 @@ struct EventSetup(Defaultable, Movable, Typeable):
         if T.dtype() not in self._typeToProduct:
             raise "RuntimeError: Product of type " + T.dtype() + " is not produced."
         return rebind[ESWrapper[T]](self._typeToProduct[T.dtype()]).product()[]
+
+    @always_inline
+    fn timer(ref self) -> ref [self._timer] TimerManager:
+        return self._timer
 
     @staticmethod
     @always_inline
