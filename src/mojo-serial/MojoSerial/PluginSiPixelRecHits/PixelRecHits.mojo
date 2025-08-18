@@ -1,0 +1,34 @@
+from MojoSerial.DataFormats.BeamSpotPOD import BeamSpotPOD
+from MojoSerial.CUDADataFormats.SiPixelClustersSoA import SiPixelClustersSoA
+from MojoSerial.CUDADataFormats.SiPixelDigisSoA import SiPixelDigisSoA
+import MojoSerial.CUDADataFormats.TrackingRecHit2DHeterogeneous as TrackingRecHit2DHeterogeneous
+from MojoSerial.CondFormats.PixelCPEforGPU import ParamsOnGPU
+from MojoSerial.MojoBridge.DTypes import Typeable, TypeableOwnedPointer
+
+@fieldwise_init
+struct PixelRecHitGPUKernel(Defaultable, Typeable):
+    fn makeHits(self,
+                mut digis_d : SiPixelDigisSoA,
+                mut clusters_d : SiPixelClustersSoA,
+                mut bs_d : BeamSpotPOD,
+                var cpeParams : UnsafePointer[ParamsOnGPU]) -> TrackingRecHit2DHeterogeneous.TrackingRecHit2DCPU:
+
+        var nHits = clusters_d.nClusters()
+        var hits_d = TrackingRecHit2DHeterogeneous.TrackingRecHit2DCPU(nHits, cpeParams, clusters_d.clusModuleStart())
+
+        if digis_d.nModules():  # protect from empty events
+            gpuPixelRecHits.getHits(cpeParams, &bs_d, digis_d.view(), digis_d.nDigis(), clusters_d.view(), hits_d.view())
+
+        # assuming full warp of threads is better than a smaller number...
+        if nHits:
+            setHitsLayerStart(clusters_d.clusModuleStart(), cpeParams, hits_d.hitsLayerStart())
+
+        if nHits:
+            cms::cuda::fillManyFromVector(hits_d.phiBinner(), 10, hits_d.iphi(), hits_d.hitsLayerStart(), nHits)
+
+        return hits_d
+
+    @always_inline
+    @staticmethod
+    fn dtype() -> String:
+        return "PixelRecHitGPUKernel"
