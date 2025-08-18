@@ -1,3 +1,4 @@
+from memory import OwnedPointer
 from time import perf_counter_ns
 
 
@@ -45,14 +46,14 @@ struct Timer(Copyable, Defaultable, Movable, Stringable):
 
 
 struct TimerManager(Defaultable, Movable, Sized):
-    var _storage: Dict[String, Timer]
+    var _storage: OwnedPointer[Dict[String, Timer]]
     # a stack
-    var _cur: List[String]
+    var _cur: OwnedPointer[List[String]]
 
     @always_inline
     fn __init__(out self):
-        self._storage = {}
-        self._cur = []
+        self._storage = OwnedPointer[Dict[String, Timer]](Dict[String, Timer]())
+        self._cur = OwnedPointer[List[String]](List[String]())
 
     @always_inline
     fn __moveinit__(out self, var other: Self):
@@ -60,59 +61,64 @@ struct TimerManager(Defaultable, Movable, Sized):
         self._cur = other._cur^
 
     @always_inline
-    fn __enter__(mut self):
+    fn __enter__(ref self):
         if not self.empty():
-            if self.top() not in self._storage:
-                self._storage[self.top()] = Timer()
+            if self.top() not in self._storage.unsafe_ptr()[]:
+                self._storage.unsafe_ptr()[][self.top()] = Timer()
             try:
-                self._storage[self.top()].start()
+                self._storage.unsafe_ptr()[][self.top()].start()
             except e:
                 print(e)
 
     @always_inline
-    fn __exit__(mut self):
+    fn __exit__(ref self):
         try:
-            self._storage[self.top()].finish()
+            self._storage.unsafe_ptr()[][self.top()].finish()
         except e:
             print(e)
         self.pop()
 
     @always_inline
-    fn configure(mut self, var name: String):
-        self._cur.append(name)
+    fn configure(ref self, var name: String):
+        self._cur.unsafe_ptr()[].append(name)
 
     @always_inline
-    fn start(mut self, var name: String = ""):
+    fn start(ref self, var name: String = ""):
         if name:
             self.configure(name)
         self.__enter__()
 
     @always_inline
-    fn stop(mut self):
+    fn stop(ref self):
         self.__exit__()
 
     @always_inline
+    fn clear(ref self):
+        self._storage.unsafe_ptr()[].clear()
+        self._cur.unsafe_ptr()[].clear()
+
+    @always_inline
     fn empty(self) -> Bool:
-        return self._cur.__len__() == 0
+        return self._cur.unsafe_ptr()[].__len__() == 0
 
     @always_inline
     fn top(ref self) -> ref [self._cur] String:
-        return self._cur[-1]
+        return self._cur.unsafe_ptr()[][-1]
 
     @always_inline
-    fn pop(mut self):
-        _ = self._cur.pop()
+    fn pop(ref self):
+        _ = self._cur.unsafe_ptr()[].pop()
 
     @always_inline
     fn __len__(self) -> Int:
-        return self._storage.__len__()
+        return self._storage.unsafe_ptr()[].__len__()
 
     @always_inline
-    fn finalize(mut self):
+    fn finalize(ref self):
         try:
             while not self.empty():
                 self.stop()
-            for k in self._storage.keys():
-                self._storage[k].finalize(k)
+            for k in self._storage.unsafe_ptr()[].keys():
+                self._storage.unsafe_ptr()[][k].finalize(k)
         except e:
             print(e)
