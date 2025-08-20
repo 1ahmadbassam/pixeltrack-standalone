@@ -112,7 +112,7 @@ fn getHits(
                 if id != me:
                     break  # end of module
 
-                var cl = digis.clus(i)
+                var cl = Int(digis.clus(i))
                 if cl < startClus or cl >= lastClus:
                     continue
                 var x = UInt32(digis.xx(i))
@@ -136,7 +136,7 @@ fn getHits(
                 if id != me:
                     break  # end of module
 
-                var cl = digis.clus(i)
+                var cl = Int(digis.clus(i))
                 if cl < startClus or cl >= lastClus:
                     continue
 
@@ -191,8 +191,8 @@ fn getHits(
 
                 hits.detectorIndex(h) = me
 
-                var xl: Float32
-                var yl: Float32
+                var xl: Float32 = 0
+                var yl: Float32 = 0
 
                 xl = clusParams.xpos[ic]
                 hits.xLocal(h) = xl
@@ -208,9 +208,9 @@ fn getHits(
 
                 # keep it local for computations
 
-                var xg: Float32
-                var yg: Float32
-                var zg: Float32
+                var xg: Float32 = 0
+                var yg: Float32 = 0
+                var zg: Float32 = 0
 
                 # to global and compute phi...
                 cpeParams[].detParams(me).frame.toGlobal(xl, yl, xg, yg, zg)

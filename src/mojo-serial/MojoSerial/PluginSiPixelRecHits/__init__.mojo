@@ -4,6 +4,9 @@ from MojoSerial.Framework.PluginFactory import fwkModule
 from MojoSerial.PluginSiPixelRecHits.PixelCPEFastESProducer import (
     PixelCPEFastESProducer,
 )
+from MojoSerial.PluginSiPixelRecHits.SiPixelRecHitCUDA import (
+    SiPixelRecHitCUDA,
+)
 
 
 fn init(
