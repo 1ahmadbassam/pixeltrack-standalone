@@ -36,18 +36,22 @@ struct SiPixelRecHitCUDA(Defaultable, EDProducer, Typeable):
         self.token_ = EDGetTokenT[SiPixelClustersSoA]()
         self.tokenDigi_ = EDGetTokenT[SiPixelDigisSoA]()
         self.tokenHit_ = EDPutTokenT[TrackingRecHit2DCPU]()
+
         self.gpuAlgo_ = PixelRecHitGPUKernel()
 
-    fn __init__(out self, mut reg: ProductRegistry) raises:
-        self.tBeamSpot = reg.consumes[BeamSpotPOD]()
-        self.token_ = reg.consumes[SiPixelClustersSoA]()
-        self.tokenDigi_ = reg.consumes[SiPixelDigisSoA]()
-        self.tokenHit_ = reg.produces[TrackingRecHit2DCPU]()
+    fn __init__(out self, mut reg: ProductRegistry):
+        try:
+            self.tBeamSpot = reg.consumes[BeamSpotPOD]()
+            self.token_ = reg.consumes[SiPixelClustersSoA]()
+            self.tokenDigi_ = reg.consumes[SiPixelDigisSoA]()
+            self.tokenHit_ = reg.produces[TrackingRecHit2DCPU]()
+        except e:
+            print("Handled exception in SiPixelRawToClusterCUDA, ", e)
+            return Self()
+
         self.gpuAlgo_ = PixelRecHitGPUKernel()
 
-    fn produce(mut self, mut iEvent: Event, ref es: EventSetup) raises:
-        ref fcpe: PixelCPEFast = es.get[PixelCPEFast]()
-
+    fn produce(mut self, mut iEvent: Event, ref es: EventSetup):
         ref clusters = iEvent.get(self.token_)
         ref digis = iEvent.get(self.tokenDigi_)
         ref bs = iEvent.get(self.tBeamSpot)
@@ -63,12 +67,15 @@ struct SiPixelRecHitCUDA(Defaultable, EDProducer, Typeable):
                 sep="",
             )
 
-        iEvent.put(
+        try:
+            iEvent.put(
             self.tokenHit_,
             self.gpuAlgo_.makeHits(
-                digis, clusters, bs, UnsafePointer(to=fcpe.getCPUProduct())
+                digis, clusters, bs, UnsafePointer(to=es.get[PixelCPEFast]().getCPUProduct())
             ),
         )
+        except e:
+            print("Error during produce in SiPixelRecHitCUDA, ", e)
 
     fn endJob(mut self):
         pass
