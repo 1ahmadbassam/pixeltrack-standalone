@@ -191,8 +191,8 @@ fn getHits(
 
                 hits.detectorIndex(h) = me
 
-                var xl: Float32 = 0
-                var yl: Float32 = 0
+                var xl: Float32
+                var yl: Float32
 
                 xl = clusParams.xpos[ic]
                 hits.xLocal(h) = xl

@@ -46,7 +46,7 @@ struct SiPixelRecHitCUDA(Defaultable, EDProducer, Typeable):
             self.tokenDigi_ = reg.consumes[SiPixelDigisSoA]()
             self.tokenHit_ = reg.produces[TrackingRecHit2DCPU]()
         except e:
-            print("Handled exception in SiPixelRawToClusterCUDA, ", e)
+            print("Handled exception in SiPixelRecHitCUDA, ", e)
             return Self()
 
         self.gpuAlgo_ = PixelRecHitGPUKernel()
