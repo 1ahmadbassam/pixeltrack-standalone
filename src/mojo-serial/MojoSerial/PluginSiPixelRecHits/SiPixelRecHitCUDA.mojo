@@ -69,11 +69,14 @@ struct SiPixelRecHitCUDA(Defaultable, EDProducer, Typeable):
 
         try:
             iEvent.put(
-            self.tokenHit_,
-            self.gpuAlgo_.makeHits(
-                digis, clusters, bs, UnsafePointer(to=es.get[PixelCPEFast]().getCPUProduct())
-            ),
-        )
+                self.tokenHit_,
+                self.gpuAlgo_.makeHits(
+                    digis,
+                    clusters,
+                    bs,
+                    UnsafePointer(to=es.get[PixelCPEFast]().getCPUProduct()),
+                ),
+            )
         except e:
             print("Error during produce in SiPixelRecHitCUDA, ", e)
 
